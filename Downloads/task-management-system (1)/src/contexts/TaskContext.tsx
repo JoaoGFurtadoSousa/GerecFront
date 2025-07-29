@@ -2,7 +2,13 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
-import { apiService, type Task, type Equipment, type TaskCompletionData } from "../services/apiService"
+import {
+  apiService,
+  type Task,
+  type Equipment,
+  type TaskCompletionData,
+  type EquipmentChecklistItem,
+} from "../services/apiService"
 
 interface TaskContextType {
   tasks: Task[]
@@ -10,9 +16,8 @@ interface TaskContextType {
   error: string | null
   getTaskById: (id: number) => Task | undefined
   refreshTasks: () => Promise<void>
-  updateTaskStatus: (id: number, status: Task["status"]) => Promise<void>
-  getEquipmentByTaskId: (taskId: number) => Promise<Equipment[]>
-  submitEquipmentChecklist: (taskId: number, equipment: Equipment[]) => Promise<void>
+  updateTaskStatus: (id: number, status: "Para iniciar" | "Em andamento" | "Concluído") => Promise<void>
+  submitEquipmentChecklist: (unitId: number, equipmentArray: EquipmentChecklistItem[]) => Promise<void>
   completeTask: (taskId: number, data: TaskCompletionData) => Promise<void>
   clearError: () => void
 }
@@ -68,7 +73,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     return task
   }
 
-  const updateTaskStatus = async (id: number, status: Task["status"]) => {
+  const updateTaskStatus = async (id: number, status: "Para iniciar" | "Em andamento" | "Concluído") => {
     console.log("🔄 Atualizando status no contexto:", id, status)
     setError(null)
     try {
@@ -88,22 +93,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const getEquipmentByTaskId = async (taskId: number): Promise<Equipment[]> => {
+  const submitEquipmentChecklist = async (unitId: number, equipmentArray: EquipmentChecklistItem[]) => {
     setError(null)
     try {
-      const equipment = await apiService.getEquipmentByTaskId(taskId)
-      return equipment
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Erro ao carregar equipamentos"
-      setError(errorMessage)
-      throw err
-    }
-  }
-
-  const submitEquipmentChecklist = async (taskId: number, equipment: Equipment[]) => {
-    setError(null)
-    try {
-      await apiService.submitEquipmentChecklist(taskId, equipment)
+      await apiService.submitEquipmentChecklist(unitId, equipmentArray)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Erro ao enviar checklist"
       setError(errorMessage)
@@ -134,7 +127,6 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         getTaskById,
         refreshTasks,
         updateTaskStatus,
-        getEquipmentByTaskId,
         submitEquipmentChecklist,
         completeTask,
         clearError,
@@ -153,4 +145,4 @@ export function useTask() {
   return context
 }
 
-export type { Task, Equipment, TaskCompletionData }
+export type { Task, Equipment, TaskCompletionData, EquipmentChecklistItem }

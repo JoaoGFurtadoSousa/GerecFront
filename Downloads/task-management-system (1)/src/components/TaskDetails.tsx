@@ -1,7 +1,7 @@
 "use client"
 
 import { Container, Typography, Card, CardContent, Button, Box, Chip, Alert, CircularProgress } from "@mui/material"
-import { ArrowBack, PlayArrow } from "@mui/icons-material"
+import { ArrowBack, PlayArrow, LocationOn } from "@mui/icons-material"
 import { useParams, useNavigate } from "react-router-dom"
 import { useTask, type Task } from "../contexts/TaskContext"
 
@@ -62,7 +62,7 @@ export default function TaskDetails() {
             <Chip label={task.status} color={getStatusColor(task.status)} sx={{ mb: 2 }} />
 
             <Typography variant="h4" component="h1" gutterBottom>
-              {task.nome}
+              Chamado #{task.numChamado}
             </Typography>
           </Box>
 
@@ -71,7 +71,14 @@ export default function TaskDetails() {
               Unidade
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              {task.unidade}
+              {task.unidade?.nome_da_unidade || "Sem unidade"}
+            </Typography>
+
+            <Typography variant="h6" gutterBottom>
+              Técnico Responsável
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+              {task.nomeDoTecnico?.nome || "Não atribuído"}
             </Typography>
 
             <Typography variant="h6" gutterBottom>
@@ -84,8 +91,27 @@ export default function TaskDetails() {
             <Typography variant="h6" gutterBottom>
               Descrição
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
               {task.descricao}
+            </Typography>
+
+            {(task.latitude !== 0 || task.longitude !== 0) && (
+              <>
+                <Typography variant="h6" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <LocationOn sx={{ fontSize: 20 }} />
+                  Localização
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                  Lat: {task.latitude}, Long: {task.longitude}
+                </Typography>
+              </>
+            )}
+
+            <Typography variant="h6" gutterBottom>
+              Data da Tarefa
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+              {new Date(task.dataTarefa).toLocaleString("pt-BR")}
             </Typography>
           </Box>
 

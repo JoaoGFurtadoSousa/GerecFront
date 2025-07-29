@@ -1,20 +1,28 @@
-const API_BASE_URL = "http://192.168.15.25:8000/api/v1"
+const API_BASE_URL = "http://192.168.15.26:8000/api/v1"
 
 export interface Task {
   id: number
-  nome: string
-  status: "Para iniciar" | "Em andamento" | "Concluído"
-  unidade: string
+  nomeDoTecnico: {
+    nome: string
+  }
+  unidade: {
+    id: number
+    nome_da_unidade: string
+  }
   descricao: string
-  data_criacao?: string
-  created_at?: string
-  data_inicio?: string
-  data_fim?: string
+  fotoTotemEntrada: string | null
+  fotoTotemSaida: string | null
+  latitude: number
+  longitude: number
+  numChamado: string
+  dataTarefa: string
+  status: string
 }
 
 export interface Equipment {
   id: number
   nome_do_equipamento: string
+  unidade: number
   danificado_a_entrada: boolean
   danificado_a_saida: boolean
 }
@@ -25,17 +33,25 @@ export interface TaskCompletionData {
   data_finalizacao: string
 }
 
+export interface EquipmentChecklistItem {
+  id: number
+  nome_do_equipamento: string
+  unidade: number
+  danificado_a_entrada: boolean
+  danificado_a_saida: boolean
+}
+
 // Mapeamento de status: Frontend <-> Backend
 const STATUS_TO_NUMBER = {
-  "Para iniciar": 1,
-  "Em andamento": 2,
-  Concluído: 3,
+  "Para iniciar": "1",
+  "Em andamento": "2",
+  Concluído: "3",
 } as const
 
 const NUMBER_TO_STATUS = {
-  1: "Para iniciar",
-  2: "Em andamento",
-  3: "Concluído",
+  "1": "Para iniciar",
+  "2": "Em andamento",
+  "3": "Concluído",
 } as const
 
 const handleFetchError = async (response: Response) => {
@@ -44,9 +60,15 @@ const handleFetchError = async (response: Response) => {
 
     try {
       const errorData = await response.json()
-      errorMessage = errorData.message || errorData.detail || errorMessage
+      console.log("📋 Detalhes do erro:", errorData)
+      errorMessage = errorData.message || errorData.detail || errorData.error || errorMessage
+
+      // Se houver detalhes específicos do erro, incluir
+      if (errorData.errors) {
+        errorMessage += ` - ${JSON.stringify(errorData.errors)}`
+      }
     } catch (e) {
-      // Se não conseguir parsear o JSON, usa a mensagem padrão
+      console.log("⚠️ Não foi possível parsear erro JSON")
     }
 
     throw new Error(errorMessage)
@@ -57,36 +79,24 @@ const handleFetchError = async (response: Response) => {
 const normalizeTask = (task: any): Task => {
   console.log("🔄 Normalizando tarefa:", task)
 
-  // Extrair nome da unidade
-  let unidadeNome = "Sem unidade"
-  if (task.unidade) {
-    if (typeof task.unidade === "string") {
-      unidadeNome = task.unidade
-    } else if (typeof task.unidade === "object" && task.unidade.nome_da_unidade) {
-      unidadeNome = task.unidade.nome_da_unidade
-    } else if (typeof task.unidade === "object" && task.unidade.nome) {
-      unidadeNome = task.unidade.nome
-    }
-  }
-
   // Converter status numérico para string
-  let statusString: Task["status"] = "Para iniciar"
-  if (typeof task.status === "number" && NUMBER_TO_STATUS[task.status as keyof typeof NUMBER_TO_STATUS]) {
+  let statusString: "Para iniciar" | "Em andamento" | "Concluído" = "Para iniciar"
+  if (typeof task.status === "string" && NUMBER_TO_STATUS[task.status as keyof typeof NUMBER_TO_STATUS]) {
     statusString = NUMBER_TO_STATUS[task.status as keyof typeof NUMBER_TO_STATUS]
-  } else if (typeof task.status === "string") {
-    statusString = task.status as Task["status"]
   }
 
   const normalized = {
     id: task.id,
-    nome: task.nome || unidadeNome || "Sem nome",
-    status: statusString,
-    unidade: unidadeNome,
+    nomeDoTecnico: task.nomeDoTecnico || { nome: "" },
+    unidade: task.unidade || { id: 0, nome_da_unidade: "Sem unidade" },
     descricao: task.descricao || "Sem descrição disponível",
-    data_criacao: task.data_criacao || task.created_at || task.data_inicio,
-    created_at: task.created_at,
-    data_inicio: task.data_inicio,
-    data_fim: task.data_fim,
+    fotoTotemEntrada: task.fotoTotemEntrada,
+    fotoTotemSaida: task.fotoTotemSaida,
+    latitude: task.latitude || 0,
+    longitude: task.longitude || 0,
+    numChamado: task.numChamado || "",
+    dataTarefa: task.dataTarefa || "",
+    status: statusString,
   }
 
   console.log("✅ Tarefa normalizada:", normalized)
@@ -155,7 +165,7 @@ class ApiService {
     return normalizeTask(data)
   }
 
-  async updateTaskStatus(id: number, status: Task["status"]): Promise<Task> {
+  async updateTaskStatus(id: number, status: "Para iniciar" | "Em andamento" | "Concluído"): Promise<Task> {
     // Converter status string para número
     const statusNumber = STATUS_TO_NUMBER[status]
     console.log("🔄 Atualizando status da tarefa:", id, "de", status, "para número", statusNumber)
@@ -167,7 +177,7 @@ class ApiService {
         Accept: "application/json",
       },
       mode: "cors",
-      body: JSON.stringify({ status: statusNumber }), // Enviar como número
+      body: JSON.stringify({ status: statusNumber }), // Enviar como string
     })
 
     await handleFetchError(response)
@@ -177,37 +187,36 @@ class ApiService {
     return normalizeTask(data)
   }
 
-  async getEquipmentByTaskId(taskId: number): Promise<Equipment[]> {
-    const response = await fetch(`${API_BASE_URL}/tarefas/${taskId}/equipamentos/`, {
-      method: "GET",
+  // Enviar checklist por unidade - FORMATO CORRETO
+  async submitEquipmentChecklist(unitId: number, equipmentArray: EquipmentChecklistItem[]): Promise<void> {
+    console.log("📤 Enviando checklist para unidade:", unitId)
+    console.log("📤 Array de equipamentos:", equipmentArray.length, "itens")
+    console.log("📤 Payload completo:", JSON.stringify(equipmentArray, null, 2))
+
+    // Endpoint correto
+    const url = `${API_BASE_URL}/equipamentosDaUnidade/atualizar-equipamentos-por-unidades/${unitId}/`
+    console.log("🌐 URL de envio (PUT):", url)
+
+    const response = await fetch(url, {
+      method: "PUT",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
       mode: "cors",
+      body: JSON.stringify(equipmentArray), // Array completo com todos os campos
     })
 
-    await handleFetchError(response)
-    return await response.json()
-  }
+    console.log("📡 Status da resposta checklist:", response.status, response.statusText)
 
-  async submitEquipmentChecklist(taskId: number, equipment: Equipment[]): Promise<void> {
-    const payload = equipment.map((item) => ({
-      id: item.id,
-      danificado_a_saida: item.danificado_a_saida,
-    }))
-
-    const response = await fetch(`${API_BASE_URL}/tarefas/${taskId}/checklist/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      mode: "cors",
-      body: JSON.stringify({ equipamentos: payload }),
-    })
+    // Log da resposta para debug
+    if (!response.ok) {
+      const responseText = await response.text()
+      console.log("📋 Resposta completa do erro:", responseText)
+    }
 
     await handleFetchError(response)
+    console.log("✅ Checklist enviado com sucesso via PUT para unidade", unitId)
   }
 
   async completeTask(taskId: number, data: TaskCompletionData): Promise<void> {
