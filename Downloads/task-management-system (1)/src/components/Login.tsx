@@ -1,0 +1,398 @@
+"use client"
+
+import type React from "react"
+import { useState, useEffect } from "react"
+import {
+  Box,
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  Typography,
+  InputAdornment,
+  IconButton,
+  Alert,
+  CircularProgress,
+  Link,
+} from "@mui/material"
+import { Email, Lock, Visibility, VisibilityOff, Engineering } from "@mui/icons-material"
+import { useNavigate } from "react-router-dom"
+import { authService } from "../services/authService"
+
+interface LoginFormData {
+  email: string
+  password: string
+}
+
+interface LoginResponse {
+  access: string
+  refresh: string
+  user?: {
+    id: number
+    nome: string
+    email: string
+  }
+}
+
+export default function Login() {
+  const navigate = useNavigate()
+  const [formData, setFormData] = useState<LoginFormData>({
+    email: "",
+    password: "",
+  })
+  const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Verificar se já está autenticado
+  useEffect(() => {
+    if (authService.isAuthenticated()) {
+      console.log("✅ Usuário já autenticado, redirecionando...")
+      navigate("/")
+    }
+  }, [navigate])
+
+  const handleInputChange = (field: keyof LoginFormData, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+    if (error) setError(null)
+  }
+
+  const validateForm = (): boolean => {
+    if (!formData.email.trim()) {
+      setError("Email é obrigatório")
+      return false
+    }
+
+    if (!formData.email.includes("@")) {
+      setError("Email deve ter um formato válido")
+      return false
+    }
+
+    if (!formData.password.trim()) {
+      setError("Senha é obrigatória")
+      return false
+    }
+
+    return true
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!validateForm()) return
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      console.log("🔐 Fazendo login com:", formData.email)
+
+      const response = await fetch("http://192.168.15.26:8000/api/v1/login/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+
+      console.log("📡 Status da resposta:", response.status)
+
+      if (!response.ok) {
+        let errorMessage = "Erro ao fazer login"
+
+        try {
+          const errorData = await response.json()
+          console.log("❌ Erro do servidor:", errorData)
+          errorMessage = errorData.message || errorData.detail || "Email ou senha incorretos"
+        } catch (e) {
+          console.log("⚠️ Não foi possível parsear erro")
+        }
+
+        throw new Error(errorMessage)
+      }
+
+      const data: LoginResponse = await response.json()
+      console.log("✅ Login realizado com sucesso:", data)
+
+      // Verificar se recebeu os tokens
+      if (!data.access || !data.refresh) {
+        throw new Error("Tokens não recebidos do servidor")
+      }
+
+      // Salvar tokens usando o AuthService
+      authService.setTokens(data.access, data.refresh, data.user)
+
+      console.log("🎉 Autenticação configurada, redirecionando...")
+      navigate("/")
+    } catch (err) {
+      console.error("❌ Erro no login:", err)
+      const errorMessage = err instanceof Error ? err.message : "Erro inesperado ao fazer login"
+      setError(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        bgcolor: "white",
+        p: 2,
+      }}
+    >
+      {/* Logo/Brand */}
+      <Box sx={{ display: "flex", alignItems: "center", mb: 6 }}>
+        <Engineering sx={{ fontSize: 40, color: "#4285f4", mr: 2 }} />
+        <Typography
+          variant="h3"
+          sx={{
+            fontWeight: 700,
+            color: "#333",
+            fontSize: "2.5rem",
+          }}
+        >
+          TaskPulse
+        </Typography>
+      </Box>
+
+      <Card
+        sx={{
+          maxWidth: 400,
+          width: "100%",
+          bgcolor: "#1a1a2e",
+          border: "1px solid #333",
+          borderRadius: 3,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+        }}
+      >
+        <CardContent sx={{ p: 4 }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 600,
+              color: "white",
+              textAlign: "center",
+              mb: 1,
+              fontSize: "1.75rem",
+            }}
+          >
+            Login
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "rgba(255,255,255,0.7)",
+              textAlign: "center",
+              mb: 4,
+              fontSize: "0.9rem",
+            }}
+          >
+            Entre com suas credenciais para acessar o sistema
+          </Typography>
+
+          {error && (
+            <Alert
+              severity="error"
+              sx={{
+                mb: 3,
+                bgcolor: "rgba(244,67,54,0.1)",
+                border: "1px solid rgba(244,67,54,0.3)",
+                color: "#ff6b6b",
+                "& .MuiAlert-icon": {
+                  color: "#ff6b6b",
+                },
+              }}
+            >
+              {error}
+            </Alert>
+          )}
+
+          <Box component="form" onSubmit={handleSubmit}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "rgba(255,255,255,0.9)",
+                mb: 1,
+                fontWeight: 500,
+                fontSize: "0.9rem",
+              }}
+            >
+              Email
+            </Typography>
+            <TextField
+              fullWidth
+              type="email"
+              placeholder="seu@email.com"
+              value={formData.email}
+              onChange={(e) => handleInputChange("email", e.target.value)}
+              disabled={loading}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Email sx={{ color: "rgba(255,255,255,0.5)", fontSize: 20 }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                mb: 3,
+                "& .MuiOutlinedInput-root": {
+                  bgcolor: "#2a2a3e",
+                  border: "1px solid #444",
+                  borderRadius: 2,
+                  color: "white",
+                  height: "48px",
+                  "& fieldset": {
+                    border: "none",
+                  },
+                  "&:hover": {
+                    bgcolor: "#2a2a3e",
+                    border: "1px solid #555",
+                  },
+                  "&.Mui-focused": {
+                    bgcolor: "#2a2a3e",
+                    border: "1px solid #4285f4",
+                  },
+                },
+                "& .MuiInputBase-input": {
+                  color: "white",
+                  fontSize: "0.9rem",
+                  "&::placeholder": {
+                    color: "rgba(255,255,255,0.5)",
+                    opacity: 1,
+                  },
+                },
+              }}
+            />
+
+            <Typography
+              variant="body2"
+              sx={{
+                color: "rgba(255,255,255,0.9)",
+                mb: 1,
+                fontWeight: 500,
+                fontSize: "0.9rem",
+              }}
+            >
+              Senha
+            </Typography>
+            <TextField
+              fullWidth
+              type={showPassword ? "text" : "password"}
+              placeholder="Digite sua senha"
+              value={formData.password}
+              onChange={(e) => handleInputChange("password", e.target.value)}
+              disabled={loading}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Lock sx={{ color: "rgba(255,255,255,0.5)", fontSize: 20 }} />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      disabled={loading}
+                      edge="end"
+                      sx={{ color: "rgba(255,255,255,0.5)" }}
+                    >
+                      {showPassword ? <VisibilityOff sx={{ fontSize: 20 }} /> : <Visibility sx={{ fontSize: 20 }} />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                mb: 4,
+                "& .MuiOutlinedInput-root": {
+                  bgcolor: "#2a2a3e",
+                  border: "1px solid #444",
+                  borderRadius: 2,
+                  color: "white",
+                  height: "48px",
+                  "& fieldset": {
+                    border: "none",
+                  },
+                  "&:hover": {
+                    bgcolor: "#2a2a3e",
+                    border: "1px solid #555",
+                  },
+                  "&.Mui-focused": {
+                    bgcolor: "#2a2a3e",
+                    border: "1px solid #4285f4",
+                  },
+                },
+                "& .MuiInputBase-input": {
+                  color: "white",
+                  fontSize: "0.9rem",
+                  "&::placeholder": {
+                    color: "rgba(255,255,255,0.5)",
+                    opacity: 1,
+                  },
+                },
+              }}
+            />
+
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              size="large"
+              disabled={loading}
+              sx={{
+                py: 1.5,
+                borderRadius: 2,
+                bgcolor: "#4285f4",
+                fontSize: "1rem",
+                fontWeight: 600,
+                textTransform: "none",
+                height: "48px",
+                boxShadow: "none",
+                "&:hover": {
+                  bgcolor: "#3367d6",
+                  boxShadow: "none",
+                },
+                "&:disabled": {
+                  bgcolor: "rgba(66, 133, 244, 0.5)",
+                  color: "white",
+                },
+              }}
+            >
+              {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Entrar"}
+            </Button>
+          </Box>
+
+          <Box sx={{ textAlign: "center", mt: 3 }}>
+            <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.7)", fontSize: "0.9rem" }}>
+              Não tem uma conta?{" "}
+              <Link
+                component="button"
+                type="button"
+                onClick={() => navigate("/cadastro")}
+                sx={{
+                  color: "#4285f4",
+                  textDecoration: "none",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  "&:hover": {
+                    textDecoration: "underline",
+                  },
+                }}
+              >
+                Cadastre-se
+              </Link>
+            </Typography>
+          </Box>
+        </CardContent>
+      </Card>
+    </Box>
+  )
+}

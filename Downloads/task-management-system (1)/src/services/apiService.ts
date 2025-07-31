@@ -1,3 +1,5 @@
+import { authService } from "./authService"
+
 const API_BASE_URL = "http://192.168.15.26:8000/api/v1"
 
 export interface Task {
@@ -71,6 +73,11 @@ const handleFetchError = async (response: Response) => {
       console.log("⚠️ Não foi possível parsear erro JSON")
     }
 
+    // Se for erro 401, pode ser token expirado (será tratado pelo authService)
+    if (response.status === 401) {
+      console.log("🔒 Erro 401 - Token pode estar expirado")
+    }
+
     throw new Error(errorMessage)
   }
 }
@@ -105,16 +112,11 @@ const normalizeTask = (task: any): Task => {
 
 class ApiService {
   async getTasks(): Promise<Task[]> {
-    console.log("🌐 Iniciando requisição para:", `${API_BASE_URL}/tarefas/`)
+    console.log("🌐 Iniciando requisição autenticada para:", `${API_BASE_URL}/tarefas/`)
 
     try {
-      const response = await fetch(`${API_BASE_URL}/tarefas/`, {
+      const response = await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/`, {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        mode: "cors",
       })
 
       console.log("📡 Status da resposta:", response.status, response.statusText)
@@ -149,13 +151,8 @@ class ApiService {
   async getTaskById(id: number): Promise<Task> {
     console.log("🔍 Buscando tarefa por ID:", id)
 
-    const response = await fetch(`${API_BASE_URL}/tarefas/${id}/`, {
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/${id}/`, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      mode: "cors",
     })
 
     await handleFetchError(response)
@@ -170,14 +167,9 @@ class ApiService {
     const statusNumber = STATUS_TO_NUMBER[status]
     console.log("🔄 Atualizando status da tarefa:", id, "de", status, "para número", statusNumber)
 
-    const response = await fetch(`${API_BASE_URL}/tarefas/${id}/`, {
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/${id}/`, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      mode: "cors",
-      body: JSON.stringify({ status: statusNumber }), // Enviar como string
+      body: JSON.stringify({ status: statusNumber }),
     })
 
     await handleFetchError(response)
@@ -193,40 +185,63 @@ class ApiService {
     console.log("📤 Array de equipamentos:", equipmentArray.length, "itens")
     console.log("📤 Payload completo:", JSON.stringify(equipmentArray, null, 2))
 
+    // Verificar se o usuário está autenticado
+    const token = authService.getAccessToken()
+    if (!token) {
+      throw new Error("Token de acesso não encontrado. Faça login novamente.")
+    }
+
     // Endpoint correto
     const url = `${API_BASE_URL}/equipamentosDaUnidade/atualizar-equipamentos-por-unidades/${unitId}/`
     console.log("🌐 URL de envio (PUT):", url)
 
-    const response = await fetch(url, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      mode: "cors",
-      body: JSON.stringify(equipmentArray), // Array completo com todos os campos
-    })
+    try {
+      const response = await authService.authenticatedFetch(url, {
+        method: "PUT",
+        body: JSON.stringify(equipmentArray),
+      })
 
-    console.log("📡 Status da resposta checklist:", response.status, response.statusText)
+      console.log("📡 Status da resposta checklist:", response.status, response.statusText)
 
-    // Log da resposta para debug
-    if (!response.ok) {
-      const responseText = await response.text()
-      console.log("📋 Resposta completa do erro:", responseText)
+      // Log detalhado da resposta para debug
+      if (!response.ok) {
+        const responseText = await response.text()
+        console.log("📋 Resposta completa do erro:", responseText)
+
+        // Tratamento específico para erro 403
+        if (response.status === 403) {
+          console.error("❌ Erro 403 - Possíveis causas:")
+          console.error("1. Usuário não tem permissão para esta unidade")
+          console.error("2. Token expirado ou inválido")
+          console.error("3. Endpoint requer permissões específicas")
+          console.error("4. CORS ou configuração do servidor")
+
+          // Tentar verificar se é problema de token
+          const userData = authService.getUserData()
+          console.log("👤 Dados do usuário:", userData)
+
+          throw new Error("Acesso negado. Você não tem permissão para atualizar equipamentos desta unidade.")
+        }
+      }
+
+      await handleFetchError(response)
+      console.log("✅ Checklist enviado com sucesso via PUT para unidade", unitId)
+    } catch (error) {
+      console.error("❌ Erro detalhado no envio do checklist:", error)
+
+      // Se for erro de rede ou conexão
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        throw new Error("Erro de conexão. Verifique sua internet e tente novamente.")
+      }
+
+      // Re-throw o erro original para manter a mensagem específica
+      throw error
     }
-
-    await handleFetchError(response)
-    console.log("✅ Checklist enviado com sucesso via PUT para unidade", unitId)
   }
 
   async completeTask(taskId: number, data: TaskCompletionData): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/tarefas/${taskId}/concluir/`, {
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/${taskId}/concluir/`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      mode: "cors",
       body: JSON.stringify(data),
     })
 

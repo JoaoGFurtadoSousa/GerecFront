@@ -6,14 +6,17 @@ import TaskList from "./components/TaskList"
 import TaskDetails from "./components/TaskDetails"
 import EquipmentChecklist from "./components/EquipmentChecklist"
 import TaskCompletion from "./components/TaskCompletion"
+import Login from "./components/Login"
+import Cadastro from "./components/Cadastro"
+import ProtectedRoute from "./components/ProtectedRoute"
 
 const theme = createTheme({
   palette: {
     primary: {
-      main: "#1976d2",
+      main: "#2196f3",
     },
     secondary: {
-      main: "#dc004e",
+      main: "#4caf50",
     },
     background: {
       default: "#f8f9fa",
@@ -56,10 +59,40 @@ export default function App() {
       <TaskProvider>
         <Router>
           <Routes>
-            <Route path="/" element={<TaskList />} />
-            <Route path="/task/:id" element={<TaskDetails />} />
-            <Route path="/task/:id/checklist" element={<EquipmentChecklist />} />
-            <Route path="/task/:id/completion" element={<TaskCompletion />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/cadastro" element={<Cadastro />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <TaskList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/task/:id"
+              element={
+                <ProtectedRoute>
+                  <TaskDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/task/:id/checklist"
+              element={
+                <ProtectedRoute>
+                  <EquipmentChecklist />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/task/:id/completion"
+              element={
+                <ProtectedRoute>
+                  <TaskCompletion />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </Router>
       </TaskProvider>

@@ -96,11 +96,21 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const submitEquipmentChecklist = async (unitId: number, equipmentArray: EquipmentChecklistItem[]) => {
     setError(null)
     try {
+      console.log("🔄 TaskContext: Enviando checklist para unidade", unitId)
       await apiService.submitEquipmentChecklist(unitId, equipmentArray)
+      console.log("✅ TaskContext: Checklist enviado com sucesso")
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Erro ao enviar checklist"
+      console.error("❌ TaskContext: Erro ao enviar checklist:", err)
+
+      let errorMessage = "Erro ao enviar checklist"
+
+      if (err instanceof Error) {
+        // Manter a mensagem específica do erro
+        errorMessage = err.message
+      }
+
       setError(errorMessage)
-      throw err
+      throw err // Re-throw para que o componente possa tratar também
     }
   }
 
@@ -111,6 +121,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       await updateTaskStatus(taskId, "Concluído")
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Erro ao concluir tarefa"
+      console.error("❌ Erro ao concluir tarefa:", errorMessage)
       setError(errorMessage)
       throw err
     }
