@@ -9,6 +9,7 @@ import TaskCompletion from "./components/TaskCompletion"
 import Login from "./components/Login"
 import Cadastro from "./components/Cadastro"
 import ProtectedRoute from "./components/ProtectedRoute"
+import Historico from "./components/Historico"
 
 const theme = createTheme({
   palette: {
@@ -90,6 +91,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <TaskCompletion />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/historico"
+              element={
+                <ProtectedRoute>
+                  <Historico />
                 </ProtectedRoute>
               }
             />

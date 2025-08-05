@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Box,
   Typography,
@@ -25,7 +25,6 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
-  Badge,
 } from "@mui/material"
 import {
   Visibility,
@@ -35,13 +34,13 @@ import {
   Assignment,
   Engineering,
   Analytics,
-  Notifications,
   TrendingUp,
   CheckCircle,
   Schedule,
   PlayArrow,
   Menu,
   Logout,
+  Sync,
 } from "@mui/icons-material"
 import { useNavigate } from "react-router-dom"
 import { useTask, type Task } from "../contexts/TaskContext"
@@ -75,12 +74,160 @@ const getStatusBgColor = (status: Task["status"]) => {
   }
 }
 
+// Adicionar estilos CSS para animação
+const pulseKeyframes = `
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+    }
+  }
+`
+
 export default function TaskList() {
   const { tasks, loading, error, refreshTasks } = useTask()
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Estado para controlar o auto-refresh
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true)
+  const [lastUpdateTime, setLastUpdateTime] = useState(new Date())
+  const [isUpdating, setIsUpdating] = useState(false)
+
+  // Adicionar após os outros estados
+  const [userInfo, setUserInfo] = useState(null)
+  const [loadingUser, setLoadingUser] = useState(true)
+
+  // Função para buscar informações do usuário
+  const fetchUserInfo = async () => {
+    try {
+      setLoadingUser(true)
+      console.log("🔄 Buscando informações do usuário...")
+
+      const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/usuario/", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar usuário: ${response.status} ${response.statusText}`)
+      }
+
+      const userData = await response.json()
+      console.log("✅ Dados do usuário recebidos:", userData)
+      setUserInfo(userData)
+    } catch (err) {
+      console.error("❌ Erro ao buscar dados do usuário:", err)
+      // Em caso de erro, usar dados do localStorage como fallback
+      const fallbackUser = authService.getUserData()
+      setUserInfo(fallbackUser)
+    } finally {
+      setLoadingUser(false)
+    }
+  }
+
+  // Função para salvar dados e atualizar apenas as tarefas
+  const saveDataAndRefreshTasks = async () => {
+    try {
+      setIsUpdating(true)
+      console.log("🔄 Enviando requisição POST para salvar dados...")
+
+      // 1. Primeiro, salvar os dados no backend
+      const saveResponse = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/salvar/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({}), // Corpo vazio conforme especificado
+      })
+
+      if (!saveResponse.ok) {
+        throw new Error(`Erro ao salvar dados: ${saveResponse.status} ${saveResponse.statusText}`)
+      }
+
+      console.log("✅ Dados salvos com sucesso no backend")
+
+      // 2. Depois, buscar as tarefas atualizadas (sem usar refreshTasks do contexto)
+      console.log("🔄 Buscando tarefas atualizadas...")
+
+      const tasksResponse = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/tarefas/", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      })
+
+      if (!tasksResponse.ok) {
+        throw new Error(`Erro ao buscar tarefas: ${tasksResponse.status} ${tasksResponse.statusText}`)
+      }
+
+      const tasksData = await tasksResponse.json()
+      console.log("✅ Tarefas atualizadas recebidas:", tasksData.length, "itens")
+
+      // 3. Atualizar apenas as tarefas através do contexto
+      await refreshTasks()
+
+      setLastUpdateTime(new Date())
+      console.log("✅ Lista de tarefas atualizada com sucesso")
+    } catch (error) {
+      console.error("❌ Erro ao salvar dados e atualizar tarefas:", error)
+      // Não mostrar erro para o usuário, apenas logar
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  // useEffect para configurar o intervalo de 10 segundos
+  useEffect(() => {
+    let intervalId
+
+    if (autoRefreshEnabled) {
+      // Executar imediatamente na primeira vez
+      saveDataAndRefreshTasks()
+
+      // Configurar intervalo de 10 segundos
+      intervalId = setInterval(() => {
+        saveDataAndRefreshTasks()
+      }, 10000) // 10 segundos
+
+      console.log("⏰ Auto-refresh ativado - executando a cada 10 segundos")
+    }
+
+    // Cleanup function para limpar o intervalo
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId)
+        console.log("🛑 Auto-refresh desativado")
+      }
+    }
+  }, [autoRefreshEnabled]) // Dependência para recriar o intervalo se o estado mudar
+
+  // Carregar dados do usuário ao montar o componente
+  useEffect(() => {
+    fetchUserInfo()
+  }, [])
+
+  // Função para toggle do auto-refresh
+  const toggleAutoRefresh = () => {
+    setAutoRefreshEnabled(!autoRefreshEnabled)
+  }
+
+  // Função para refresh manual
+  const handleManualRefresh = () => {
+    saveDataAndRefreshTasks()
+  }
 
   // Obter dados do usuário
   const userData = authService.getUserData()
@@ -148,6 +295,7 @@ export default function TaskList() {
         </ListItem>
 
         <ListItem
+          onClick={() => navigate("/historico")}
           sx={{
             borderRadius: 2,
             mb: 1,
@@ -159,7 +307,7 @@ export default function TaskList() {
             <Assignment sx={{ color: "#ccc" }} />
           </ListItemIcon>
           <ListItemText
-            primary="Tarefas"
+            primary="Histórico"
             primaryTypographyProps={{
               fontSize: "0.9rem",
               color: "#ccc",
@@ -253,6 +401,17 @@ export default function TaskList() {
     </Box>
   )
 
+  // Injetar CSS no head
+  useEffect(() => {
+    const style = document.createElement("style")
+    style.textContent = pulseKeyframes
+    document.head.appendChild(style)
+
+    return () => {
+      document.head.removeChild(style)
+    }
+  }, [])
+
   if (loading) {
     return (
       <Box sx={{ display: "flex", height: "100vh" }}>
@@ -327,20 +486,18 @@ export default function TaskList() {
             </Typography>
           </Box>
 
+          {/* Na seção Top Bar, substituir o Box com notificações e avatar por: */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <IconButton>
-              <Badge badgeContent={3} color="error">
-                <Notifications />
-              </Badge>
-            </IconButton>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData?.nome?.charAt(0) || "U"}</Avatar>
-              <Box sx={{ display: { xs: "none", sm: "block" } }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>
+                {loadingUser ? "..." : userInfo?.nome?.charAt(0) || userData?.nome?.charAt(0) || "U"}
+              </Avatar>
+              <Box>
                 <Typography variant="body2" sx={{ fontWeight: 600, color: "#333" }}>
-                  {userData?.nome || "Usuário"}
+                  {loadingUser ? "Carregando..." : userInfo?.nome || userData?.nome || "Usuário"}
                 </Typography>
                 <Typography variant="caption" sx={{ color: "#666" }}>
-                  {userData?.email || ""}
+                  {userInfo?.email || userData?.email || ""}
                 </Typography>
               </Box>
             </Box>
@@ -503,6 +660,78 @@ export default function TaskList() {
             </CardContent>
           </Card>
 
+          {/* Indicador de Auto-refresh */}
+          <Card sx={{ mb: 3, bgcolor: "white", border: "1px solid #e0e0e0" }}>
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <Box
+                    sx={{
+                      width: 12,
+                      height: 12,
+                      borderRadius: "50%",
+                      bgcolor: autoRefreshEnabled ? "#4caf50" : "#f44336",
+                      animation: autoRefreshEnabled ? "pulse 2s infinite" : "none",
+                    }}
+                  />
+                  <Typography variant="body2" sx={{ color: "#666" }}>
+                    Auto-atualização: {autoRefreshEnabled ? "Ativa" : "Inativa"}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "#999" }}>
+                    Última atualização: {lastUpdateTime.toLocaleTimeString("pt-BR")}
+                  </Typography>
+                  {isUpdating && (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <CircularProgress size={16} />
+                      <Typography variant="caption" sx={{ color: "#2196f3" }}>
+                        Atualizando...
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+
+                <Box sx={{ display: "flex", gap: 1 }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<Sync />}
+                    onClick={handleManualRefresh}
+                    disabled={isUpdating}
+                    sx={{
+                      textTransform: "none",
+                      fontSize: "0.8rem",
+                      borderColor: "#2196f3",
+                      color: "#2196f3",
+                      "&:hover": {
+                        borderColor: "#1976d2",
+                        bgcolor: "transparent",
+                      },
+                    }}
+                  >
+                    Atualizar Agora
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={toggleAutoRefresh}
+                    sx={{
+                      textTransform: "none",
+                      fontSize: "0.8rem",
+                      borderColor: autoRefreshEnabled ? "#f44336" : "#4caf50",
+                      color: autoRefreshEnabled ? "#f44336" : "#4caf50",
+                      "&:hover": {
+                        borderColor: autoRefreshEnabled ? "#d32f2f" : "#388e3c",
+                        bgcolor: "transparent",
+                      },
+                    }}
+                  >
+                    {autoRefreshEnabled ? "Pausar" : "Ativar"}
+                  </Button>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+
           {/* Lista de Tarefas */}
           <Box>
             <Typography variant="h6" sx={{ mb: 3, color: "#333", fontWeight: 600 }}>
@@ -515,7 +744,7 @@ export default function TaskList() {
                 <Typography variant="h6" color="text.secondary" gutterBottom>
                   Nenhuma tarefa encontrada
                 </Typography>
-                <Button variant="contained" onClick={refreshTasks}>
+                <Button variant="contained" onClick={handleManualRefresh}>
                   Recarregar
                 </Button>
               </Paper>

@@ -1,6 +1,6 @@
 import { authService } from "./authService"
 
-const API_BASE_URL = "http://192.168.15.26:8000/api/v1"
+const API_BASE_URL = "http://192.168.0.102:8000/api/v1"
 
 export interface Task {
   id: number
@@ -246,6 +246,25 @@ class ApiService {
     })
 
     await handleFetchError(response)
+  }
+
+  // Método para salvar dados no backend
+  async saveData() {
+    console.log("🌐 Enviando dados para salvar no backend...")
+
+    try {
+      const response = await authService.authenticatedFetch(`${API_BASE_URL}/salvar/`, {
+        method: "POST",
+      })
+
+      console.log("📡 Status da resposta salvar:", response.status, response.statusText)
+
+      await handleFetchError(response)
+      console.log("✅ Dados salvos com sucesso no backend")
+    } catch (error) {
+      console.error("❌ Erro ao salvar dados:", error)
+      throw error
+    }
   }
 }
 
