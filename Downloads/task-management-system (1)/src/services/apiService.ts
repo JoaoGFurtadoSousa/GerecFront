@@ -1,6 +1,6 @@
 import { authService } from "./authService"
 
-const API_BASE_URL = "http://192.168.0.102:8000/api/v1"
+const API_BASE_URL = "http://192.168.15.26:8000/api/v1"
 
 export interface Task {
   id: number
@@ -82,6 +82,11 @@ const handleFetchError = async (response: Response) => {
   }
 }
 
+const handleConnectionError = (error: any): Error => {
+  console.error("❌ Erro de conexão:", error)
+  return new Error("Erro de conexão com o servidor. Por favor, tente novamente mais tarde.")
+}
+
 // Função para normalizar os dados da tarefa
 const normalizeTask = (task: any): Task => {
   console.log("🔄 Normalizando tarefa:", task)
@@ -117,6 +122,7 @@ class ApiService {
     try {
       const response = await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/`, {
         method: "GET",
+        signal: AbortSignal.timeout(10000), // Timeout de 10 segundos
       })
 
       console.log("📡 Status da resposta:", response.status, response.statusText)
@@ -144,22 +150,27 @@ class ApiService {
       return normalizedTasks
     } catch (error) {
       console.error("❌ Erro na requisição:", error)
-      throw error
+      throw handleConnectionError(error)
     }
   }
 
   async getTaskById(id: number): Promise<Task> {
     console.log("🔍 Buscando tarefa por ID:", id)
 
-    const response = await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/${id}/`, {
-      method: "GET",
-    })
+    try {
+      const response = await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/${id}/`, {
+        method: "GET",
+        signal: AbortSignal.timeout(10000),
+      })
 
-    await handleFetchError(response)
-    const data = await response.json()
-    console.log("📦 Dados da tarefa recebidos:", data)
+      await handleFetchError(response)
+      const data = await response.json()
+      console.log("📦 Dados da tarefa recebidos:", data)
 
-    return normalizeTask(data)
+      return normalizeTask(data)
+    } catch (error) {
+      throw handleConnectionError(error)
+    }
   }
 
   async updateTaskStatus(id: number, status: "Para iniciar" | "Em andamento" | "Concluído"): Promise<Task> {
@@ -167,16 +178,21 @@ class ApiService {
     const statusNumber = STATUS_TO_NUMBER[status]
     console.log("🔄 Atualizando status da tarefa:", id, "de", status, "para número", statusNumber)
 
-    const response = await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/${id}/`, {
-      method: "PATCH",
-      body: JSON.stringify({ status: statusNumber }),
-    })
+    try {
+      const response = await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/${id}/`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: statusNumber }),
+        signal: AbortSignal.timeout(10000),
+      })
 
-    await handleFetchError(response)
-    const data = await response.json()
-    console.log("✅ Resposta da atualização:", data)
+      await handleFetchError(response)
+      const data = await response.json()
+      console.log("✅ Resposta da atualização:", data)
 
-    return normalizeTask(data)
+      return normalizeTask(data)
+    } catch (error) {
+      throw handleConnectionError(error)
+    }
   }
 
   // Enviar checklist por unidade - FORMATO CORRETO
@@ -199,6 +215,7 @@ class ApiService {
       const response = await authService.authenticatedFetch(url, {
         method: "PUT",
         body: JSON.stringify(equipmentArray),
+        signal: AbortSignal.timeout(15000), // Timeout maior para upload
       })
 
       console.log("📡 Status da resposta checklist:", response.status, response.statusText)
@@ -228,42 +245,21 @@ class ApiService {
       console.log("✅ Checklist enviado com sucesso via PUT para unidade", unitId)
     } catch (error) {
       console.error("❌ Erro detalhado no envio do checklist:", error)
-
-      // Se for erro de rede ou conexão
-      if (error instanceof TypeError && error.message.includes("fetch")) {
-        throw new Error("Erro de conexão. Verifique sua internet e tente novamente.")
-      }
-
-      // Re-throw o erro original para manter a mensagem específica
-      throw error
+      throw handleConnectionError(error)
     }
   }
 
   async completeTask(taskId: number, data: TaskCompletionData): Promise<void> {
-    const response = await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/${taskId}/concluir/`, {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
-
-    await handleFetchError(response)
-  }
-
-  // Método para salvar dados no backend
-  async saveData() {
-    console.log("🌐 Enviando dados para salvar no backend...")
-
     try {
-      const response = await authService.authenticatedFetch(`${API_BASE_URL}/salvar/`, {
+      const response = await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/${taskId}/concluir/`, {
         method: "POST",
+        body: JSON.stringify(data),
+        signal: AbortSignal.timeout(10000),
       })
 
-      console.log("📡 Status da resposta salvar:", response.status, response.statusText)
-
       await handleFetchError(response)
-      console.log("✅ Dados salvos com sucesso no backend")
     } catch (error) {
-      console.error("❌ Erro ao salvar dados:", error)
-      throw error
+      throw handleConnectionError(error)
     }
   }
 }

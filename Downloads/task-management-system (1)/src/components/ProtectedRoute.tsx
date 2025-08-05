@@ -26,7 +26,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
         // Verificar se o token ainda é válido fazendo uma requisição de teste
         try {
-          await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/tarefas/", {
+          await authService.authenticatedFetch("http://192.168.15.26:8000/api/v1/tarefas/", {
             method: "GET",
           })
           console.log("✅ Token válido, permitindo acesso")

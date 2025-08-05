@@ -25,6 +25,7 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
+  AlertTitle,
 } from "@mui/material"
 import {
   Visibility,
@@ -41,12 +42,18 @@ import {
   Menu,
   Logout,
   Sync,
+  Add,
+  Warning,
+  Wifi,
+  WifiOff,
 } from "@mui/icons-material"
 import { useNavigate } from "react-router-dom"
 import { useTask, type Task } from "../contexts/TaskContext"
 import { authService } from "../services/authService"
+import NewTaskModal from "./NewTaskModal"
 
 const DRAWER_WIDTH = 240
+const API_BASE_URL = "http://192.168.15.26:8000/api/v1"
 
 const getStatusColor = (status: Task["status"]) => {
   switch (status) {
@@ -90,7 +97,7 @@ const pulseKeyframes = `
 `
 
 export default function TaskList() {
-  const { tasks, loading, error, refreshTasks } = useTask()
+  const { tasks, loading, error, refreshTasks, clearError } = useTask()
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
@@ -101,9 +108,33 @@ export default function TaskList() {
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date())
   const [isUpdating, setIsUpdating] = useState(false)
 
+  // Estados para conectividade
+  const [serverOnline, setServerOnline] = useState<boolean | null>(null)
+  const [connectionError, setConnectionError] = useState<string | null>(null)
+
   // Adicionar após os outros estados
   const [userInfo, setUserInfo] = useState(null)
   const [loadingUser, setLoadingUser] = useState(true)
+
+  const [showNewTaskModal, setShowNewTaskModal] = useState(false)
+
+  // Função para verificar conectividade do servidor
+  const checkServerStatus = async () => {
+    try {
+      // Fazer uma requisição simples para testar conectividade
+      await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/`, {
+        method: "GET",
+        signal: AbortSignal.timeout(5000),
+      })
+      setServerOnline(true)
+      setConnectionError(null)
+      return true
+    } catch (error) {
+      setServerOnline(false)
+      setConnectionError("Erro ao verificar conectividade")
+      return false
+    }
+  }
 
   // Função para buscar informações do usuário
   const fetchUserInfo = async () => {
@@ -111,12 +142,13 @@ export default function TaskList() {
       setLoadingUser(true)
       console.log("🔄 Buscando informações do usuário...")
 
-      const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/usuario/", {
+      const response = await authService.authenticatedFetch("http://192.168.15.26:8000/api/v1/usuario/", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
+        signal: AbortSignal.timeout(10000),
       })
 
       if (!response.ok) {
@@ -136,57 +168,54 @@ export default function TaskList() {
     }
   }
 
-  // Função para salvar dados e atualizar apenas as tarefas
+  // Função para atualizar apenas as tarefas E fazer ping na migração
   const saveDataAndRefreshTasks = async () => {
     try {
       setIsUpdating(true)
-      console.log("🔄 Enviando requisição POST para salvar dados...")
+      console.log("🔄 Atualizando lista de tarefas...")
 
-      // 1. Primeiro, salvar os dados no backend
-      const saveResponse = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/salvar/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({}), // Corpo vazio conforme especificado
-      })
+      // 1. Fazer ping no endpoint de migração PRIMEIRO
+      try {
+        console.log("📡 Fazendo ping no endpoint de migração...")
+        const migrationResponse = await authService.authenticatedFetch("http://192.168.15.26:8000/api/v1/enviar/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({}), // Corpo vazio para o POST
+          signal: AbortSignal.timeout(5000), // Timeout menor para migração
+        })
 
-      if (!saveResponse.ok) {
-        throw new Error(`Erro ao salvar dados: ${saveResponse.status} ${saveResponse.statusText}`)
+        if (migrationResponse.ok) {
+          console.log("✅ Ping de migração enviado com sucesso")
+        } else {
+          console.warn("⚠️ Ping de migração falhou:", migrationResponse.status, migrationResponse.statusText)
+        }
+      } catch (migrationError) {
+        console.warn("⚠️ Erro no ping de migração (continuando com refresh):", migrationError)
+        // Não interromper o processo se a migração falhar
       }
 
-      console.log("✅ Dados salvos com sucesso no backend")
-
-      // 2. Depois, buscar as tarefas atualizadas (sem usar refreshTasks do contexto)
-      console.log("🔄 Buscando tarefas atualizadas...")
-
-      const tasksResponse = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/tarefas/", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      })
-
-      if (!tasksResponse.ok) {
-        throw new Error(`Erro ao buscar tarefas: ${tasksResponse.status} ${tasksResponse.statusText}`)
-      }
-
-      const tasksData = await tasksResponse.json()
-      console.log("✅ Tarefas atualizadas recebidas:", tasksData.length, "itens")
-
-      // 3. Atualizar apenas as tarefas através do contexto
+      // 2. Buscar as tarefas atualizadas
       await refreshTasks()
 
       setLastUpdateTime(new Date())
       console.log("✅ Lista de tarefas atualizada com sucesso")
     } catch (error) {
-      console.error("❌ Erro ao salvar dados e atualizar tarefas:", error)
-      // Não mostrar erro para o usuário, apenas logar
+      console.error("❌ Erro ao atualizar tarefas:", error)
+      setConnectionError(error instanceof Error ? error.message : "Erro ao atualizar tarefas")
     } finally {
       setIsUpdating(false)
     }
+  }
+
+  // Função para refresh manual (incluindo migração)
+  const handleManualRefresh = () => {
+    clearError()
+    setConnectionError(null)
+    console.log("🔄 Refresh manual iniciado - incluindo ping de migração")
+    saveDataAndRefreshTasks()
   }
 
   // useEffect para configurar o intervalo de 10 segundos
@@ -219,14 +248,14 @@ export default function TaskList() {
     fetchUserInfo()
   }, [])
 
+  // Verificar conectividade inicial
+  useEffect(() => {
+    checkServerStatus()
+  }, [])
+
   // Função para toggle do auto-refresh
   const toggleAutoRefresh = () => {
     setAutoRefreshEnabled(!autoRefreshEnabled)
-  }
-
-  // Função para refresh manual
-  const handleManualRefresh = () => {
-    saveDataAndRefreshTasks()
   }
 
   // Obter dados do usuário
@@ -316,6 +345,7 @@ export default function TaskList() {
         </ListItem>
 
         <ListItem
+          onClick={() => setShowNewTaskModal(true)}
           sx={{
             borderRadius: 2,
             mb: 1,
@@ -324,10 +354,10 @@ export default function TaskList() {
           }}
         >
           <ListItemIcon>
-            <Engineering sx={{ color: "#ccc" }} />
+            <Add sx={{ color: "#ccc" }} />
           </ListItemIcon>
           <ListItemText
-            primary="Equipamentos"
+            primary="Nova Tarefa"
             primaryTypographyProps={{
               fontSize: "0.9rem",
               color: "#ccc",
@@ -417,20 +447,51 @@ export default function TaskList() {
       <Box sx={{ display: "flex", height: "100vh" }}>
         <Box sx={{ width: DRAWER_WIDTH, flexShrink: 0 }}>{drawer}</Box>
         <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center", alignItems: "center", bgcolor: "#f8f9fa" }}>
-          <CircularProgress size={60} />
+          <Box sx={{ textAlign: "center" }}>
+            <CircularProgress size={60} sx={{ mb: 2 }} />
+            <Typography variant="h6" color="text.secondary">
+              Carregando tarefas...
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Conectando ao servidor...
+            </Typography>
+          </Box>
         </Box>
       </Box>
     )
   }
 
-  if (error) {
+  if (error || connectionError) {
     return (
       <Box sx={{ display: "flex", height: "100vh" }}>
         <Box sx={{ width: DRAWER_WIDTH, flexShrink: 0 }}>{drawer}</Box>
         <Box sx={{ flexGrow: 1, p: 3, bgcolor: "#f8f9fa" }}>
-          <Alert severity="error" action={<Button onClick={refreshTasks}>Tentar Novamente</Button>}>
-            <Typography variant="h6">Erro ao carregar tarefas</Typography>
-            <Typography variant="body2">{error}</Typography>
+          <Alert
+            severity="error"
+            icon={<WifiOff />}
+            action={
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <Button onClick={checkServerStatus} size="small">
+                  Verificar Conexão
+                </Button>
+                <Button onClick={handleManualRefresh} size="small">
+                  Tentar Novamente
+                </Button>
+              </Box>
+            }
+          >
+            <AlertTitle>Erro de Conexão</AlertTitle>
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              {error || connectionError}
+            </Typography>
+            <Typography variant="body2" sx={{ fontSize: "0.85rem", color: "#666" }}>
+              Verifique se:
+            </Typography>
+            <Box component="ul" sx={{ fontSize: "0.85rem", color: "#666", mt: 1, pl: 2 }}>
+              <li>O servidor está rodando no IP 192.168.15.26:8000</li>
+              <li>Sua conexão com a internet está funcionando</li>
+              <li>Não há bloqueios de firewall</li>
+            </Box>
           </Alert>
         </Box>
       </Box>
@@ -484,9 +545,14 @@ export default function TaskList() {
             <Typography variant="h5" sx={{ fontWeight: 600, color: "#333" }}>
               Dashboard de Tarefas
             </Typography>
+            {/* Indicador de conectividade */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              {serverOnline === true && <Wifi sx={{ color: "#4caf50", fontSize: 20 }} />}
+              {serverOnline === false && <WifiOff sx={{ color: "#f44336", fontSize: 20 }} />}
+              {serverOnline === null && <CircularProgress size={16} />}
+            </Box>
           </Box>
 
-          {/* Na seção Top Bar, substituir o Box com notificações e avatar por: */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>
@@ -506,6 +572,15 @@ export default function TaskList() {
 
         {/* Content */}
         <Box sx={{ p: 3 }}>
+          {/* Alerta de conectividade se houver problemas */}
+          {(connectionError || serverOnline === false) && (
+            <Alert severity="warning" sx={{ mb: 3 }} icon={<Warning />}>
+              <Typography variant="body2">
+                Problemas de conectividade detectados. Algumas funcionalidades podem não estar disponíveis.
+              </Typography>
+            </Alert>
+          )}
+
           {/* Métricas */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
             <Grid item xs={12} sm={6} md={3}>
@@ -670,15 +745,15 @@ export default function TaskList() {
                       width: 12,
                       height: 12,
                       borderRadius: "50%",
-                      bgcolor: autoRefreshEnabled ? "#4caf50" : "#f44336",
-                      animation: autoRefreshEnabled ? "pulse 2s infinite" : "none",
+                      bgcolor: autoRefreshEnabled && serverOnline ? "#4caf50" : "#f44336",
+                      animation: autoRefreshEnabled && serverOnline ? "pulse 2s infinite" : "none",
                     }}
                   />
                   <Typography variant="body2" sx={{ color: "#666" }}>
-                    Auto-atualização: {autoRefreshEnabled ? "Ativa" : "Inativa"}
+                    Auto-atualização: {autoRefreshEnabled && serverOnline ? "Ativa" : "Inativa"}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "#999" }}>
-                    Última atualização: {lastUpdateTime.toLocaleTimeString("pt-BR")}
+                    Última atualização: {lastUpdateTime.toLocaleTimeString("pt-BR")} | Migração: Ativa
                   </Typography>
                   {isUpdating && (
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -744,8 +819,13 @@ export default function TaskList() {
                 <Typography variant="h6" color="text.secondary" gutterBottom>
                   Nenhuma tarefa encontrada
                 </Typography>
-                <Button variant="contained" onClick={handleManualRefresh}>
-                  Recarregar
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  {serverOnline === false
+                    ? "Verifique a conexão com o servidor"
+                    : "As tarefas aparecerão aqui quando disponíveis"}
+                </Typography>
+                <Button variant="contained" onClick={handleManualRefresh} disabled={isUpdating}>
+                  {isUpdating ? "Carregando..." : "Recarregar"}
                 </Button>
               </Paper>
             ) : (
@@ -882,6 +962,15 @@ export default function TaskList() {
           </Box>
         </Box>
       </Box>
+      {/* Modal Nova Tarefa */}
+      <NewTaskModal
+        open={showNewTaskModal}
+        onClose={() => setShowNewTaskModal(false)}
+        onSuccess={() => {
+          setShowNewTaskModal(false)
+          handleManualRefresh()
+        }}
+      />
     </Box>
   )
 }

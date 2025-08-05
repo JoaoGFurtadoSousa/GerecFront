@@ -22,6 +22,7 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
+  AlertTitle,
 } from "@mui/material"
 import {
   Search,
@@ -36,6 +37,8 @@ import {
   History,
   CalendarToday,
   Person,
+  Add,
+  WifiOff,
 } from "@mui/icons-material"
 import { useNavigate } from "react-router-dom"
 import { authService } from "../services/authService"
@@ -85,12 +88,13 @@ export default function Historico() {
       setLoadingUser(true)
       console.log("🔄 Buscando informações do usuário...")
 
-      const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/usuario/", {
+      const response = await authService.authenticatedFetch("http://192.168.15.26:8000/api/v1/usuario/", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
+        signal: AbortSignal.timeout(10000),
       })
 
       if (!response.ok) {
@@ -118,12 +122,13 @@ export default function Historico() {
     try {
       console.log("🔄 Buscando histórico de tarefas...")
 
-      const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/historico/", {
+      const response = await authService.authenticatedFetch("http://192.168.15.26:8000/api/v1/historico/", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
+        signal: AbortSignal.timeout(15000), // Timeout maior para histórico
       })
 
       if (!response.ok) {
@@ -142,7 +147,16 @@ export default function Historico() {
       }
     } catch (err) {
       console.error("❌ Erro ao buscar histórico:", err)
-      const errorMessage = err instanceof Error ? err.message : "Erro ao carregar histórico"
+
+      let errorMessage = "Erro ao carregar histórico"
+
+      if (err instanceof TypeError && err.message.includes("fetch")) {
+        errorMessage =
+          "Não foi possível conectar ao servidor. Verifique se o servidor está rodando no IP 192.168.15.26:8000"
+      } else if (err instanceof Error) {
+        errorMessage = err.message
+      }
+
       setError(errorMessage)
       setTasks([])
     } finally {
@@ -250,10 +264,10 @@ export default function Historico() {
           }}
         >
           <ListItemIcon>
-            <Engineering sx={{ color: "#ccc" }} />
+            <Add sx={{ color: "#ccc" }} />
           </ListItemIcon>
           <ListItemText
-            primary="Equipamentos"
+            primary="Nova Tarefa"
             primaryTypographyProps={{
               fontSize: "0.9rem",
               color: "#ccc",
@@ -354,6 +368,9 @@ export default function Historico() {
             <Typography variant="h6" color="text.secondary">
               Carregando histórico...
             </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Conectando ao servidor...
+            </Typography>
           </Box>
         </Box>
       </Box>
@@ -365,9 +382,23 @@ export default function Historico() {
       <Box sx={{ display: "flex", height: "100vh" }}>
         <Box sx={{ width: DRAWER_WIDTH, flexShrink: 0 }}>{drawer}</Box>
         <Box sx={{ flexGrow: 1, p: 3, bgcolor: "#f8f9fa" }}>
-          <Alert severity="error" action={<Button onClick={fetchHistorico}>Tentar Novamente</Button>}>
-            <Typography variant="h6">Erro ao carregar histórico</Typography>
-            <Typography variant="body2">{error}</Typography>
+          <Alert
+            severity="error"
+            icon={<WifiOff />}
+            action={<Button onClick={fetchHistorico}>Tentar Novamente</Button>}
+          >
+            <AlertTitle>Erro de Conexão</AlertTitle>
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              {error}
+            </Typography>
+            <Typography variant="body2" sx={{ fontSize: "0.85rem", color: "#666" }}>
+              Verifique se:
+            </Typography>
+            <Box component="ul" sx={{ fontSize: "0.85rem", color: "#666", mt: 1, pl: 2 }}>
+              <li>O servidor está rodando no IP 192.168.15.26:8000</li>
+              <li>Sua conexão com a internet está funcionando</li>
+              <li>O endpoint /historico/ está disponível</li>
+            </Box>
           </Alert>
         </Box>
       </Box>

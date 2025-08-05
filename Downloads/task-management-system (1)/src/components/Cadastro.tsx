@@ -122,7 +122,7 @@ export default function Cadastro() {
     try {
       console.log("👤 Fazendo cadastro com:", formData.nome, formData.email)
 
-      const response = await fetch("http://192.168.0.102:8000/api/v1/cadastrar/", {
+      const response = await fetch("http://192.168.15.26:8000/api/v1/cadastrar/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
