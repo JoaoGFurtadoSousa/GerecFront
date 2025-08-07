@@ -6,6 +6,7 @@ import TaskList from "./components/TaskList"
 import TaskDetails from "./components/TaskDetails"
 import EquipmentChecklist from "./components/EquipmentChecklist"
 import TaskCompletion from "./components/TaskCompletion"
+import UnitsView from "./components/UnitsView"
 import Login from "./components/Login"
 import Cadastro from "./components/Cadastro"
 import ProtectedRoute from "./components/ProtectedRoute"
@@ -71,6 +72,22 @@ export default function App() {
               }
             />
             <Route
+              path="/unidades"
+              element={
+                <ProtectedRoute>
+                  <UnitsView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/historico"
+              element={
+                <ProtectedRoute>
+                  <Historico />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/task/:id"
               element={
                 <ProtectedRoute>
@@ -91,14 +108,6 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <TaskCompletion />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/historico"
-              element={
-                <ProtectedRoute>
-                  <Historico />
                 </ProtectedRoute>
               }
             />

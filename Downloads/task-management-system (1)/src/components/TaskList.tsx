@@ -46,6 +46,7 @@ import {
   Warning,
   Wifi,
   WifiOff,
+  Business,
 } from "@mui/icons-material"
 import { useNavigate } from "react-router-dom"
 import { useTask, type Task } from "../contexts/TaskContext"
@@ -53,7 +54,7 @@ import { authService } from "../services/authService"
 import NewTaskModal from "./NewTaskModal"
 
 const DRAWER_WIDTH = 240
-const API_BASE_URL = "http://192.168.15.26:8000/api/v1"
+const API_BASE_URL = "http://192.168.15.17:8000/api/v1"
 
 const getStatusColor = (status: Task["status"]) => {
   switch (status) {
@@ -112,10 +113,9 @@ export default function TaskList() {
   const [serverOnline, setServerOnline] = useState<boolean | null>(null)
   const [connectionError, setConnectionError] = useState<string | null>(null)
 
-  // Adicionar após os outros estados
+  // Estados para usuário
   const [userInfo, setUserInfo] = useState(null)
   const [loadingUser, setLoadingUser] = useState(true)
-
   const [showNewTaskModal, setShowNewTaskModal] = useState(false)
 
   // Função para verificar conectividade do servidor
@@ -141,8 +141,7 @@ export default function TaskList() {
     try {
       setLoadingUser(true)
       console.log("🔄 Buscando informações do usuário...")
-
-      const response = await authService.authenticatedFetch("http://192.168.15.26:8000/api/v1/usuario/", {
+      const response = await authService.authenticatedFetch("http://192.168.15.17:8000/api/v1/usuario/", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -150,11 +149,9 @@ export default function TaskList() {
         },
         signal: AbortSignal.timeout(10000),
       })
-
       if (!response.ok) {
         throw new Error(`Erro ao buscar usuário: ${response.status} ${response.statusText}`)
       }
-
       const userData = await response.json()
       console.log("✅ Dados do usuário recebidos:", userData)
       setUserInfo(userData)
@@ -173,11 +170,10 @@ export default function TaskList() {
     try {
       setIsUpdating(true)
       console.log("🔄 Atualizando lista de tarefas...")
-
       // 1. Fazer ping no endpoint de migração PRIMEIRO
       try {
         console.log("📡 Fazendo ping no endpoint de migração...")
-        const migrationResponse = await authService.authenticatedFetch("http://192.168.15.26:8000/api/v1/enviar/", {
+        const migrationResponse = await authService.authenticatedFetch("http://192.168.15.17:8000/api/v1/enviar/", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -186,7 +182,6 @@ export default function TaskList() {
           body: JSON.stringify({}), // Corpo vazio para o POST
           signal: AbortSignal.timeout(5000), // Timeout menor para migração
         })
-
         if (migrationResponse.ok) {
           console.log("✅ Ping de migração enviado com sucesso")
         } else {
@@ -196,10 +191,8 @@ export default function TaskList() {
         console.warn("⚠️ Erro no ping de migração (continuando com refresh):", migrationError)
         // Não interromper o processo se a migração falhar
       }
-
       // 2. Buscar as tarefas atualizadas
       await refreshTasks()
-
       setLastUpdateTime(new Date())
       console.log("✅ Lista de tarefas atualizada com sucesso")
     } catch (error) {
@@ -221,19 +214,15 @@ export default function TaskList() {
   // useEffect para configurar o intervalo de 10 segundos
   useEffect(() => {
     let intervalId
-
     if (autoRefreshEnabled) {
       // Executar imediatamente na primeira vez
       saveDataAndRefreshTasks()
-
       // Configurar intervalo de 10 segundos
       intervalId = setInterval(() => {
         saveDataAndRefreshTasks()
       }, 10000) // 10 segundos
-
       console.log("⏰ Auto-refresh ativado - executando a cada 10 segundos")
     }
-
     // Cleanup function para limpar o intervalo
     return () => {
       if (intervalId) {
@@ -263,12 +252,10 @@ export default function TaskList() {
 
   const filteredTasks = tasks.filter((task) => {
     if (!task) return false
-
     const taskDesc = String(task.descricao || "").toLowerCase()
     const unitName = String(task.unidade?.nome_da_unidade || "").toLowerCase()
     const numChamado = String(task.numChamado || "").toLowerCase()
     const searchLower = searchTerm.toLowerCase()
-
     const matchesSearch =
       taskDesc.includes(searchLower) || unitName.includes(searchLower) || numChamado.includes(searchLower)
     const matchesStatus = statusFilter === "all" || task.status === statusFilter
@@ -300,7 +287,6 @@ export default function TaskList() {
           </Typography>
         </Box>
       </Box>
-
       <List sx={{ px: 2, py: 1 }}>
         <ListItem
           sx={{
@@ -308,6 +294,7 @@ export default function TaskList() {
             mb: 1,
             bgcolor: "#2196f3",
             "&:hover": { bgcolor: "#1976d2" },
+            cursor: "pointer",
           }}
         >
           <ListItemIcon>
@@ -322,7 +309,6 @@ export default function TaskList() {
             }}
           />
         </ListItem>
-
         <ListItem
           onClick={() => navigate("/historico")}
           sx={{
@@ -343,7 +329,6 @@ export default function TaskList() {
             }}
           />
         </ListItem>
-
         <ListItem
           onClick={() => setShowNewTaskModal(true)}
           sx={{
@@ -364,8 +349,8 @@ export default function TaskList() {
             }}
           />
         </ListItem>
-
         <ListItem
+          onClick={() => navigate("/unidades")}
           sx={{
             borderRadius: 2,
             mb: 1,
@@ -374,19 +359,17 @@ export default function TaskList() {
           }}
         >
           <ListItemIcon>
-            <Analytics sx={{ color: "#ccc" }} />
+            <Business sx={{ color: "#ccc" }} />
           </ListItemIcon>
           <ListItemText
-            primary="Relatórios"
+            primary="Unidades"
             primaryTypographyProps={{
               fontSize: "0.9rem",
               color: "#ccc",
             }}
           />
         </ListItem>
-
         <Divider sx={{ my: 2, borderColor: "#333" }} />
-
         <ListItem
           sx={{
             borderRadius: 2,
@@ -406,7 +389,6 @@ export default function TaskList() {
             }}
           />
         </ListItem>
-
         <ListItem
           onClick={handleLogout}
           sx={{
@@ -436,7 +418,6 @@ export default function TaskList() {
     const style = document.createElement("style")
     style.textContent = pulseKeyframes
     document.head.appendChild(style)
-
     return () => {
       document.head.removeChild(style)
     }
@@ -488,7 +469,7 @@ export default function TaskList() {
               Verifique se:
             </Typography>
             <Box component="ul" sx={{ fontSize: "0.85rem", color: "#666", mt: 1, pl: 2 }}>
-              <li>O servidor está rodando no IP 192.168.15.26:8000</li>
+              <li>O servidor está rodando no IP 192.168.15.17:8000</li>
               <li>Sua conexão com a internet está funcionando</li>
               <li>Não há bloqueios de firewall</li>
             </Box>
@@ -510,7 +491,6 @@ export default function TaskList() {
       >
         {drawer}
       </Box>
-
       {/* Sidebar Mobile */}
       <Drawer
         variant="temporary"
@@ -524,7 +504,6 @@ export default function TaskList() {
       >
         {drawer}
       </Drawer>
-
       {/* Main Content */}
       <Box sx={{ flexGrow: 1, overflow: "auto" }}>
         {/* Top Bar */}
@@ -552,7 +531,6 @@ export default function TaskList() {
               {serverOnline === null && <CircularProgress size={16} />}
             </Box>
           </Box>
-
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>
@@ -569,7 +547,6 @@ export default function TaskList() {
             </Box>
           </Box>
         </Box>
-
         {/* Content */}
         <Box sx={{ p: 3 }}>
           {/* Alerta de conectividade se houver problemas */}
@@ -604,7 +581,6 @@ export default function TaskList() {
                 </CardContent>
               </Card>
             </Grid>
-
             <Grid item xs={12} sm={6} md={3}>
               <Card sx={{ bgcolor: "white", border: "1px solid #e0e0e0" }}>
                 <CardContent>
@@ -625,7 +601,6 @@ export default function TaskList() {
                 </CardContent>
               </Card>
             </Grid>
-
             <Grid item xs={12} sm={6} md={3}>
               <Card sx={{ bgcolor: "white", border: "1px solid #e0e0e0" }}>
                 <CardContent>
@@ -647,7 +622,6 @@ export default function TaskList() {
                 </CardContent>
               </Card>
             </Grid>
-
             <Grid item xs={12} sm={6} md={3}>
               <Card sx={{ bgcolor: "white", border: "1px solid #e0e0e0" }}>
                 <CardContent>
@@ -670,7 +644,6 @@ export default function TaskList() {
               </Card>
             </Grid>
           </Grid>
-
           {/* Filtros */}
           <Card sx={{ mb: 3, bgcolor: "white", border: "1px solid #e0e0e0" }}>
             <CardContent>
@@ -734,7 +707,6 @@ export default function TaskList() {
               </Grid>
             </CardContent>
           </Card>
-
           {/* Indicador de Auto-refresh */}
           <Card sx={{ mb: 3, bgcolor: "white", border: "1px solid #e0e0e0" }}>
             <CardContent>
@@ -764,7 +736,6 @@ export default function TaskList() {
                     </Box>
                   )}
                 </Box>
-
                 <Box sx={{ display: "flex", gap: 1 }}>
                   <Button
                     variant="outlined"
@@ -806,13 +777,11 @@ export default function TaskList() {
               </Box>
             </CardContent>
           </Card>
-
           {/* Lista de Tarefas */}
           <Box>
             <Typography variant="h6" sx={{ mb: 3, color: "#333", fontWeight: 600 }}>
               Lista de Tarefas ({filteredTasks.length})
             </Typography>
-
             {tasks.length === 0 ? (
               <Paper sx={{ p: 6, textAlign: "center", bgcolor: "white" }}>
                 <Assignment sx={{ fontSize: 64, color: "#e0e0e0", mb: 2 }} />
@@ -868,7 +837,6 @@ export default function TaskList() {
                             #{task.numChamado}
                           </Typography>
                         </Box>
-
                         {/* Título */}
                         <Typography
                           className="task-title"
@@ -885,7 +853,6 @@ export default function TaskList() {
                         >
                           {task.unidade?.nome_da_unidade || "Sem unidade"}
                         </Typography>
-
                         {/* Descrição */}
                         <Typography
                           variant="body2"
@@ -902,7 +869,6 @@ export default function TaskList() {
                         >
                           {String(task.descricao)}
                         </Typography>
-
                         {/* Técnico */}
                         <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
                           <Avatar sx={{ width: 24, height: 24, bgcolor: "#2196f3", mr: 1, fontSize: "0.75rem" }}>
@@ -912,7 +878,6 @@ export default function TaskList() {
                             {task.nomeDoTecnico?.nome || "Não atribuído"}
                           </Typography>
                         </Box>
-
                         {/* Botão */}
                         <Button
                           variant="outlined"
@@ -941,7 +906,6 @@ export default function TaskList() {
                 ))}
               </Grid>
             )}
-
             {filteredTasks.length === 0 && tasks.length > 0 && (
               <Paper sx={{ p: 6, textAlign: "center", bgcolor: "white" }}>
                 <Search sx={{ fontSize: 64, color: "#e0e0e0", mb: 2 }} />

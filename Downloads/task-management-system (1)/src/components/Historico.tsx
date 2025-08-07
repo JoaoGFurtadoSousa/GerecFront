@@ -39,6 +39,7 @@ import {
   Person,
   Add,
   WifiOff,
+  Business,
 } from "@mui/icons-material"
 import { useNavigate } from "react-router-dom"
 import { authService } from "../services/authService"
@@ -87,8 +88,7 @@ export default function Historico() {
     try {
       setLoadingUser(true)
       console.log("🔄 Buscando informações do usuário...")
-
-      const response = await authService.authenticatedFetch("http://192.168.15.26:8000/api/v1/usuario/", {
+      const response = await authService.authenticatedFetch("http://192.168.17.26:8000/api/v1/usuario/", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -96,11 +96,9 @@ export default function Historico() {
         },
         signal: AbortSignal.timeout(10000),
       })
-
       if (!response.ok) {
         throw new Error(`Erro ao buscar usuário: ${response.status} ${response.statusText}`)
       }
-
       const userData = await response.json()
       console.log("✅ Dados do usuário recebidos:", userData)
       setUserInfo(userData)
@@ -118,11 +116,9 @@ export default function Historico() {
   const fetchHistorico = async () => {
     setLoading(true)
     setError(null)
-
     try {
       console.log("🔄 Buscando histórico de tarefas...")
-
-      const response = await authService.authenticatedFetch("http://192.168.15.26:8000/api/v1/historico/", {
+      const response = await authService.authenticatedFetch("http://192.168.15.17:8000/api/v1/historico/", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -147,7 +143,6 @@ export default function Historico() {
       }
     } catch (err) {
       console.error("❌ Erro ao buscar histórico:", err)
-
       let errorMessage = "Erro ao carregar histórico"
 
       if (err instanceof TypeError && err.message.includes("fetch")) {
@@ -177,7 +172,6 @@ export default function Historico() {
   // Filtrar tarefas baseado na busca
   const filteredTasks = tasks.filter((task) => {
     if (!task) return false
-
     const taskDesc = String(task.descricao || "").toLowerCase()
     const unitName = String(task.unidade?.nome_da_unidade || "").toLowerCase()
     const numChamado = String(task.numChamado || "").toLowerCase()
@@ -211,7 +205,6 @@ export default function Historico() {
           </Typography>
         </Box>
       </Box>
-
       <List sx={{ px: 2, py: 1 }}>
         <ListItem
           onClick={() => navigate("/")}
@@ -233,7 +226,6 @@ export default function Historico() {
             }}
           />
         </ListItem>
-
         <ListItem
           sx={{
             borderRadius: 2,
@@ -254,7 +246,6 @@ export default function Historico() {
             }}
           />
         </ListItem>
-
         <ListItem
           sx={{
             borderRadius: 2,
@@ -274,7 +265,26 @@ export default function Historico() {
             }}
           />
         </ListItem>
-
+        <ListItem
+          onClick={() => navigate("/unidades")}
+          sx={{
+            borderRadius: 2,
+            mb: 1,
+            "&:hover": { bgcolor: "#333" },
+            cursor: "pointer",
+          }}
+        >
+          <ListItemIcon>
+            <Business sx={{ color: "#ccc" }} />
+          </ListItemIcon>
+          <ListItemText
+            primary="Unidades"
+            primaryTypographyProps={{
+              fontSize: "0.9rem",
+              color: "#ccc",
+            }}
+          />
+        </ListItem>
         <ListItem
           sx={{
             borderRadius: 2,
@@ -294,9 +304,7 @@ export default function Historico() {
             }}
           />
         </ListItem>
-
         <Divider sx={{ my: 2, borderColor: "#333" }} />
-
         <ListItem
           sx={{
             borderRadius: 2,
@@ -316,7 +324,6 @@ export default function Historico() {
             }}
           />
         </ListItem>
-
         <ListItem
           onClick={handleLogout}
           sx={{
@@ -417,7 +424,6 @@ export default function Historico() {
       >
         {drawer}
       </Box>
-
       {/* Sidebar Mobile */}
       <Drawer
         variant="temporary"
@@ -431,7 +437,6 @@ export default function Historico() {
       >
         {drawer}
       </Drawer>
-
       {/* Main Content */}
       <Box sx={{ flexGrow: 1, overflow: "auto" }}>
         {/* Top Bar */}
@@ -457,7 +462,6 @@ export default function Historico() {
               Voltar ao Dashboard
             </Button>
           </Box>
-
           {/* Na seção Top Bar, substituir o Box com notificações e avatar por: */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -475,7 +479,6 @@ export default function Historico() {
             </Box>
           </Box>
         </Box>
-
         {/* Content */}
         <Box sx={{ p: 3 }}>
           {/* Header */}
@@ -490,7 +493,6 @@ export default function Historico() {
               Visualize todas as tarefas que foram concluídas com sucesso
             </Typography>
           </Box>
-
           {/* Estatísticas */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
             <Grid item xs={12} sm={6} md={4}>
@@ -513,7 +515,6 @@ export default function Historico() {
                 </CardContent>
               </Card>
             </Grid>
-
             <Grid item xs={12} sm={6} md={4}>
               <Card sx={{ bgcolor: "white", border: "1px solid #e0e0e0" }}>
                 <CardContent>
@@ -535,7 +536,6 @@ export default function Historico() {
               </Card>
             </Grid>
           </Grid>
-
           {/* Filtro de Busca */}
           <Card sx={{ mb: 3, bgcolor: "white", border: "1px solid #e0e0e0" }}>
             <CardContent>
@@ -571,13 +571,11 @@ export default function Historico() {
               />
             </CardContent>
           </Card>
-
           {/* Lista de Tarefas do Histórico */}
           <Box>
             <Typography variant="h6" sx={{ mb: 3, color: "#333", fontWeight: 600 }}>
               Tarefas Concluídas ({filteredTasks.length})
             </Typography>
-
             {tasks.length === 0 ? (
               <Paper sx={{ p: 6, textAlign: "center", bgcolor: "white" }}>
                 <History sx={{ fontSize: 64, color: "#e0e0e0", mb: 2 }} />
@@ -628,7 +626,6 @@ export default function Historico() {
                             #{task.numChamado}
                           </Typography>
                         </Box>
-
                         {/* Título */}
                         <Typography
                           variant="h6"
@@ -643,7 +640,6 @@ export default function Historico() {
                         >
                           {task.unidade?.nome_da_unidade || "Sem unidade"}
                         </Typography>
-
                         {/* Descrição */}
                         <Typography
                           variant="body2"
@@ -660,7 +656,6 @@ export default function Historico() {
                         >
                           {String(task.descricao)}
                         </Typography>
-
                         {/* Técnico */}
                         <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                           <Person sx={{ fontSize: 16, color: "#999", mr: 1 }} />
@@ -668,7 +663,6 @@ export default function Historico() {
                             {task.nomeDoTecnico?.nome || "Não informado"}
                           </Typography>
                         </Box>
-
                         {/* Data de conclusão */}
                         <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
                           <CalendarToday sx={{ fontSize: 16, color: "#999", mr: 1 }} />
@@ -676,7 +670,6 @@ export default function Historico() {
                             Concluído em: {formatDate(task.data_finalizacao || task.dataTarefa)}
                           </Typography>
                         </Box>
-
                         {/* Descrição realizada (se disponível) */}
                         {task.descricao_realizada && (
                           <Box
@@ -715,7 +708,6 @@ export default function Historico() {
                 ))}
               </Grid>
             )}
-
             {filteredTasks.length === 0 && tasks.length > 0 && (
               <Paper sx={{ p: 6, textAlign: "center", bgcolor: "white" }}>
                 <Search sx={{ fontSize: 64, color: "#e0e0e0", mb: 2 }} />

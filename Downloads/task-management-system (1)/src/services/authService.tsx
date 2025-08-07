@@ -111,7 +111,7 @@ class AuthService {
     console.log("🔄 Renovando token de acesso...")
 
     try {
-      const response = await fetch("http://192.168.15.26:8000/api/token/refresh/", {
+      const response = await fetch("http://192.168.15.17:8000/api/token/refresh/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
