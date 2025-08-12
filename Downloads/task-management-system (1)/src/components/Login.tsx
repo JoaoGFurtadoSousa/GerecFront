@@ -48,7 +48,7 @@ export default function Login() {
   useEffect(() => {
     if (authService.isAuthenticated()) {
       console.log("✅ Usuário já autenticado, redirecionando...")
-      navigate("/")
+      navigate("/", { replace: true })
     }
   }, [navigate])
 
@@ -88,9 +88,9 @@ export default function Login() {
     setError(null)
 
     try {
-      console.log("🔐 Fazendo login com:", formData.email)
+      console.log("🔐 Fazendo login...")
 
-      const response = await fetch("http://192.168.15.17:8000/api/v1/login/", {
+      const response = await fetch("http://192.168.15.10:8000/api/v1/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -116,7 +116,7 @@ export default function Login() {
       }
 
       const data: LoginResponse = await response.json()
-      console.log("✅ Login realizado com sucesso:", data)
+      console.log("✅ Login realizado com sucesso")
 
       // Verificar se recebeu os tokens
       if (!data.access || !data.refresh) {
@@ -126,8 +126,10 @@ export default function Login() {
       // Salvar tokens usando o AuthService
       authService.setTokens(data.access, data.refresh, data.user)
 
-      console.log("🎉 Autenticação configurada, redirecionando...")
-      navigate("/")
+      console.log("🎉 Tokens salvos, redirecionando...")
+
+      // Redirecionar
+      navigate("/", { replace: true })
     } catch (err) {
       console.error("❌ Erro no login:", err)
       const errorMessage = err instanceof Error ? err.message : "Erro inesperado ao fazer login"
@@ -315,7 +317,6 @@ export default function Login() {
                 "& .MuiOutlinedInput-root": {
                   bgcolor: "#2a2a3e",
                   border: "1px solid #444",
-                  borderRadius: 2,
                   color: "white",
                   height: "48px",
                   "& fieldset": {

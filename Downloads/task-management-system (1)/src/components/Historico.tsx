@@ -88,7 +88,7 @@ export default function Historico() {
     try {
       setLoadingUser(true)
       console.log("🔄 Buscando informações do usuário...")
-      const response = await authService.authenticatedFetch("http://192.168.17.26:8000/api/v1/usuario/", {
+      const response = await authService.authenticatedFetch("http://192.168.15.10:8000/api/v1/usuarios/", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -118,7 +118,7 @@ export default function Historico() {
     setError(null)
     try {
       console.log("🔄 Buscando histórico de tarefas...")
-      const response = await authService.authenticatedFetch("http://192.168.15.17:8000/api/v1/historico/", {
+      const response = await authService.authenticatedFetch("http://192.168.15.10:8000/api/v1/historico/", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

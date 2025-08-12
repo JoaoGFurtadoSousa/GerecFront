@@ -1,8 +1,7 @@
 "use client"
 
 import React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Typography,
   Button,
@@ -337,7 +336,7 @@ const FIXED_EQUIPMENT_LIST: Equipment[] = [
 export default function EquipmentChecklist() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { getTaskById, submitEquipmentChecklist, updateTaskStatus, error, clearError } = useTask()
+  const { getTaskById, submitEquipmentChecklist, error, clearError } = useTask()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
 
@@ -347,6 +346,7 @@ export default function EquipmentChecklist() {
   const [submitting, setSubmitting] = useState(false)
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right")
   const [isAnimating, setIsAnimating] = useState(false)
+  const [localError, setLocalError] = useState<string | null>(null)
 
   // Configuração de paginação
   const itemsPerPage = isMobile ? 5 : 10
@@ -432,37 +432,168 @@ export default function EquipmentChecklist() {
     )
   }
 
+  // FUNÇÃO HANDLESUBMIT COMPLETAMENTE REESCRITA COM VALIDAÇÃO ROBUSTA
   const handleSubmit = async () => {
-    if (!task?.unidade?.id || !task?.id) {
-      console.error("❌ IDs da unidade ou tarefa não encontrados")
+    console.log("🚀 Iniciando handleSubmit...")
+
+    // Limpar erros anteriores
+    setLocalError(null)
+    clearError()
+
+    // 1. VERIFICAÇÃO CRÍTICA DE AUTENTICAÇÃO
+    console.log("🔐 Verificando autenticação antes do envio...")
+
+    if (!authService.isAuthenticated()) {
+      console.error("❌ CRÍTICO: Usuário não autenticado")
+      setLocalError("Sessão expirada. Redirecionando para login...")
+      setTimeout(() => {
+        authService.logout()
+      }, 2000)
       return
     }
 
+    // 2. VERIFICAÇÃO DA TAREFA E UNIDADE
+    if (!task) {
+      console.error("❌ CRÍTICO: Tarefa não encontrada")
+      setLocalError("Tarefa não encontrada. Recarregue a página.")
+      return
+    }
+
+    if (!task.unidade?.id) {
+      console.error("❌ CRÍTICO: ID da unidade não encontrado na tarefa:", task)
+      setLocalError("ID da unidade não encontrado. Recarregue a página.")
+      return
+    }
+
+    // 3. VERIFICAÇÃO DOS TOKENS
+    const accessToken = authService.getAccessToken()
+    const refreshToken = authService.getRefreshToken()
     const userData = authService.getUserData()
-    if (!userData) {
-      console.error("❌ Usuário não autenticado")
+
+    console.log("🔍 Estado dos tokens:", {
+      hasAccessToken: !!accessToken,
+      hasRefreshToken: !!refreshToken,
+      hasUserData: !!userData,
+      taskId: task.id,
+      unitId: task.unidade.id,
+      userEmail: userData?.email,
+    })
+
+    if (!accessToken || !refreshToken || !userData) {
+      console.error("❌ CRÍTICO: Tokens ou dados do usuário ausentes")
+      setLocalError("Dados de autenticação inválidos. Redirecionando para login...")
+      setTimeout(() => {
+        authService.logout()
+      }, 2000)
       return
     }
 
-    setSubmitting(true)
+    // 4. VALIDAÇÃO DO TOKEN ANTES DO ENVIO
+    console.log("🔍 Validando token antes do envio...")
     try {
+      const isTokenValid = await authService.validateToken()
+      if (!isTokenValid) {
+        console.log("🔄 Token inválido, tentando renovar...")
+        await authService.refreshAccessToken()
+        console.log("✅ Token renovado com sucesso")
+      }
+    } catch (error) {
+      console.error("❌ CRÍTICO: Erro na validação/renovação do token:", error)
+      setLocalError("Erro na validação da sessão. Redirecionando para login...")
+      setTimeout(() => {
+        authService.logout()
+      }, 2000)
+      return
+    }
+
+    // 5. PREPARAR DADOS PARA ENVIO
+    setSubmitting(true)
+
+    try {
+      // Criar array de equipamentos no formato correto
       const equipmentArray = equipment.map((item) => ({
         id: item.id,
         nome_do_equipamento: item.nome_do_equipamento,
-        unidade: task.unidade.id,
+        unidade: task.unidade.id, // ID da unidade da tarefa
         danificado_a_entrada: item.danificado_a_entrada,
         danificado_a_saida: item.danificado_a_saida,
       }))
 
+      console.log("📤 ENVIANDO CHECKLIST:", {
+        unitId: task.unidade.id,
+        equipmentCount: equipmentArray.length,
+        userEmail: userData.email,
+        taskNumber: task.numChamado,
+      })
+
+      // 6. ENVIAR CHECKLIST COM TRATAMENTO ROBUSTO DE ERROS
       await submitEquipmentChecklist(task.unidade.id, equipmentArray)
-      await updateTaskStatus(task.id, "Em andamento")
-      navigate("/")
+
+      console.log("✅ SUCESSO: Checklist enviado com sucesso!")
+
+      // Navegar para próxima tela
+      navigate(`/task/${id}/additional-data`)
     } catch (err) {
-      console.error("❌ Erro ao processar checklist:", err)
+      console.error("❌ ERRO NO ENVIO DO CHECKLIST:", err)
+
+      // Tratamento específico de erros
+      let errorMessage = "Erro inesperado ao enviar checklist"
+
+      if (err instanceof Error) {
+        const errorMsg = err.message.toLowerCase()
+
+        if (errorMsg.includes("403") || errorMsg.includes("forbidden") || errorMsg.includes("acesso negado")) {
+          errorMessage = "Você não tem permissão para atualizar equipamentos desta unidade. Contate o administrador."
+        } else if (
+          errorMsg.includes("401") ||
+          errorMsg.includes("unauthorized") ||
+          errorMsg.includes("não autenticado")
+        ) {
+          errorMessage = "Sessão expirada. Redirecionando para login..."
+          // Fazer logout após 2 segundos
+          setTimeout(() => {
+            authService.logout()
+          }, 2000)
+        } else if (errorMsg.includes("conexão") || errorMsg.includes("network") || errorMsg.includes("fetch")) {
+          errorMessage = "Erro de conexão. Verifique sua internet e tente novamente."
+        } else {
+          errorMessage = err.message
+        }
+      }
+
+      setLocalError(errorMessage)
     } finally {
       setSubmitting(false)
     }
   }
+
+  // Verificar autenticação ao carregar o componente
+  useEffect(() => {
+    console.log("🔍 EquipmentChecklist: Verificando autenticação inicial...")
+
+    if (!authService.isAuthenticated()) {
+      console.error("❌ Usuário não autenticado ao carregar checklist")
+      setLocalError("Sessão expirada. Redirecionando para login...")
+      setTimeout(() => {
+        authService.logout()
+      }, 2000)
+      return
+    }
+
+    console.log("✅ Usuário autenticado no checklist")
+  }, [])
+
+  // Debug da tarefa
+  useEffect(() => {
+    console.log("🔍 Debug - Dados da tarefa no checklist:", {
+      taskId: id,
+      task: task,
+      unidadeId: task?.unidade?.id,
+      unidadeNome: task?.unidade?.nome_da_unidade,
+      userData: authService.getUserData(),
+      hasToken: !!authService.getAccessToken(),
+    })
+  }, [task, id])
 
   // Estatísticas dos equipamentos
   const totalEquipment = equipment.length
@@ -471,6 +602,30 @@ export default function EquipmentChecklist() {
   const damagedExitCount = equipment.filter((item) => item.danificado_a_saida).length
   const checkedItemsCount = equipment.filter((item) => item.danificado_a_entrada || item.danificado_a_saida).length
   const progressPercentage = (checkedItemsCount / totalEquipment) * 100
+
+  // Injetar CSS no head
+  useEffect(() => {
+    const pulseKeyframes = `
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+        }
+        70% {
+          box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+        }
+      }
+    `
+    const style = document.createElement("style")
+    style.textContent = pulseKeyframes
+    document.head.appendChild(style)
+
+    return () => {
+      document.head.removeChild(style)
+    }
+  }, [])
 
   if (!task) {
     return (
@@ -757,10 +912,17 @@ export default function EquipmentChecklist() {
           flexDirection: "column",
         }}
       >
-        {error && (
+        {(error || localError) && (
           <Box sx={{ px: { xs: 2, md: 3 }, pt: 2 }}>
-            <Alert severity="error" sx={{ borderRadius: 3 }} onClose={clearError}>
-              {error}
+            <Alert
+              severity="error"
+              sx={{ borderRadius: 3 }}
+              onClose={() => {
+                clearError()
+                setLocalError(null)
+              }}
+            >
+              {error || localError}
             </Alert>
           </Box>
         )}

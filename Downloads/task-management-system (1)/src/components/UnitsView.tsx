@@ -37,7 +37,7 @@ import { authService } from "../services/authService"
 import NewTaskModal from "./NewTaskModal"
 
 const DRAWER_WIDTH = 240
-const API_BASE_URL = "http://192.168.15.17:8000/api/v1"
+const API_BASE_URL = "http://192.168.15.10:8000/api/v1"
 
 export default function UnitsView() {
   const navigate = useNavigate()
@@ -61,7 +61,7 @@ export default function UnitsView() {
     try {
       setLoadingUser(true)
       console.log("🔄 Buscando informações do usuário...")
-      const response = await authService.authenticatedFetch(`${API_BASE_URL}/usuario/`, {
+      const response = await authService.authenticatedFetch(`${API_BASE_URL}/usuarios/`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

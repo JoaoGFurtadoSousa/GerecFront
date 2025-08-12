@@ -81,7 +81,7 @@ export default function NewTaskModal({ open, onClose, onSuccess }: NewTaskModalP
 
     try {
       // Carregar usuários
-      const usuariosResponse = await authService.authenticatedFetch("http://192.168.15.17:8000/api/v1/usuarios/", {
+      const usuariosResponse = await authService.authenticatedFetch("http://192.168.15.10:8000/api/v1/usuarios/", {
         method: "GET",
         signal: AbortSignal.timeout(10000),
       })
@@ -95,7 +95,7 @@ export default function NewTaskModal({ open, onClose, onSuccess }: NewTaskModalP
       setUsuarios(Array.isArray(usuariosData) ? usuariosData : [])
 
       // Carregar unidades
-      const unidadesResponse = await authService.authenticatedFetch("http://192.168.15.17:8000/api/v1/unidades/", {
+      const unidadesResponse = await authService.authenticatedFetch("http:/192.168.15.10:8000/api/v1/unidades/", {
         method: "GET",
         signal: AbortSignal.timeout(10000),
       })
@@ -293,7 +293,7 @@ export default function NewTaskModal({ open, onClose, onSuccess }: NewTaskModalP
         console.log(`📤 Tentativa ${i + 1} - Payload:`, JSON.stringify(payload, null, 2))
 
         try {
-          const response = await authService.authenticatedFetch("http://192.168.15.17:8000/api/v1/tarefas/", {
+          const response = await authService.authenticatedFetch("http://192.168.15.10:8000/api/v1/tarefas/", {
             method: "POST",
             body: JSON.stringify(payload),
             signal: AbortSignal.timeout(15000),
@@ -542,7 +542,7 @@ export default function NewTaskModal({ open, onClose, onSuccess }: NewTaskModalP
                   Status: {formData.status} ({STATUS_OPTIONS.find((s) => s.value === formData.status)?.label})
                 </Typography>
                 <Typography variant="caption" sx={{ display: "block", fontFamily: "monospace" }}>
-                  Endpoint: http://192.168.15.17:8000/api/v1/tarefas/
+                  Endpoint: http://192.168.15.10:8000/api/v1/tarefas/
                 </Typography>
                 <Typography variant="caption" sx={{ display: "block", fontFamily: "monospace", color: "#ff6600" }}>
                   Sistema tentará 4 formatos diferentes automaticamente

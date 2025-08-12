@@ -54,7 +54,7 @@ import { authService } from "../services/authService"
 import NewTaskModal from "./NewTaskModal"
 
 const DRAWER_WIDTH = 240
-const API_BASE_URL = "http://192.168.15.17:8000/api/v1"
+const API_BASE_URL = "192.168.15.10:8000/api/v1"
 
 const getStatusColor = (status: Task["status"]) => {
   switch (status) {
@@ -141,7 +141,7 @@ export default function TaskList() {
     try {
       setLoadingUser(true)
       console.log("🔄 Buscando informações do usuário...")
-      const response = await authService.authenticatedFetch("http://192.168.15.17:8000/api/v1/usuario/", {
+      const response = await authService.authenticatedFetch("http:/192.168.15.10:8000/api/v1/usuarios/", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -173,7 +173,7 @@ export default function TaskList() {
       // 1. Fazer ping no endpoint de migração PRIMEIRO
       try {
         console.log("📡 Fazendo ping no endpoint de migração...")
-        const migrationResponse = await authService.authenticatedFetch("http://192.168.15.17:8000/api/v1/enviar/", {
+        const migrationResponse = await authService.authenticatedFetch("http://192.168.15.10:8000/api/v1/enviar/", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -469,7 +469,7 @@ export default function TaskList() {
               Verifique se:
             </Typography>
             <Box component="ul" sx={{ fontSize: "0.85rem", color: "#666", mt: 1, pl: 2 }}>
-              <li>O servidor está rodando no IP 192.168.15.17:8000</li>
+              <li>O servidor está rodando no IP 192.168.15.19:8000</li>
               <li>Sua conexão com a internet está funcionando</li>
               <li>Não há bloqueios de firewall</li>
             </Box>
