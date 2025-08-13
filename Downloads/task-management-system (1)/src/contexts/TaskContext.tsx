@@ -8,6 +8,7 @@ import {
   type Equipment,
   type TaskCompletionData,
   type EquipmentChecklistItem,
+  type AdditionalDataForm,
 } from "../services/apiService"
 
 interface TaskContextType {
@@ -17,7 +18,10 @@ interface TaskContextType {
   getTaskById: (id: number) => Task | undefined
   refreshTasks: () => Promise<void>
   updateTaskStatus: (id: number, status: "Para iniciar" | "Em andamento" | "Concluído") => Promise<void>
+  // ✅ NOVO: Método para buscar equipamentos da unidade
+  getEquipmentByUnitId: (unitId: number) => Promise<Equipment[]>
   submitEquipmentChecklist: (unitId: number, equipmentArray: EquipmentChecklistItem[]) => Promise<void>
+  updateTaskWithAdditionalData: (taskId: number, data: AdditionalDataForm) => Promise<void>
   completeTask: (taskId: number, data: TaskCompletionData) => Promise<void>
   clearError: () => void
 }
@@ -74,20 +78,54 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   }
 
   const updateTaskStatus = async (id: number, status: "Para iniciar" | "Em andamento" | "Concluído") => {
-    console.log("🔄 Atualizando status no contexto:", id, status)
+    console.log("🔄 TaskContext: Atualizando status:", id, "para:", status)
     setError(null)
-    try {
-      const updatedTask = await apiService.updateTaskStatus(id, status)
-      console.log("✅ Tarefa atualizada recebida:", updatedTask)
 
+    try {
+      // ✅ CORREÇÃO: Atualizar estado local IMEDIATAMENTE (otimistic update)
       setTasks((prevTasks) => {
-        const newTasks = prevTasks.map((task) => (task.id === id ? updatedTask : task))
-        console.log("📋 Estado das tarefas atualizado")
-        return newTasks
+        const optimisticTasks = prevTasks.map((task) => (task.id === id ? { ...task, status } : task))
+        console.log("⚡ Estado local atualizado otimisticamente")
+        return optimisticTasks
+      })
+
+      // Fazer a requisição para o backend
+      const updatedTask = await apiService.updateTaskStatus(id, status)
+      console.log("✅ Resposta do backend recebida:", updatedTask)
+
+      // ✅ CORREÇÃO: Atualizar com dados reais do backend
+      setTasks((prevTasks) => {
+        const finalTasks = prevTasks.map((task) => (task.id === id ? updatedTask : task))
+        console.log("📋 Estado final atualizado com dados do backend")
+        return finalTasks
       })
     } catch (err) {
+      console.error("❌ Erro ao atualizar status, revertendo estado:", err)
+
+      // ✅ CORREÇÃO: Reverter estado em caso de erro
+      setTasks((prevTasks) => {
+        const revertedTasks = prevTasks.map((task) => (task.id === id ? { ...task, status: task.status } : task))
+        console.log("🔄 Estado revertido devido ao erro")
+        return revertedTasks
+      })
+
       const errorMessage = err instanceof Error ? err.message : "Erro ao atualizar status da tarefa"
-      console.error("❌ Erro ao atualizar status:", errorMessage)
+      setError(errorMessage)
+      throw err
+    }
+  }
+
+  // ✅ NOVO: Método para buscar equipamentos da unidade
+  const getEquipmentByUnitId = async (unitId: number): Promise<Equipment[]> => {
+    console.log("🔄 TaskContext: Buscando equipamentos da unidade", unitId)
+    setError(null)
+    try {
+      const equipment = await apiService.getEquipmentByUnitId(unitId)
+      console.log("✅ TaskContext: Equipamentos da unidade carregados:", equipment.length)
+      return equipment
+    } catch (err) {
+      console.error("❌ TaskContext: Erro ao buscar equipamentos:", err)
+      const errorMessage = err instanceof Error ? err.message : "Erro ao carregar equipamentos"
       setError(errorMessage)
       throw err
     }
@@ -105,12 +143,38 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       let errorMessage = "Erro ao enviar checklist"
 
       if (err instanceof Error) {
-        // Manter a mensagem específica do erro
         errorMessage = err.message
       }
 
       setError(errorMessage)
-      throw err // Re-throw para que o componente possa tratar também
+      throw err
+    }
+  }
+
+  const updateTaskWithAdditionalData = async (taskId: number, data: AdditionalDataForm) => {
+    setError(null)
+    try {
+      console.log("🔄 TaskContext: Atualizando tarefa com dados adicionais:", taskId)
+
+      const updatedTask = await apiService.updateTaskWithAdditionalData(taskId, data)
+
+      setTasks((prevTasks) => {
+        const newTasks = prevTasks.map((task) => (task.id === taskId ? updatedTask : task))
+        console.log("📋 Estado das tarefas atualizado com dados adicionais")
+        return newTasks
+      })
+
+      console.log("✅ TaskContext: Tarefa atualizada com dados adicionais")
+    } catch (err) {
+      console.error("❌ TaskContext: Erro ao atualizar tarefa:", err)
+
+      let errorMessage = "Erro ao salvar dados da tarefa"
+      if (err instanceof Error) {
+        errorMessage = err.message
+      }
+
+      setError(errorMessage)
+      throw err
     }
   }
 
@@ -138,7 +202,9 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         getTaskById,
         refreshTasks,
         updateTaskStatus,
+        getEquipmentByUnitId, // ✅ NOVO
         submitEquipmentChecklist,
+        updateTaskWithAdditionalData,
         completeTask,
         clearError,
       }}
@@ -156,4 +222,4 @@ export function useTask() {
   return context
 }
 
-export type { Task, Equipment, TaskCompletionData, EquipmentChecklistItem }
+export type { Task, Equipment, TaskCompletionData, EquipmentChecklistItem, AdditionalDataForm }

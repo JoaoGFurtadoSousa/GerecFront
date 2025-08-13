@@ -44,312 +44,24 @@ import { useParams, useNavigate } from "react-router-dom"
 import { useTask, type Equipment } from "../contexts/TaskContext"
 import { authService } from "../services/authService"
 
-// Lista fixa dos 45 equipamentos (iguais para todas as unidades)
-const FIXED_EQUIPMENT_LIST: Equipment[] = [
-  {
-    id: 1,
-    nome_do_equipamento: "KIT Chicote de Cabos",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  { id: 2, nome_do_equipamento: "ALTO-FALANTE", unidade: 0, danificado_a_entrada: false, danificado_a_saida: false },
-  {
-    id: 3,
-    nome_do_equipamento: "PLACA AMPLIFICADOR",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  { id: 4, nome_do_equipamento: "MICRO SD", unidade: 0, danificado_a_entrada: false, danificado_a_saida: false },
-  {
-    id: 5,
-    nome_do_equipamento: "PLACA CPU TOTEM M-2",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 6,
-    nome_do_equipamento: "TELA 7 POLEGADAS HDM",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 7,
-    nome_do_equipamento: "INTERRUPTOR DE ENERGIA",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  { id: 8, nome_do_equipamento: "COOLER", unidade: 0, danificado_a_entrada: false, danificado_a_saida: false },
-  {
-    id: 9,
-    nome_do_equipamento: "GABINETE COMPLETO INFERIOR",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 10,
-    nome_do_equipamento: "GABINETE COMPLETO SUPERIOR",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 11,
-    nome_do_equipamento: "PAINEL FRONTAL AÇO C/ ABERTURA",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 12,
-    nome_do_equipamento: "BASE FIXAÇÃO NO PISO",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 13,
-    nome_do_equipamento: "CABO USB V8 - LEITOR QRCODE",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 14,
-    nome_do_equipamento: "CABO USB V3 - LEITOR RFID",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 15,
-    nome_do_equipamento: "CABO HDMI-MICRO HDMI",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 16,
-    nome_do_equipamento: "CABO P2 - ÁUDIO",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 17,
-    nome_do_equipamento: "LEITOR RFID / QRCODE 2D",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  { id: 18, nome_do_equipamento: "LEITOR RFID", unidade: 0, danificado_a_entrada: false, danificado_a_saida: false },
-  {
-    id: 19,
-    nome_do_equipamento: "MÓDULO / FONTE ALIMENTAÇÃO ISO",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 20,
-    nome_do_equipamento: "MÓDULO / FONTE ALIMENTAÇÃO ÁUD",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 21,
-    nome_do_equipamento: "RÉGUA ALIMENTAÇÃO 5 TOMADAS",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 22,
-    nome_do_equipamento: "BOTÃO AJUDA AÇO INOX ANTI-VAND",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 23,
-    nome_do_equipamento: "MÓDULO CAIXA CONTROLADORA I2C",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 24,
-    nome_do_equipamento: "EXPEDIDOR CARTÃO",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 25,
-    nome_do_equipamento: "BOTÃO EMISSOR AÇO INOX ANTI-VA",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 26,
-    nome_do_equipamento: "MÓDULO / FONTE ALIMENTAÇÃO ISO",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 27,
-    nome_do_equipamento: "PAINEL DE ACRÍLICO CRISTAL",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 28,
-    nome_do_equipamento: "SOLENOIDE - COLETOR DE CARTÃO",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 29,
-    nome_do_equipamento: "KIT BOCAL COLETOR / CAIXA COLE",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 30,
-    nome_do_equipamento: "KIT - SENSOR ÓPTICO COLETOR CA",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 31,
-    nome_do_equipamento: "HASTE DA CANCELA CM/GR",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 32,
-    nome_do_equipamento: "MOTOR REDUTOR CANCELA CM/GR",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 33,
-    nome_do_equipamento: "PLACA CPU CENTRAL CONTROLE CAN",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 34,
-    nome_do_equipamento: "GABINETE DA CANCELA CM/GR",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 35,
-    nome_do_equipamento: "FONTE CORDÃO DE LED DA HASTE C",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 36,
-    nome_do_equipamento: "CANALETA PARA FITA DE LED CM",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 37,
-    nome_do_equipamento: "DETECTOR VEÍCULO POR LAÇO INDU",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 38,
-    nome_do_equipamento: "LAÇO INDUTIVO 2,5X2,5M COM RAB",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 39,
-    nome_do_equipamento: "DETECTOR VEÍCULO POR ULTRASSOM",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 40,
-    nome_do_equipamento: "CARTÃO PROXIMIDADE RFID",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  { id: 41, nome_do_equipamento: "CÂMERA", unidade: 0, danificado_a_entrada: false, danificado_a_saida: false },
-  {
-    id: 42,
-    nome_do_equipamento: "SUPORTE PARA CÂMERA",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 43,
-    nome_do_equipamento: "TOTEM - INTEGRAÇÃO SOFTWARE",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 44,
-    nome_do_equipamento: "CABEAMENTO DE REDE TOTEM",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 45,
-    nome_do_equipamento: "CABEAMENTO DE REDE CÂMERA",
-    unidade: 0,
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-]
-
 export default function EquipmentChecklist() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { getTaskById, submitEquipmentChecklist, error, clearError } = useTask()
+  const { getTaskById, getEquipmentByUnitId, submitEquipmentChecklist, error, clearError, refreshTasks } = useTask()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
 
   // Estados para paginação e navegação
-  const [equipment, setEquipment] = useState<Equipment[]>(FIXED_EQUIPMENT_LIST)
+  const [equipment, setEquipment] = useState<Equipment[]>([])
   const [currentPage, setCurrentPage] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right")
   const [isAnimating, setIsAnimating] = useState(false)
   const [localError, setLocalError] = useState<string | null>(null)
+  const [loadingEquipment, setLoadingEquipment] = useState(true)
 
   // Configuração de paginação
-  const itemsPerPage = isMobile ? 5 : 10
+  const itemsPerPage = 10
   const totalPages = Math.ceil(equipment.length / itemsPerPage)
   const startIndex = currentPage * itemsPerPage
   const endIndex = startIndex + itemsPerPage
@@ -387,17 +99,69 @@ export default function EquipmentChecklist() {
     }
   }
 
+  // Carregar equipamentos reais da unidade
+  useEffect(() => {
+    const loadEquipmentFromUnit = async () => {
+      if (!task) {
+        console.log("⚠️ Tarefa não encontrada, aguardando...")
+        return
+      }
+
+      if (!task.unidade || !task.unidade.id) {
+        console.log("⚠️ Dados da unidade não disponíveis:", {
+          task: !!task,
+          unidade: !!task.unidade,
+          unidadeId: task.unidade?.id,
+          taskStatus: task.status,
+        })
+
+        if (task.status === "Em andamento") {
+          console.log("🔄 Tentando recarregar dados da tarefa...")
+          try {
+            await refreshTasks()
+          } catch (error) {
+            console.error("❌ Erro ao recarregar tarefas:", error)
+          }
+        }
+        return
+      }
+
+      console.log("🔄 Carregando equipamentos da unidade:", {
+        unidadeId: task.unidade.id,
+        unidadeNome: task.unidade.nome_da_unidade,
+        taskStatus: task.status,
+      })
+
+      setLoadingEquipment(true)
+      setLocalError(null)
+
+      try {
+        const realEquipment = await getEquipmentByUnitId(task.unidade.id)
+        console.log("✅ Equipamentos carregados:", realEquipment.length, "itens")
+        console.log("📋 Primeiro equipamento:", realEquipment[0])
+        console.log("📋 Último equipamento:", realEquipment[realEquipment.length - 1])
+
+        setEquipment(realEquipment)
+      } catch (error) {
+        console.error("❌ Erro ao carregar equipamentos:", error)
+        setLocalError("Erro ao carregar equipamentos da unidade. Tente novamente.")
+      } finally {
+        setLoadingEquipment(false)
+      }
+    }
+
+    loadEquipmentFromUnit()
+  }, [task])
+
   // Adicionar uma referência para o container de scroll
   const scrollContainerRef = React.useRef<HTMLDivElement>(null)
 
-  // Modificar a função handleNextPage para incluir o scroll para o topo
   const handleNextPage = () => {
     if (currentPage < totalPages - 1 && !isAnimating) {
       setIsAnimating(true)
       setSlideDirection("left")
       setTimeout(() => {
         setCurrentPage(currentPage + 1)
-        // Scroll para o topo quando a página muda
         if (scrollContainerRef.current) {
           scrollContainerRef.current.scrollTop = 0
         }
@@ -406,14 +170,12 @@ export default function EquipmentChecklist() {
     }
   }
 
-  // Modificar a função handlePrevPage para incluir o scroll para o topo
   const handlePrevPage = () => {
     if (currentPage > 0 && !isAnimating) {
       setIsAnimating(true)
       setSlideDirection("right")
       setTimeout(() => {
         setCurrentPage(currentPage - 1)
-        // Scroll para o topo quando a página muda
         if (scrollContainerRef.current) {
           scrollContainerRef.current.scrollTop = 0
         }
@@ -427,24 +189,32 @@ export default function EquipmentChecklist() {
     field: "danificado_a_entrada" | "danificado_a_saida",
     checked: boolean,
   ) => {
+    console.log("🔄 Alterando equipamento:", equipmentId, field, checked)
     setEquipment((prevEquipment) =>
       prevEquipment.map((item) => (item.id === equipmentId ? { ...item, [field]: checked } : item)),
     )
   }
 
-  // FUNÇÃO HANDLESUBMIT COMPLETAMENTE REESCRITA COM VALIDAÇÃO ROBUSTA
   const handleSubmit = async () => {
-    console.log("🚀 Iniciando handleSubmit...")
+    console.log("🚀 Iniciando envio do checklist...")
 
-    // Limpar erros anteriores
     setLocalError(null)
     clearError()
 
-    // 1. VERIFICAÇÃO CRÍTICA DE AUTENTICAÇÃO
-    console.log("🔐 Verificando autenticação antes do envio...")
+    if (!task) {
+      setLocalError("Tarefa não encontrada. Recarregue a página.")
+      return
+    }
+
+    if (!task.unidade?.id) {
+      setLocalError("ID da unidade não encontrado. Recarregue a página.")
+      return
+    }
+
+    console.log("🔍 Verificando autenticação antes do envio...")
 
     if (!authService.isAuthenticated()) {
-      console.error("❌ CRÍTICO: Usuário não autenticado")
+      console.error("❌ Usuário não autenticado")
       setLocalError("Sessão expirada. Redirecionando para login...")
       setTimeout(() => {
         authService.logout()
@@ -452,112 +222,63 @@ export default function EquipmentChecklist() {
       return
     }
 
-    // 2. VERIFICAÇÃO DA TAREFA E UNIDADE
-    if (!task) {
-      console.error("❌ CRÍTICO: Tarefa não encontrada")
-      setLocalError("Tarefa não encontrada. Recarregue a página.")
-      return
-    }
+    const accessToken = localStorage.getItem("access_token")
+    const refreshToken = localStorage.getItem("refresh_token")
 
-    if (!task.unidade?.id) {
-      console.error("❌ CRÍTICO: ID da unidade não encontrado na tarefa:", task)
-      setLocalError("ID da unidade não encontrado. Recarregue a página.")
-      return
-    }
-
-    // 3. VERIFICAÇÃO DOS TOKENS
-    const accessToken = authService.getAccessToken()
-    const refreshToken = authService.getRefreshToken()
-    const userData = authService.getUserData()
-
-    console.log("🔍 Estado dos tokens:", {
+    console.log("🔍 Estado dos tokens antes do envio:", {
       hasAccessToken: !!accessToken,
       hasRefreshToken: !!refreshToken,
-      hasUserData: !!userData,
-      taskId: task.id,
-      unitId: task.unidade.id,
-      userEmail: userData?.email,
+      accessTokenLength: accessToken?.length || 0,
+      refreshTokenLength: refreshToken?.length || 0,
     })
 
-    if (!accessToken || !refreshToken || !userData) {
-      console.error("❌ CRÍTICO: Tokens ou dados do usuário ausentes")
-      setLocalError("Dados de autenticação inválidos. Redirecionando para login...")
+    if (!accessToken || !refreshToken) {
+      console.error("❌ Tokens não encontrados no localStorage")
+      setLocalError("Tokens de autenticação não encontrados. Faça login novamente.")
       setTimeout(() => {
         authService.logout()
       }, 2000)
       return
     }
 
-    // 4. VALIDAÇÃO DO TOKEN ANTES DO ENVIO
-    console.log("🔍 Validando token antes do envio...")
-    try {
-      const isTokenValid = await authService.validateToken()
-      if (!isTokenValid) {
-        console.log("🔄 Token inválido, tentando renovar...")
-        await authService.refreshAccessToken()
-        console.log("✅ Token renovado com sucesso")
-      }
-    } catch (error) {
-      console.error("❌ CRÍTICO: Erro na validação/renovação do token:", error)
-      setLocalError("Erro na validação da sessão. Redirecionando para login...")
-      setTimeout(() => {
-        authService.logout()
-      }, 2000)
-      return
-    }
+    authService.forceReinitialize()
 
-    // 5. PREPARAR DADOS PARA ENVIO
     setSubmitting(true)
 
     try {
-      // Criar array de equipamentos no formato correto
       const equipmentArray = equipment.map((item) => ({
         id: item.id,
         nome_do_equipamento: item.nome_do_equipamento,
-        unidade: task.unidade.id, // ID da unidade da tarefa
+        unidade: task.unidade.id,
         danificado_a_entrada: item.danificado_a_entrada,
         danificado_a_saida: item.danificado_a_saida,
       }))
 
-      console.log("📤 ENVIANDO CHECKLIST:", {
+      console.log("📤 Enviando checklist com IDs corretos:", {
         unitId: task.unidade.id,
         equipmentCount: equipmentArray.length,
-        userEmail: userData.email,
-        taskNumber: task.numChamado,
+        firstEquipmentId: equipmentArray[0]?.id,
+        lastEquipmentId: equipmentArray[equipmentArray.length - 1]?.id,
+        sampleEquipment: equipmentArray.slice(0, 3),
       })
 
-      // 6. ENVIAR CHECKLIST COM TRATAMENTO ROBUSTO DE ERROS
       await submitEquipmentChecklist(task.unidade.id, equipmentArray)
 
-      console.log("✅ SUCESSO: Checklist enviado com sucesso!")
-
-      // Navegar para próxima tela
+      console.log("✅ Checklist enviado com sucesso, redirecionando...")
       navigate(`/task/${id}/additional-data`)
     } catch (err) {
-      console.error("❌ ERRO NO ENVIO DO CHECKLIST:", err)
+      console.error("❌ Erro detalhado ao enviar checklist:", err)
 
-      // Tratamento específico de erros
-      let errorMessage = "Erro inesperado ao enviar checklist"
-
+      let errorMessage = "Erro ao enviar checklist"
       if (err instanceof Error) {
-        const errorMsg = err.message.toLowerCase()
+        errorMessage = err.message
 
-        if (errorMsg.includes("403") || errorMsg.includes("forbidden") || errorMsg.includes("acesso negado")) {
-          errorMessage = "Você não tem permissão para atualizar equipamentos desta unidade. Contate o administrador."
-        } else if (
-          errorMsg.includes("401") ||
-          errorMsg.includes("unauthorized") ||
-          errorMsg.includes("não autenticado")
-        ) {
-          errorMessage = "Sessão expirada. Redirecionando para login..."
-          // Fazer logout após 2 segundos
+        if (errorMessage.includes("Token não encontrado") || errorMessage.includes("Sessão expirada")) {
+          setLocalError("Sessão expirada. Redirecionando para login...")
           setTimeout(() => {
             authService.logout()
           }, 2000)
-        } else if (errorMsg.includes("conexão") || errorMsg.includes("network") || errorMsg.includes("fetch")) {
-          errorMessage = "Erro de conexão. Verifique sua internet e tente novamente."
-        } else {
-          errorMessage = err.message
+          return
         }
       }
 
@@ -571,8 +292,16 @@ export default function EquipmentChecklist() {
   useEffect(() => {
     console.log("🔍 EquipmentChecklist: Verificando autenticação inicial...")
 
-    if (!authService.isAuthenticated()) {
-      console.error("❌ Usuário não autenticado ao carregar checklist")
+    const accessToken = localStorage.getItem("access_token")
+    const refreshToken = localStorage.getItem("refresh_token")
+
+    console.log("🔍 Tokens no carregamento:", {
+      hasAccessToken: !!accessToken,
+      hasRefreshToken: !!refreshToken,
+    })
+
+    if (!accessToken || !refreshToken) {
+      console.error("❌ Tokens não encontrados ao carregar checklist")
       setLocalError("Sessão expirada. Redirecionando para login...")
       setTimeout(() => {
         authService.logout()
@@ -580,7 +309,12 @@ export default function EquipmentChecklist() {
       return
     }
 
-    console.log("✅ Usuário autenticado no checklist")
+    if (!authService.isAuthenticated()) {
+      console.log("🔄 Re-inicializando AuthService...")
+      authService.forceReinitialize()
+    }
+
+    console.log("✅ Autenticação verificada no checklist")
   }, [])
 
   // Debug da tarefa
@@ -601,7 +335,7 @@ export default function EquipmentChecklist() {
   const damagedEntryCount = equipment.filter((item) => item.danificado_a_entrada).length
   const damagedExitCount = equipment.filter((item) => item.danificado_a_saida).length
   const checkedItemsCount = equipment.filter((item) => item.danificado_a_entrada || item.danificado_a_saida).length
-  const progressPercentage = (checkedItemsCount / totalEquipment) * 100
+  const progressPercentage = totalEquipment > 0 ? (checkedItemsCount / totalEquipment) * 100 : 0
 
   // Injetar CSS no head
   useEffect(() => {
@@ -635,6 +369,29 @@ export default function EquipmentChecklist() {
     )
   }
 
+  if (loadingEquipment) {
+    return (
+      <Box
+        sx={{
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          bgcolor: "#f8f9fa",
+        }}
+      >
+        <CircularProgress size={60} sx={{ mb: 2, color: "#2196f3" }} />
+        <Typography variant="h6" color="text.secondary">
+          Carregando equipamentos da unidade...
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          {task.unidade?.nome_da_unidade}
+        </Typography>
+      </Box>
+    )
+  }
+
   return (
     <Box
       sx={{
@@ -644,7 +401,7 @@ export default function EquipmentChecklist() {
         bgcolor: "#f8f9fa",
       }}
     >
-      {/* 📌 ÁREA FIXA SUPERIOR - COMPACTA PARA CABER EM 45VH */}
+      {/* 📌 ÁREA FIXA SUPERIOR */}
       <Box
         sx={{
           position: "fixed",
@@ -655,13 +412,13 @@ export default function EquipmentChecklist() {
           bgcolor: "#f8f9fa",
           borderBottom: "1px solid #e5e7eb",
           boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-          height: "45vh", // Altura fixa exata
+          height: "45vh",
           display: "flex",
           flexDirection: "column",
         }}
       >
         <Box sx={{ px: { xs: 2, md: 3 }, py: 1, flex: 1, display: "flex", flexDirection: "column" }}>
-          {/* Botão Voltar - Compacto */}
+          {/* Botão Voltar */}
           <Button
             startIcon={<ArrowBack />}
             onClick={() => navigate(`/task/${id}`)}
@@ -681,7 +438,7 @@ export default function EquipmentChecklist() {
             Voltar para detalhes
           </Button>
 
-          {/* Header com Título - Compacto */}
+          {/* Header com Título */}
           <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 1.5 }}>
             <Box
               sx={{
@@ -709,7 +466,40 @@ export default function EquipmentChecklist() {
             </Box>
           </Stack>
 
-          {/* Progresso da Verificação - Compacto */}
+          {/* Indicador de equipamentos carregados */}
+          <Paper
+            elevation={0}
+            sx={{
+              mb: 1.5,
+              p: 1.5,
+              borderRadius: 2,
+              border: "1px solid #e5e7eb",
+              bgcolor: "#e8f5e8",
+            }}
+          >
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <CheckCircle sx={{ fontSize: 16, color: "#16a34a" }} />
+              <Typography variant="body2" sx={{ fontWeight: 600, color: "#16a34a", fontSize: "0.875rem" }}>
+                Equipamentos Carregados da Unidade
+              </Typography>
+              <Chip
+                label={`${totalEquipment} equipamentos`}
+                size="small"
+                sx={{
+                  bgcolor: "#dcfce7",
+                  color: "#16a34a",
+                  fontWeight: 600,
+                  height: 20,
+                  fontSize: "0.7rem",
+                }}
+              />
+            </Stack>
+            <Typography variant="caption" sx={{ color: "#15803d", fontSize: "0.7rem", display: "block", mt: 0.5 }}>
+              IDs: {equipment.length > 0 ? `${equipment[0].id} - ${equipment[equipment.length - 1].id}` : "N/A"}
+            </Typography>
+          </Paper>
+
+          {/* Progresso da Verificação */}
           <Paper
             elevation={0}
             sx={{
@@ -754,7 +544,7 @@ export default function EquipmentChecklist() {
             </Typography>
           </Paper>
 
-          {/* Cards de Status - Mais Compactos */}
+          {/* Cards de Status */}
           <Grid container spacing={1} sx={{ mb: 1.5 }}>
             <Grid item xs={6} sm={3}>
               <Paper
@@ -854,7 +644,7 @@ export default function EquipmentChecklist() {
             </Grid>
           </Grid>
 
-          {/* Indicador de Página - Compacto */}
+          {/* Indicador de Página */}
           <Paper
             elevation={0}
             sx={{
@@ -862,7 +652,7 @@ export default function EquipmentChecklist() {
               borderRadius: 2,
               border: "1px solid #e5e7eb",
               bgcolor: "white",
-              mt: "auto", // Empurra para o final do espaço disponível
+              mt: "auto",
             }}
           >
             <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -906,7 +696,7 @@ export default function EquipmentChecklist() {
       <Box
         sx={{
           flex: 1,
-          marginTop: "45vh", // Espaço para a área fixa
+          marginTop: { xs: "48vh", md: "45vh" }, // Margem extra no mobile
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
@@ -927,7 +717,7 @@ export default function EquipmentChecklist() {
           </Box>
         )}
 
-        {/* Container da Lista com Scroll */}
+        {/* ✅ CORREÇÃO ROBUSTA: Container da Lista com Espaçador Dedicado */}
         <Box
           ref={scrollContainerRef}
           sx={{
@@ -954,6 +744,32 @@ export default function EquipmentChecklist() {
           onTouchMove={isMobile ? onTouchMove : undefined}
           onTouchEnd={isMobile ? onTouchEnd : undefined}
         >
+          {/* ✅ ESPAÇADOR DEDICADO - Usa mesma unidade do header (45vh + margem extra) */}
+          <Box
+            sx={{
+              height: { xs: "12vh", md: "8vh" }, // Espaço proporcional à viewport
+              width: "100%",
+              mb: 2,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: "transparent",
+              minHeight: { xs: "100px", md: "60px" }, // Altura mínima de segurança
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{
+                color: "#94a3b8",
+                fontSize: "0.75rem",
+                textAlign: "center",
+                fontStyle: "italic",
+              }}
+            >
+              ↓ Lista de Equipamentos ↓
+            </Typography>
+          </Box>
+
           <Fade in={!isAnimating} timeout={300}>
             <Box>
               {currentItems.map((item, index) => {
@@ -1022,6 +838,17 @@ export default function EquipmentChecklist() {
                               sx={{
                                 bgcolor: "#f8fafc",
                                 color: "#64748b",
+                                fontSize: "0.75rem",
+                                height: 22,
+                                fontWeight: 500,
+                              }}
+                            />
+                            <Chip
+                              label={`ID: ${item.id}`}
+                              size="small"
+                              sx={{
+                                bgcolor: "#e0f2fe",
+                                color: "#0277bd",
                                 fontSize: "0.75rem",
                                 height: 22,
                                 fontWeight: 500,
@@ -1308,7 +1135,7 @@ export default function EquipmentChecklist() {
             ) : (
               <>
                 <Send sx={{ mr: 2 }} />
-                Finalizar ({checkedItemsCount}/{totalEquipment})
+                Prosseguir ({checkedItemsCount}/{totalEquipment})
               </>
             )}
           </Fab>

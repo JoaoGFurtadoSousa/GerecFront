@@ -1,6 +1,6 @@
 import { authService } from "./authService"
 
-const API_BASE_URL = "http://192.168.15.10:8000/api/v1"
+const API_BASE_URL = "http://192.168.15.14:8000/api/v1"
 
 export interface Task {
   id: number
@@ -19,6 +19,9 @@ export interface Task {
   numChamado: string
   dataTarefa: string
   status: string
+  diagnostico?: string
+  solucao?: string
+  substituicao_de_pecas?: string
 }
 
 export interface Equipment {
@@ -43,6 +46,17 @@ export interface EquipmentChecklistItem {
   danificado_a_saida: boolean
 }
 
+// Interface para dados adicionais
+export interface AdditionalDataForm {
+  diagnostico: string
+  solucao: string
+  substituicao_de_pecas: string
+  fotoTotemEntrada: File | null
+  fotoTotemSaida: File | null
+  latitude: number
+  longitude: number
+}
+
 // Mapeamento de status: Frontend <-> Backend
 const STATUS_TO_NUMBER = {
   "Para iniciar": "1",
@@ -65,7 +79,6 @@ const handleFetchError = async (response: Response) => {
       console.log("📋 Detalhes do erro:", errorData)
       errorMessage = errorData.message || errorData.detail || errorData.error || errorMessage
 
-      // Se houver detalhes específicos do erro, incluir
       if (errorData.errors) {
         errorMessage += ` - ${JSON.stringify(errorData.errors)}`
       }
@@ -73,31 +86,19 @@ const handleFetchError = async (response: Response) => {
       console.log("⚠️ Não foi possível parsear erro JSON")
     }
 
-    // Se for erro 401, pode ser token expirado (será tratado pelo authService)
-    if (response.status === 401) {
-      console.log("🔒 Erro 401 - Token pode estar expirado")
-    }
-
     throw new Error(errorMessage)
   }
 }
 
-const handleConnectionError = (error: any): Error => {
-  console.error("❌ Erro de conexão:", error)
-  return new Error("Erro de conexão com o servidor. Por favor, tente novamente mais tarde.")
-}
-
 // Função para normalizar os dados da tarefa
 const normalizeTask = (task: any): Task => {
-  console.log("🔄 Normalizando tarefa:", task)
-
   // Converter status numérico para string
   let statusString: "Para iniciar" | "Em andamento" | "Concluído" = "Para iniciar"
   if (typeof task.status === "string" && NUMBER_TO_STATUS[task.status as keyof typeof NUMBER_TO_STATUS]) {
     statusString = NUMBER_TO_STATUS[task.status as keyof typeof NUMBER_TO_STATUS]
   }
 
-  const normalized = {
+  return {
     id: task.id,
     nomeDoTecnico: task.nomeDoTecnico || { nome: "" },
     unidade: task.unidade || { id: 0, nome_da_unidade: "Sem unidade" },
@@ -109,158 +110,170 @@ const normalizeTask = (task: any): Task => {
     numChamado: task.numChamado || "",
     dataTarefa: task.dataTarefa || "",
     status: statusString,
+    diagnostico: task.diagnostico || "",
+    solucao: task.solucao || "",
+    substituicao_de_pecas: task.substituicao_de_pecas || "",
   }
-
-  console.log("✅ Tarefa normalizada:", normalized)
-  return normalized
 }
 
 class ApiService {
   async getTasks(): Promise<Task[]> {
-    console.log("🌐 Iniciando requisição autenticada para:", `${API_BASE_URL}/tarefas/`)
+    console.log("🌐 Buscando tarefas com GET...")
 
     try {
       const response = await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/`, {
         method: "GET",
-        signal: AbortSignal.timeout(10000), // Timeout de 10 segundos
       })
-
-      console.log("📡 Status da resposta:", response.status, response.statusText)
 
       await handleFetchError(response)
 
       const data = await response.json()
-      console.log("📦 Dados brutos recebidos:", data)
+      console.log("📦 Tarefas recebidas:", data.length)
 
-      // Garantir que sempre retornamos um array
       if (!Array.isArray(data)) {
-        console.warn("⚠️ API não retornou um array, convertendo...")
+        console.warn("⚠️ API não retornou um array")
         return []
       }
 
-      // Normalizar cada tarefa
-      const normalizedTasks = data.map((task, index) => {
-        console.log(`📋 Tarefa ${index + 1} dados brutos:`, task)
-        const normalized = normalizeTask(task)
-        console.log(`✅ Tarefa ${index + 1} normalizada:`, normalized)
-        return normalized
-      })
-
-      console.log("✅ Todas as tarefas processadas:", normalizedTasks.length, "itens")
-      return normalizedTasks
+      return data.map(normalizeTask)
     } catch (error) {
-      console.error("❌ Erro na requisição:", error)
-      throw handleConnectionError(error)
+      console.error("❌ Erro ao buscar tarefas:", error)
+      throw error
     }
   }
 
   async getTaskById(id: number): Promise<Task> {
-    console.log("🔍 Buscando tarefa por ID:", id)
+    console.log("🔍 Buscando tarefa:", id)
 
-    try {
-      const response = await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/${id}/`, {
-        method: "GET",
-        signal: AbortSignal.timeout(10000),
-      })
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/${id}/`, {
+      method: "GET",
+    })
 
-      await handleFetchError(response)
-      const data = await response.json()
-      console.log("📦 Dados da tarefa recebidos:", data)
+    await handleFetchError(response)
+    const data = await response.json()
 
-      return normalizeTask(data)
-    } catch (error) {
-      throw handleConnectionError(error)
-    }
+    return normalizeTask(data)
   }
 
   async updateTaskStatus(id: number, status: "Para iniciar" | "Em andamento" | "Concluído"): Promise<Task> {
-    // Converter status string para número
     const statusNumber = STATUS_TO_NUMBER[status]
-    console.log("🔄 Atualizando status da tarefa:", id, "de", status, "para número", statusNumber)
+    console.log("🔄 Atualizando status:", id, "para", statusNumber)
+
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/${id}/`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: statusNumber }),
+    })
+
+    await handleFetchError(response)
+    const data = await response.json()
+
+    return normalizeTask(data)
+  }
+
+  // ✅ NOVO: Método para buscar equipamentos reais da unidade
+  async getEquipmentByUnitId(unitId: number): Promise<Equipment[]> {
+    console.log("🔍 Buscando equipamentos da unidade:", unitId)
 
     try {
-      const response = await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/${id}/`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: statusNumber }),
-        signal: AbortSignal.timeout(10000),
-      })
+      const response = await authService.authenticatedFetch(
+        `${API_BASE_URL}/equipamentosDaUnidade/por-unidade/${unitId}/`, // ✅ ENDPOINT CORRETO
+        {
+          method: "GET",
+        },
+      )
 
       await handleFetchError(response)
       const data = await response.json()
-      console.log("✅ Resposta da atualização:", data)
 
-      return normalizeTask(data)
+      console.log("📦 Equipamentos da unidade recebidos:", {
+        unitId,
+        count: data.length,
+        firstEquipment: data[0],
+        lastEquipment: data[data.length - 1],
+      })
+
+      // Normalizar equipamentos
+      const normalizedEquipment = data.map((item: any) => ({
+        id: item.id,
+        nome_do_equipamento: item.nome_do_equipamento,
+        unidade: item.unidade,
+        danificado_a_entrada: item.danificado_a_entrada || false,
+        danificado_a_saida: item.danificado_a_saida || false,
+      }))
+
+      console.log("✅ Equipamentos normalizados:", normalizedEquipment.length, "itens")
+      return normalizedEquipment
     } catch (error) {
-      throw handleConnectionError(error)
+      console.error("❌ Erro ao buscar equipamentos da unidade:", error)
+      throw error
     }
   }
 
-  // Enviar checklist por unidade - FORMATO CORRETO
   async submitEquipmentChecklist(unitId: number, equipmentArray: EquipmentChecklistItem[]): Promise<void> {
     console.log("📤 Enviando checklist para unidade:", unitId)
-    console.log("📤 Array de equipamentos:", equipmentArray.length, "itens")
-    console.log("📤 Payload completo:", JSON.stringify(equipmentArray, null, 2))
+    console.log(
+      "📤 Equipamentos com IDs corretos:",
+      equipmentArray.map((eq) => ({ id: eq.id, nome: eq.nome_do_equipamento })),
+    )
 
-    // Verificar se o usuário está autenticado
-    const token = authService.getAccessToken()
-    if (!token) {
-      throw new Error("Token de acesso não encontrado. Faça login novamente.")
-    }
-
-    // Endpoint correto
     const url = `${API_BASE_URL}/equipamentosDaUnidade/atualizar-equipamentos-por-unidades/${unitId}/`
-    console.log("🌐 URL de envio (PUT):", url)
 
-    try {
-      const response = await authService.authenticatedFetch(url, {
-        method: "PUT",
-        body: JSON.stringify(equipmentArray),
-        signal: AbortSignal.timeout(15000), // Timeout maior para upload
-      })
+    const response = await authService.authenticatedFetch(url, {
+      method: "PUT",
+      body: JSON.stringify(equipmentArray),
+    })
 
-      console.log("📡 Status da resposta checklist:", response.status, response.statusText)
-
-      // Log detalhado da resposta para debug
-      if (!response.ok) {
-        const responseText = await response.text()
-        console.log("📋 Resposta completa do erro:", responseText)
-
-        // Tratamento específico para erro 403
-        if (response.status === 403) {
-          console.error("❌ Erro 403 - Possíveis causas:")
-          console.error("1. Usuário não tem permissão para esta unidade")
-          console.error("2. Token expirado ou inválido")
-          console.error("3. Endpoint requer permissões específicas")
-          console.error("4. CORS ou configuração do servidor")
-
-          // Tentar verificar se é problema de token
-          const userData = authService.getUserData()
-          console.log("👤 Dados do usuário:", userData)
-
-          throw new Error("Acesso negado. Você não tem permissão para atualizar equipamentos desta unidade.")
-        }
-      }
-
-      await handleFetchError(response)
-      console.log("✅ Checklist enviado com sucesso via PUT para unidade", unitId)
-    } catch (error) {
-      console.error("❌ Erro detalhado no envio do checklist:", error)
-      throw handleConnectionError(error)
-    }
+    await handleFetchError(response)
+    console.log("✅ Checklist enviado com sucesso")
   }
 
-  async completeTask(taskId: number, data: TaskCompletionData): Promise<void> {
-    try {
-      const response = await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/${taskId}/concluir/`, {
-        method: "POST",
-        body: JSON.stringify(data),
-        signal: AbortSignal.timeout(10000),
-      })
+  async updateTaskWithAdditionalData(taskId: number, data: AdditionalDataForm): Promise<Task> {
+    console.log("📤 Atualizando tarefa com dados adicionais:", taskId)
 
-      await handleFetchError(response)
-    } catch (error) {
-      throw handleConnectionError(error)
+    const formData = new FormData()
+
+    // Adicionar campos de texto
+    formData.append("diagnostico", data.diagnostico)
+    formData.append("solucao", data.solucao)
+    formData.append("substituicao_de_pecas", data.substituicao_de_pecas)
+    formData.append("latitude", data.latitude.toString())
+    formData.append("longitude", data.longitude.toString())
+
+    // Adicionar arquivos se existirem
+    if (data.fotoTotemEntrada) {
+      formData.append("fotoTotemEntrada", data.fotoTotemEntrada)
     }
+
+    if (data.fotoTotemSaida) {
+      formData.append("fotoTotemSaida", data.fotoTotemSaida)
+    }
+
+    // Atualizar status para concluído
+    formData.append("status", "3") // 3 = Concluído
+
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/${taskId}/`, {
+      method: "PATCH",
+      body: formData,
+      headers: {
+        Accept: "application/json",
+      },
+    })
+
+    await handleFetchError(response)
+    const updatedTask = await response.json()
+
+    return normalizeTask(updatedTask)
+  }
+
+  async saveData() {
+    console.log("🌐 Salvando dados no backend...")
+
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/salvar/`, {
+      method: "POST",
+    })
+
+    await handleFetchError(response)
+    console.log("✅ Dados salvos com sucesso")
   }
 }
 

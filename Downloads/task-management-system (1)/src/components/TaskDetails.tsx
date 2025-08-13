@@ -34,10 +34,24 @@ export default function TaskDetails() {
   }
 
   const handleProceedWithTask = async () => {
-    if (task.status === "Para iniciar") {
-      await updateTaskStatus(task.id, "Em andamento")
+    try {
+      // ✅ CORREÇÃO: Aguardar atualização do status ANTES de navegar
+      if (task.status === "Para iniciar") {
+        console.log("🔄 Atualizando status para 'Em andamento'...")
+        await updateTaskStatus(task.id, "Em andamento")
+        console.log("✅ Status atualizado com sucesso")
+      }
+
+      // ✅ CORREÇÃO: Pequeno delay para garantir que o contexto seja atualizado
+      setTimeout(() => {
+        console.log("🚀 Navegando para checklist...")
+        navigate(`/task/${task.id}/checklist`)
+      }, 500) // 500ms de delay para garantir atualização
+    } catch (error) {
+      console.error("❌ Erro ao atualizar status:", error)
+      // Em caso de erro, ainda permite navegar (fallback)
+      navigate(`/task/${task.id}/checklist`)
     }
-    navigate(`/task/${task.id}/checklist`)
   }
 
   const canProceed = task.status !== "Concluído"

@@ -44,10 +44,22 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Verificar se já está autenticado
   useEffect(() => {
-    if (authService.isAuthenticated()) {
-      console.log("✅ Usuário já autenticado, redirecionando...")
+    console.log("🔍 Login: Verificando se já está autenticado...")
+
+    // Registrar callback de navegação
+    authService.setNavigationCallback((path: string) => {
+      console.log("🔄 Login: Navegando para:", path)
+      navigate(path, { replace: true })
+    })
+
+    // Verificar se já está autenticado
+    const accessToken = localStorage.getItem("access_token")
+    const refreshToken = localStorage.getItem("refresh_token")
+    const userData = localStorage.getItem("user_data")
+
+    if (accessToken && refreshToken && userData) {
+      console.log("✅ Já autenticado, redirecionando para home...")
       navigate("/", { replace: true })
     }
   }, [navigate])
@@ -88,9 +100,9 @@ export default function Login() {
     setError(null)
 
     try {
-      console.log("🔐 Fazendo login...")
+      console.log("🔐 Fazendo login com:", formData.email)
 
-      const response = await fetch("http://192.168.15.10:8000/api/v1/login/", {
+      const response = await fetch("http://192.168.15.14:8000/api/v1/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -103,7 +115,6 @@ export default function Login() {
 
       if (!response.ok) {
         let errorMessage = "Erro ao fazer login"
-
         try {
           const errorData = await response.json()
           console.log("❌ Erro do servidor:", errorData)
@@ -111,25 +122,34 @@ export default function Login() {
         } catch (e) {
           console.log("⚠️ Não foi possível parsear erro")
         }
-
         throw new Error(errorMessage)
       }
 
       const data: LoginResponse = await response.json()
-      console.log("✅ Login realizado com sucesso")
+      console.log("✅ Login bem-sucedido:", data)
 
-      // Verificar se recebeu os tokens
       if (!data.access || !data.refresh) {
         throw new Error("Tokens não recebidos do servidor")
       }
 
-      // Salvar tokens usando o AuthService
+      // Salvar tokens no localStorage
+      localStorage.setItem("access_token", data.access)
+      localStorage.setItem("refresh_token", data.refresh)
+      if (data.user) {
+        localStorage.setItem("user_data", JSON.stringify(data.user))
+      }
+
+      console.log("💾 Tokens salvos no localStorage")
+
+      // Configurar tokens no authService
       authService.setTokens(data.access, data.refresh, data.user)
 
-      console.log("🎉 Tokens salvos, redirecionando...")
+      console.log("🚀 Redirecionando para home...")
 
-      // Redirecionar
-      navigate("/", { replace: true })
+      // Pequeno delay para garantir que tudo foi salvo
+      setTimeout(() => {
+        navigate("/", { replace: true })
+      }, 100)
     } catch (err) {
       console.error("❌ Erro no login:", err)
       const errorMessage = err instanceof Error ? err.message : "Erro inesperado ao fazer login"

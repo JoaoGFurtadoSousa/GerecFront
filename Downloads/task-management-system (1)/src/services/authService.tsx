@@ -17,8 +17,13 @@ class AuthService {
   private refreshTimer: NodeJS.Timeout | null = null
   private isRefreshing = false
   private refreshPromise: Promise<string> | null = null
+  private isLoggingOut = false
+  private hasInitialized = false
+  private navigationCallback: ((path: string) => void) | null = null
 
-  private constructor() {}
+  private constructor() {
+    // Construtor vazio - sem inicialização automática
+  }
 
   static getInstance(): AuthService {
     if (!AuthService.instance) {
@@ -27,8 +32,38 @@ class AuthService {
     return AuthService.instance
   }
 
+  // Registrar callback de navegação do React Router
+  setNavigationCallback(callback: (path: string) => void) {
+    this.navigationCallback = callback
+  }
+
+  // Inicializar apenas quando necessário
+  initialize() {
+    if (this.hasInitialized) {
+      return
+    }
+
+    console.log("🔐 Inicializando AuthService...")
+    this.hasInitialized = true
+
+    // Apenas agendar refresh se tiver tokens válidos
+    if (this.hasValidTokens()) {
+      this.scheduleTokenRefresh()
+      console.log("✅ AuthService inicializado com tokens válidos")
+    }
+  }
+
+  private hasValidTokens(): boolean {
+    const accessToken = localStorage.getItem("access_token")
+    const refreshToken = localStorage.getItem("refresh_token")
+    const userData = localStorage.getItem("user_data")
+    return !!(accessToken && refreshToken && userData)
+  }
+
   // Salvar tokens após login
   setTokens(accessToken: string, refreshToken: string, user?: any) {
+    console.log("💾 Salvando tokens...")
+
     localStorage.setItem("access_token", accessToken)
     localStorage.setItem("refresh_token", refreshToken)
 
@@ -36,55 +71,71 @@ class AuthService {
       localStorage.setItem("user_data", JSON.stringify(user))
     }
 
-    // Configurar refresh automático (25 minutos = 1500000ms)
+    // Limpar timer anterior
+    this.clearRefreshTimer()
+
+    // Configurar refresh automático
     this.scheduleTokenRefresh()
 
-    console.log("✅ Tokens salvos e refresh agendado")
+    console.log("✅ Tokens salvos")
   }
 
-  // Obter token de acesso
   getAccessToken(): string | null {
     return localStorage.getItem("access_token")
   }
 
-  // Obter token de refresh
   getRefreshToken(): string | null {
     return localStorage.getItem("refresh_token")
   }
 
-  // Obter dados do usuário
   getUserData(): any | null {
     const userData = localStorage.getItem("user_data")
     return userData ? JSON.parse(userData) : null
   }
 
-  // Verificar se está autenticado
   isAuthenticated(): boolean {
-    const accessToken = this.getAccessToken()
-    const refreshToken = this.getRefreshToken()
-    return !!(accessToken && refreshToken)
+    return this.hasValidTokens()
   }
 
-  // Agendar refresh automático do token
-  private scheduleTokenRefresh() {
-    // Limpar timer anterior se existir
+  private clearRefreshTimer() {
     if (this.refreshTimer) {
       clearTimeout(this.refreshTimer)
+      this.refreshTimer = null
     }
-
-    // Agendar refresh para 25 minutos (5 minutos antes de expirar)
-    this.refreshTimer = setTimeout(
-      () => {
-        this.refreshAccessToken()
-      },
-      25 * 60 * 1000,
-    ) // 25 minutos
-
-    console.log("⏰ Refresh do token agendado para 25 minutos")
   }
 
-  // Renovar token de acesso
+  private scheduleTokenRefresh() {
+    // Limpar timer anterior
+    this.clearRefreshTimer()
+
+    // Não agendar se está fazendo logout
+    if (this.isLoggingOut) {
+      return
+    }
+
+    // Agendar refresh para 25 minutos
+    this.refreshTimer = setTimeout(
+      () => {
+        if (!this.isLoggingOut && this.hasValidTokens()) {
+          console.log("⏰ Executando refresh automático...")
+          this.refreshAccessToken().catch((error) => {
+            console.error("❌ Erro no refresh automático:", error)
+            this.logout()
+          })
+        }
+      },
+      25 * 60 * 1000,
+    )
+
+    console.log("⏰ Refresh agendado para 25 minutos")
+  }
+
   async refreshAccessToken(): Promise<string> {
+    // Se já está fazendo logout, não tentar refresh
+    if (this.isLoggingOut) {
+      throw new Error("Logout em andamento")
+    }
+
     // Se já está fazendo refresh, retorna a promise existente
     if (this.isRefreshing && this.refreshPromise) {
       return this.refreshPromise
@@ -92,6 +143,7 @@ class AuthService {
 
     const refreshToken = this.getRefreshToken()
     if (!refreshToken) {
+      this.logout()
       throw new Error("Refresh token não encontrado")
     }
 
@@ -101,6 +153,9 @@ class AuthService {
     try {
       const newAccessToken = await this.refreshPromise
       return newAccessToken
+    } catch (error) {
+      this.logout()
+      throw error
     } finally {
       this.isRefreshing = false
       this.refreshPromise = null
@@ -108,10 +163,8 @@ class AuthService {
   }
 
   private async performTokenRefresh(refreshToken: string): Promise<string> {
-    console.log("🔄 Renovando token de acesso...")
-
     try {
-      const response = await fetch("http://192.168.15.10:8000/api/token/refresh/", {
+      const response = await fetch("http://192.168.15.14:8000/api/token/refresh/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -121,21 +174,12 @@ class AuthService {
       })
 
       if (!response.ok) {
-        console.error("❌ Erro ao renovar token:", response.status)
-
-        if (response.status === 401) {
-          // Refresh token expirado, fazer logout
-          this.logout()
-          throw new Error("Sessão expirada. Faça login novamente.")
-        }
-
-        throw new Error("Erro ao renovar token")
+        throw new Error(`Erro ao renovar token: ${response.status}`)
       }
 
       const data: RefreshResponse = await response.json()
-      console.log("✅ Token renovado com sucesso")
 
-      // Salvar novo token de acesso
+      // Salvar novo token
       localStorage.setItem("access_token", data.access)
 
       // Agendar próximo refresh
@@ -143,74 +187,130 @@ class AuthService {
 
       return data.access
     } catch (error) {
-      console.error("❌ Erro no refresh do token:", error)
       throw error
     }
   }
 
-  // Fazer logout
+  // Logout SEM redirecionamento automático
   logout() {
-    console.log("🚪 Fazendo logout...")
-
-    // Limpar timer de refresh
-    if (this.refreshTimer) {
-      clearTimeout(this.refreshTimer)
-      this.refreshTimer = null
+    if (this.isLoggingOut) {
+      return
     }
+
+    console.log("🚪 Executando logout...")
+    this.isLoggingOut = true
+
+    // Limpar timer
+    this.clearRefreshTimer()
 
     // Limpar localStorage
     localStorage.removeItem("access_token")
     localStorage.removeItem("refresh_token")
     localStorage.removeItem("user_data")
 
-    // Redirecionar para login
-    window.location.href = "/login"
+    // Resetar estado
+    this.isRefreshing = false
+    this.refreshPromise = null
+    this.hasInitialized = false
+
+    console.log("🧹 Dados limpos")
+
+    // Usar callback de navegação se disponível
+    if (this.navigationCallback) {
+      this.navigationCallback("/login")
+    }
+
+    // Reset do flag após navegação
+    setTimeout(() => {
+      this.isLoggingOut = false
+    }, 1000)
   }
 
-  // Fazer requisição autenticada
   async authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
+    if (this.isLoggingOut) {
+      throw new Error("Logout em andamento")
+    }
+
     let accessToken = this.getAccessToken()
 
     if (!accessToken) {
-      throw new Error("Token de acesso não encontrado")
+      this.logout()
+      throw new Error("Token não encontrado")
     }
 
-    // Primeira tentativa com token atual
-    const response = await fetch(url, {
+    // Preparar headers
+    const headers: Record<string, string> = {
+      ...options.headers,
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/json",
+    }
+
+    if (!(options.body instanceof FormData)) {
+      headers["Content-Type"] = "application/json"
+    }
+
+    // Primeira tentativa
+    let response = await fetch(url, {
       ...options,
-      headers: {
-        ...options.headers,
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
+      headers,
     })
 
-    // Se token expirou, tentar renovar
-    if (response.status === 401) {
-      console.log("🔄 Token expirado, tentando renovar...")
-
+    // Se token expirou, tentar renovar UMA VEZ
+    if (response.status === 401 && !this.isRefreshing) {
       try {
         accessToken = await this.refreshAccessToken()
 
-        // Repetir requisição com novo token
-        return fetch(url, {
+        // Repetir com novo token
+        const newHeaders: Record<string, string> = {
+          ...options.headers,
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/json",
+        }
+
+        if (!(options.body instanceof FormData)) {
+          newHeaders["Content-Type"] = "application/json"
+        }
+
+        response = await fetch(url, {
           ...options,
-          headers: {
-            ...options.headers,
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
+          headers: newHeaders,
         })
+
+        if (response.status === 401) {
+          this.logout()
+          throw new Error("Sessão expirada")
+        }
       } catch (error) {
-        console.error("❌ Erro ao renovar token:", error)
         this.logout()
         throw error
       }
     }
 
     return response
+  }
+
+  // Método para validar token sem logout automático
+  async validateToken(): Promise<boolean> {
+    const accessToken = this.getAccessToken()
+    if (!accessToken) {
+      return false
+    }
+
+    try {
+      // Fazer uma requisição simples para validar o token
+      const response = await fetch("http://192.168.15.14:8000/api/v1/tarefas/", {
+        method: "HEAD", // Usar HEAD para não retornar dados
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/json",
+        },
+      })
+
+      return response.ok
+    } catch (error) {
+      console.log("⚠️ Erro na validação do token:", error)
+      return false
+    }
   }
 }
 

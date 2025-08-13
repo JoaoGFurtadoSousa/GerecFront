@@ -25,36 +25,30 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
-  AlertTitle,
+  Badge,
 } from "@mui/material"
 import {
   Visibility,
   Search,
-  Settings,
   Dashboard,
-  Assignment,
   Engineering,
-  Analytics,
+  Notifications,
   TrendingUp,
   CheckCircle,
   Schedule,
   PlayArrow,
   Menu,
   Logout,
-  Sync,
   Add,
-  Warning,
-  Wifi,
-  WifiOff,
   Business,
+  History,
+  Assignment,
 } from "@mui/icons-material"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { useTask, type Task } from "../contexts/TaskContext"
 import { authService } from "../services/authService"
-import NewTaskModal from "./NewTaskModal"
 
 const DRAWER_WIDTH = 240
-const API_BASE_URL = "192.168.15.10:8000/api/v1"
 
 const getStatusColor = (status: Task["status"]) => {
   switch (status) {
@@ -82,24 +76,10 @@ const getStatusBgColor = (status: Task["status"]) => {
   }
 }
 
-// Adicionar estilos CSS para animação
-const pulseKeyframes = `
-  @keyframes pulse {
-    0% {
-      box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
-    }
-    70% {
-      box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
-    }
-    100% {
-      box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
-    }
-  }
-`
-
 export default function TaskList() {
-  const { tasks, loading, error, refreshTasks, clearError } = useTask()
+  const { tasks, loading, error, refreshTasks } = useTask()
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -107,122 +87,59 @@ export default function TaskList() {
   // Estado para controlar o auto-refresh
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true)
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date())
-  const [isUpdating, setIsUpdating] = useState(false)
 
-  // Estados para conectividade
-  const [serverOnline, setServerOnline] = useState<boolean | null>(null)
-  const [connectionError, setConnectionError] = useState<string | null>(null)
+  // Registrar callback de navegação no authService
+  useEffect(() => {
+    authService.setNavigationCallback((path: string) => {
+      navigate(path, { replace: true })
+    })
+  }, [navigate])
 
-  // Estados para usuário
-  const [userInfo, setUserInfo] = useState(null)
-  const [loadingUser, setLoadingUser] = useState(true)
-  const [showNewTaskModal, setShowNewTaskModal] = useState(false)
-
-  // Função para verificar conectividade do servidor
-  const checkServerStatus = async () => {
+  // Função para salvar dados no backend
+  const saveDataToBackend = async () => {
     try {
-      // Fazer uma requisição simples para testar conectividade
-      await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/`, {
-        method: "GET",
-        signal: AbortSignal.timeout(5000),
-      })
-      setServerOnline(true)
-      setConnectionError(null)
-      return true
-    } catch (error) {
-      setServerOnline(false)
-      setConnectionError("Erro ao verificar conectividade")
-      return false
-    }
-  }
+      console.log("🔄 Enviando requisição POST para salvar dados...")
 
-  // Função para buscar informações do usuário
-  const fetchUserInfo = async () => {
-    try {
-      setLoadingUser(true)
-      console.log("🔄 Buscando informações do usuário...")
-      const response = await authService.authenticatedFetch("http:/192.168.15.10:8000/api/v1/usuarios/", {
-        method: "GET",
+      const response = await authService.authenticatedFetch("http://192.168.15.14:8000/api/v1/salvar/", {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        signal: AbortSignal.timeout(10000),
+        body: JSON.stringify({}),
       })
-      if (!response.ok) {
-        throw new Error(`Erro ao buscar usuário: ${response.status} ${response.statusText}`)
-      }
-      const userData = await response.json()
-      console.log("✅ Dados do usuário recebidos:", userData)
-      setUserInfo(userData)
-    } catch (err) {
-      console.error("❌ Erro ao buscar dados do usuário:", err)
-      // Em caso de erro, usar dados do localStorage como fallback
-      const fallbackUser = authService.getUserData()
-      setUserInfo(fallbackUser)
-    } finally {
-      setLoadingUser(false)
-    }
-  }
 
-  // Função para atualizar apenas as tarefas E fazer ping na migração
-  const saveDataAndRefreshTasks = async () => {
-    try {
-      setIsUpdating(true)
-      console.log("🔄 Atualizando lista de tarefas...")
-      // 1. Fazer ping no endpoint de migração PRIMEIRO
-      try {
-        console.log("📡 Fazendo ping no endpoint de migração...")
-        const migrationResponse = await authService.authenticatedFetch("http://192.168.15.10:8000/api/v1/enviar/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({}), // Corpo vazio para o POST
-          signal: AbortSignal.timeout(5000), // Timeout menor para migração
-        })
-        if (migrationResponse.ok) {
-          console.log("✅ Ping de migração enviado com sucesso")
-        } else {
-          console.warn("⚠️ Ping de migração falhou:", migrationResponse.status, migrationResponse.statusText)
-        }
-      } catch (migrationError) {
-        console.warn("⚠️ Erro no ping de migração (continuando com refresh):", migrationError)
-        // Não interromper o processo se a migração falhar
+      if (!response.ok) {
+        throw new Error(`Erro ao salvar dados: ${response.status} ${response.statusText}`)
       }
-      // 2. Buscar as tarefas atualizadas
+
+      console.log("✅ Dados salvos com sucesso no backend")
+
+      // Após salvar, buscar dados atualizados
       await refreshTasks()
       setLastUpdateTime(new Date())
-      console.log("✅ Lista de tarefas atualizada com sucesso")
     } catch (error) {
-      console.error("❌ Erro ao atualizar tarefas:", error)
-      setConnectionError(error instanceof Error ? error.message : "Erro ao atualizar tarefas")
-    } finally {
-      setIsUpdating(false)
+      console.error("❌ Erro ao salvar dados:", error)
+      // Não mostrar erro para o usuário, apenas logar
     }
-  }
-
-  // Função para refresh manual (incluindo migração)
-  const handleManualRefresh = () => {
-    clearError()
-    setConnectionError(null)
-    console.log("🔄 Refresh manual iniciado - incluindo ping de migração")
-    saveDataAndRefreshTasks()
   }
 
   // useEffect para configurar o intervalo de 10 segundos
   useEffect(() => {
-    let intervalId
+    let intervalId: NodeJS.Timeout
+
     if (autoRefreshEnabled) {
       // Executar imediatamente na primeira vez
-      saveDataAndRefreshTasks()
+      saveDataToBackend()
+
       // Configurar intervalo de 10 segundos
       intervalId = setInterval(() => {
-        saveDataAndRefreshTasks()
-      }, 10000) // 10 segundos
+        saveDataToBackend()
+      }, 10000)
+
       console.log("⏰ Auto-refresh ativado - executando a cada 10 segundos")
     }
+
     // Cleanup function para limpar o intervalo
     return () => {
       if (intervalId) {
@@ -230,32 +147,29 @@ export default function TaskList() {
         console.log("🛑 Auto-refresh desativado")
       }
     }
-  }, [autoRefreshEnabled]) // Dependência para recriar o intervalo se o estado mudar
-
-  // Carregar dados do usuário ao montar o componente
-  useEffect(() => {
-    fetchUserInfo()
-  }, [])
-
-  // Verificar conectividade inicial
-  useEffect(() => {
-    checkServerStatus()
-  }, [])
+  }, [autoRefreshEnabled])
 
   // Função para toggle do auto-refresh
   const toggleAutoRefresh = () => {
     setAutoRefreshEnabled(!autoRefreshEnabled)
   }
 
-  // Obter dados do usuário
-  const userData = authService.getUserData()
+  // ✅ CORREÇÃO: Obter dados do usuário com fallback robusto
+  const userData = authService.getUserData() || {
+    nome: "Usuário",
+    email: "usuario@sistema.com",
+  }
+
+  console.log("👤 Dados do usuário no TaskList:", userData)
 
   const filteredTasks = tasks.filter((task) => {
     if (!task) return false
+
     const taskDesc = String(task.descricao || "").toLowerCase()
     const unitName = String(task.unidade?.nome_da_unidade || "").toLowerCase()
     const numChamado = String(task.numChamado || "").toLowerCase()
     const searchLower = searchTerm.toLowerCase()
+
     const matchesSearch =
       taskDesc.includes(searchLower) || unitName.includes(searchLower) || numChamado.includes(searchLower)
     const matchesStatus = statusFilter === "all" || task.status === statusFilter
@@ -276,7 +190,43 @@ export default function TaskList() {
     authService.logout()
   }
 
-  // Sidebar content
+  // ✅ CORREÇÃO: Verificar se funcionalidades devem estar habilitadas
+  const featuresEnabled = authService.shouldEnableFeatures()
+  console.log("🔍 Funcionalidades habilitadas:", featuresEnabled)
+
+  // ✅ NOVO: Funções de navegação
+  const handleNavigateToNewTask = () => {
+    if (featuresEnabled) {
+      console.log("🚀 Navegando para Nova Tarefa")
+      navigate("/nova-tarefa")
+    }
+  }
+
+  const handleNavigateToHistory = () => {
+    if (featuresEnabled) {
+      console.log("🚀 Navegando para Histórico")
+      navigate("/historico")
+    }
+  }
+
+  const handleNavigateToUnits = () => {
+    if (featuresEnabled) {
+      console.log("🚀 Navegando para Unidades")
+      navigate("/unidades")
+    }
+  }
+
+  const handleNavigateToDashboard = () => {
+    console.log("🚀 Navegando para Dashboard")
+    navigate("/")
+  }
+
+  // ✅ NOVO: Verificar rota ativa
+  const isActiveRoute = (path: string) => {
+    return location.pathname === path
+  }
+
+  // Sidebar content - COM NAVEGAÇÃO FUNCIONAL
   const drawer = (
     <Box sx={{ height: "100%", bgcolor: "#1a1a1a", color: "white" }}>
       <Box sx={{ p: 3, borderBottom: "1px solid #333" }}>
@@ -287,13 +237,16 @@ export default function TaskList() {
           </Typography>
         </Box>
       </Box>
+
       <List sx={{ px: 2, py: 1 }}>
+        {/* 1. Dashboard - ATIVO */}
         <ListItem
+          onClick={handleNavigateToDashboard}
           sx={{
             borderRadius: 2,
             mb: 1,
-            bgcolor: "#2196f3",
-            "&:hover": { bgcolor: "#1976d2" },
+            bgcolor: isActiveRoute("/") ? "#2196f3" : "transparent",
+            "&:hover": { bgcolor: isActiveRoute("/") ? "#1976d2" : "#333" },
             cursor: "pointer",
           }}
         >
@@ -309,86 +262,94 @@ export default function TaskList() {
             }}
           />
         </ListItem>
+
+        {/* 2. Nova Tarefa */}
         <ListItem
-          onClick={() => navigate("/historico")}
+          onClick={handleNavigateToNewTask}
           sx={{
             borderRadius: 2,
             mb: 1,
-            "&:hover": { bgcolor: "#333" },
-            cursor: "pointer",
+            bgcolor: isActiveRoute("/nova-tarefa") ? "#4caf50" : "transparent",
+            "&:hover": {
+              bgcolor: featuresEnabled ? (isActiveRoute("/nova-tarefa") ? "#388e3c" : "#333") : "transparent",
+            },
+            cursor: featuresEnabled ? "pointer" : "not-allowed",
+            opacity: featuresEnabled ? 1 : 0.5,
           }}
         >
           <ListItemIcon>
-            <Assignment sx={{ color: "#ccc" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Histórico"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: "#ccc",
-            }}
-          />
-        </ListItem>
-        <ListItem
-          onClick={() => setShowNewTaskModal(true)}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            "&:hover": { bgcolor: "#333" },
-            cursor: "pointer",
-          }}
-        >
-          <ListItemIcon>
-            <Add sx={{ color: "#ccc" }} />
+            <Add sx={{ color: featuresEnabled ? (isActiveRoute("/nova-tarefa") ? "white" : "#4caf50") : "#666" }} />
           </ListItemIcon>
           <ListItemText
             primary="Nova Tarefa"
             primaryTypographyProps={{
               fontSize: "0.9rem",
-              color: "#ccc",
+              color: featuresEnabled ? (isActiveRoute("/nova-tarefa") ? "white" : "#ccc") : "#666",
             }}
           />
+          {!featuresEnabled && (
+            <Typography variant="caption" sx={{ color: "#666", fontSize: "0.7rem" }}>
+              Tokens válidos
+            </Typography>
+          )}
         </ListItem>
+
+        {/* 3. Histórico */}
         <ListItem
-          onClick={() => navigate("/unidades")}
+          onClick={handleNavigateToHistory}
           sx={{
             borderRadius: 2,
             mb: 1,
-            "&:hover": { bgcolor: "#333" },
-            cursor: "pointer",
+            bgcolor: isActiveRoute("/historico") ? "#2196f3" : "transparent",
+            "&:hover": {
+              bgcolor: featuresEnabled ? (isActiveRoute("/historico") ? "#1976d2" : "#333") : "transparent",
+            },
+            cursor: featuresEnabled ? "pointer" : "not-allowed",
+            opacity: featuresEnabled ? 1 : 0.5,
           }}
         >
           <ListItemIcon>
-            <Business sx={{ color: "#ccc" }} />
+            <History sx={{ color: featuresEnabled ? (isActiveRoute("/historico") ? "white" : "#ccc") : "#666" }} />
+          </ListItemIcon>
+          <ListItemText
+            primary="Histórico"
+            primaryTypographyProps={{
+              fontSize: "0.9rem",
+              color: featuresEnabled ? (isActiveRoute("/historico") ? "white" : "#ccc") : "#666",
+            }}
+          />
+        </ListItem>
+
+        {/* 4. Unidades */}
+        <ListItem
+          onClick={handleNavigateToUnits}
+          sx={{
+            borderRadius: 2,
+            mb: 1,
+            bgcolor: isActiveRoute("/unidades") ? "#2196f3" : "transparent",
+            "&:hover": {
+              bgcolor: featuresEnabled ? (isActiveRoute("/unidades") ? "#1976d2" : "#333") : "transparent",
+            },
+            cursor: featuresEnabled ? "pointer" : "not-allowed",
+            opacity: featuresEnabled ? 1 : 0.5,
+          }}
+        >
+          <ListItemIcon>
+            <Business sx={{ color: featuresEnabled ? (isActiveRoute("/unidades") ? "white" : "#ccc") : "#666" }} />
           </ListItemIcon>
           <ListItemText
             primary="Unidades"
             primaryTypographyProps={{
               fontSize: "0.9rem",
-              color: "#ccc",
+              color: featuresEnabled ? (isActiveRoute("/unidades") ? "white" : "#ccc") : "#666",
             }}
           />
         </ListItem>
+
+        {/* Divider antes do Sair */}
         <Divider sx={{ my: 2, borderColor: "#333" }} />
-        <ListItem
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            "&:hover": { bgcolor: "#333" },
-            cursor: "pointer",
-          }}
-        >
-          <ListItemIcon>
-            <Settings sx={{ color: "#ccc" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Configurações"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: "#ccc",
-            }}
-          />
-        </ListItem>
+
+        {/* Sair - MANTIDO */}
         <ListItem
           onClick={handleLogout}
           sx={{
@@ -413,66 +374,25 @@ export default function TaskList() {
     </Box>
   )
 
-  // Injetar CSS no head
-  useEffect(() => {
-    const style = document.createElement("style")
-    style.textContent = pulseKeyframes
-    document.head.appendChild(style)
-    return () => {
-      document.head.removeChild(style)
-    }
-  }, [])
-
   if (loading) {
     return (
       <Box sx={{ display: "flex", height: "100vh" }}>
         <Box sx={{ width: DRAWER_WIDTH, flexShrink: 0 }}>{drawer}</Box>
         <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center", alignItems: "center", bgcolor: "#f8f9fa" }}>
-          <Box sx={{ textAlign: "center" }}>
-            <CircularProgress size={60} sx={{ mb: 2 }} />
-            <Typography variant="h6" color="text.secondary">
-              Carregando tarefas...
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Conectando ao servidor...
-            </Typography>
-          </Box>
+          <CircularProgress size={60} />
         </Box>
       </Box>
     )
   }
 
-  if (error || connectionError) {
+  if (error) {
     return (
       <Box sx={{ display: "flex", height: "100vh" }}>
         <Box sx={{ width: DRAWER_WIDTH, flexShrink: 0 }}>{drawer}</Box>
         <Box sx={{ flexGrow: 1, p: 3, bgcolor: "#f8f9fa" }}>
-          <Alert
-            severity="error"
-            icon={<WifiOff />}
-            action={
-              <Box sx={{ display: "flex", gap: 1 }}>
-                <Button onClick={checkServerStatus} size="small">
-                  Verificar Conexão
-                </Button>
-                <Button onClick={handleManualRefresh} size="small">
-                  Tentar Novamente
-                </Button>
-              </Box>
-            }
-          >
-            <AlertTitle>Erro de Conexão</AlertTitle>
-            <Typography variant="body2" sx={{ mb: 2 }}>
-              {error || connectionError}
-            </Typography>
-            <Typography variant="body2" sx={{ fontSize: "0.85rem", color: "#666" }}>
-              Verifique se:
-            </Typography>
-            <Box component="ul" sx={{ fontSize: "0.85rem", color: "#666", mt: 1, pl: 2 }}>
-              <li>O servidor está rodando no IP 192.168.15.19:8000</li>
-              <li>Sua conexão com a internet está funcionando</li>
-              <li>Não há bloqueios de firewall</li>
-            </Box>
+          <Alert severity="error" action={<Button onClick={refreshTasks}>Tentar Novamente</Button>}>
+            <Typography variant="h6">Erro ao carregar tarefas</Typography>
+            <Typography variant="body2">{error}</Typography>
           </Alert>
         </Box>
       </Box>
@@ -491,6 +411,7 @@ export default function TaskList() {
       >
         {drawer}
       </Box>
+
       {/* Sidebar Mobile */}
       <Drawer
         variant="temporary"
@@ -504,6 +425,7 @@ export default function TaskList() {
       >
         {drawer}
       </Drawer>
+
       {/* Main Content */}
       <Box sx={{ flexGrow: 1, overflow: "auto" }}>
         {/* Top Bar */}
@@ -524,39 +446,53 @@ export default function TaskList() {
             <Typography variant="h5" sx={{ fontWeight: 600, color: "#333" }}>
               Dashboard de Tarefas
             </Typography>
-            {/* Indicador de conectividade */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              {serverOnline === true && <Wifi sx={{ color: "#4caf50", fontSize: 20 }} />}
-              {serverOnline === false && <WifiOff sx={{ color: "#f44336", fontSize: 20 }} />}
-              {serverOnline === null && <CircularProgress size={16} />}
-            </Box>
           </Box>
+
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>
-                {loadingUser ? "..." : userInfo?.nome?.charAt(0) || userData?.nome?.charAt(0) || "U"}
-              </Avatar>
-              <Box>
+            <IconButton>
+              <Badge badgeContent={3} color="error">
+                <Notifications />
+              </Badge>
+            </IconButton>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.nome?.charAt(0) || "U"}</Avatar>
+              <Box sx={{ display: { xs: "none", sm: "block" } }}>
                 <Typography variant="body2" sx={{ fontWeight: 600, color: "#333" }}>
-                  {loadingUser ? "Carregando..." : userInfo?.nome || userData?.nome || "Usuário"}
+                  {userData.nome || "Usuário"}
                 </Typography>
                 <Typography variant="caption" sx={{ color: "#666" }}>
-                  {userInfo?.email || userData?.email || ""}
+                  {userData.email || "usuario@sistema.com"}
                 </Typography>
               </Box>
             </Box>
           </Box>
         </Box>
+
         {/* Content */}
         <Box sx={{ p: 3 }}>
-          {/* Alerta de conectividade se houver problemas */}
-          {(connectionError || serverOnline === false) && (
-            <Alert severity="warning" sx={{ mb: 3 }} icon={<Warning />}>
-              <Typography variant="body2">
-                Problemas de conectividade detectados. Algumas funcionalidades podem não estar disponíveis.
-              </Typography>
-            </Alert>
-          )}
+          {/* Status de Autenticação */}
+          <Card sx={{ mb: 3, bgcolor: featuresEnabled ? "#e8f5e8" : "#fff3e0", border: "1px solid #e0e0e0" }}>
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <Box
+                    sx={{
+                      width: 12,
+                      height: 12,
+                      borderRadius: "50%",
+                      bgcolor: featuresEnabled ? "#4caf50" : "#ff9800",
+                    }}
+                  />
+                  <Typography variant="body2" sx={{ color: "#666" }}>
+                    Status: {featuresEnabled ? "Autenticado (Tokens Válidos)" : "Tokens Inválidos"}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "#999" }}>
+                    Funcionalidades: {featuresEnabled ? "Habilitadas" : "Limitadas"}
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
 
           {/* Métricas */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -581,6 +517,7 @@ export default function TaskList() {
                 </CardContent>
               </Card>
             </Grid>
+
             <Grid item xs={12} sm={6} md={3}>
               <Card sx={{ bgcolor: "white", border: "1px solid #e0e0e0" }}>
                 <CardContent>
@@ -601,6 +538,7 @@ export default function TaskList() {
                 </CardContent>
               </Card>
             </Grid>
+
             <Grid item xs={12} sm={6} md={3}>
               <Card sx={{ bgcolor: "white", border: "1px solid #e0e0e0" }}>
                 <CardContent>
@@ -622,6 +560,7 @@ export default function TaskList() {
                 </CardContent>
               </Card>
             </Grid>
+
             <Grid item xs={12} sm={6} md={3}>
               <Card sx={{ bgcolor: "white", border: "1px solid #e0e0e0" }}>
                 <CardContent>
@@ -644,6 +583,7 @@ export default function TaskList() {
               </Card>
             </Grid>
           </Grid>
+
           {/* Filtros */}
           <Card sx={{ mb: 3, bgcolor: "white", border: "1px solid #e0e0e0" }}>
             <CardContent>
@@ -707,6 +647,7 @@ export default function TaskList() {
               </Grid>
             </CardContent>
           </Card>
+
           {/* Indicador de Auto-refresh */}
           <Card sx={{ mb: 3, bgcolor: "white", border: "1px solid #e0e0e0" }}>
             <CardContent>
@@ -717,84 +658,52 @@ export default function TaskList() {
                       width: 12,
                       height: 12,
                       borderRadius: "50%",
-                      bgcolor: autoRefreshEnabled && serverOnline ? "#4caf50" : "#f44336",
-                      animation: autoRefreshEnabled && serverOnline ? "pulse 2s infinite" : "none",
+                      bgcolor: autoRefreshEnabled ? "#4caf50" : "#f44336",
                     }}
                   />
                   <Typography variant="body2" sx={{ color: "#666" }}>
-                    Auto-atualização: {autoRefreshEnabled && serverOnline ? "Ativa" : "Inativa"}
+                    Auto-atualização: {autoRefreshEnabled ? "Ativa" : "Inativa"}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "#999" }}>
-                    Última atualização: {lastUpdateTime.toLocaleTimeString("pt-BR")} | Migração: Ativa
+                    Última atualização: {lastUpdateTime.toLocaleTimeString("pt-BR")}
                   </Typography>
-                  {isUpdating && (
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <CircularProgress size={16} />
-                      <Typography variant="caption" sx={{ color: "#2196f3" }}>
-                        Atualizando...
-                      </Typography>
-                    </Box>
-                  )}
                 </Box>
-                <Box sx={{ display: "flex", gap: 1 }}>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<Sync />}
-                    onClick={handleManualRefresh}
-                    disabled={isUpdating}
-                    sx={{
-                      textTransform: "none",
-                      fontSize: "0.8rem",
-                      borderColor: "#2196f3",
-                      color: "#2196f3",
-                      "&:hover": {
-                        borderColor: "#1976d2",
-                        bgcolor: "transparent",
-                      },
-                    }}
-                  >
-                    Atualizar Agora
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={toggleAutoRefresh}
-                    sx={{
-                      textTransform: "none",
-                      fontSize: "0.8rem",
-                      borderColor: autoRefreshEnabled ? "#f44336" : "#4caf50",
-                      color: autoRefreshEnabled ? "#f44336" : "#4caf50",
-                      "&:hover": {
-                        borderColor: autoRefreshEnabled ? "#d32f2f" : "#388e3c",
-                        bgcolor: "transparent",
-                      },
-                    }}
-                  >
-                    {autoRefreshEnabled ? "Pausar" : "Ativar"}
-                  </Button>
-                </Box>
+
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={toggleAutoRefresh}
+                  sx={{
+                    textTransform: "none",
+                    fontSize: "0.8rem",
+                    borderColor: autoRefreshEnabled ? "#f44336" : "#4caf50",
+                    color: autoRefreshEnabled ? "#f44336" : "#4caf50",
+                    "&:hover": {
+                      borderColor: autoRefreshEnabled ? "#d32f2f" : "#388e3c",
+                      bgcolor: "transparent",
+                    },
+                  }}
+                >
+                  {autoRefreshEnabled ? "Pausar" : "Ativar"}
+                </Button>
               </Box>
             </CardContent>
           </Card>
+
           {/* Lista de Tarefas */}
           <Box>
             <Typography variant="h6" sx={{ mb: 3, color: "#333", fontWeight: 600 }}>
               Lista de Tarefas ({filteredTasks.length})
             </Typography>
+
             {tasks.length === 0 ? (
               <Paper sx={{ p: 6, textAlign: "center", bgcolor: "white" }}>
                 <Assignment sx={{ fontSize: 64, color: "#e0e0e0", mb: 2 }} />
                 <Typography variant="h6" color="text.secondary" gutterBottom>
                   Nenhuma tarefa encontrada
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  {serverOnline === false
-                    ? "Verifique a conexão com o servidor"
-                    : "As tarefas aparecerão aqui quando disponíveis"}
-                </Typography>
-                <Button variant="contained" onClick={handleManualRefresh} disabled={isUpdating}>
-                  {isUpdating ? "Carregando..." : "Recarregar"}
+                <Button variant="contained" onClick={refreshTasks}>
+                  Recarregar
                 </Button>
               </Paper>
             ) : (
@@ -837,6 +746,7 @@ export default function TaskList() {
                             #{task.numChamado}
                           </Typography>
                         </Box>
+
                         {/* Título */}
                         <Typography
                           className="task-title"
@@ -853,6 +763,7 @@ export default function TaskList() {
                         >
                           {task.unidade?.nome_da_unidade || "Sem unidade"}
                         </Typography>
+
                         {/* Descrição */}
                         <Typography
                           variant="body2"
@@ -869,6 +780,7 @@ export default function TaskList() {
                         >
                           {String(task.descricao)}
                         </Typography>
+
                         {/* Técnico */}
                         <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
                           <Avatar sx={{ width: 24, height: 24, bgcolor: "#2196f3", mr: 1, fontSize: "0.75rem" }}>
@@ -878,6 +790,7 @@ export default function TaskList() {
                             {task.nomeDoTecnico?.nome || "Não atribuído"}
                           </Typography>
                         </Box>
+
                         {/* Botão */}
                         <Button
                           variant="outlined"
@@ -906,6 +819,7 @@ export default function TaskList() {
                 ))}
               </Grid>
             )}
+
             {filteredTasks.length === 0 && tasks.length > 0 && (
               <Paper sx={{ p: 6, textAlign: "center", bgcolor: "white" }}>
                 <Search sx={{ fontSize: 64, color: "#e0e0e0", mb: 2 }} />
@@ -926,15 +840,6 @@ export default function TaskList() {
           </Box>
         </Box>
       </Box>
-      {/* Modal Nova Tarefa */}
-      <NewTaskModal
-        open={showNewTaskModal}
-        onClose={() => setShowNewTaskModal(false)}
-        onSuccess={() => {
-          setShowNewTaskModal(false)
-          handleManualRefresh()
-        }}
-      />
     </Box>
   )
 }

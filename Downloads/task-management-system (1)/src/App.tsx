@@ -6,11 +6,13 @@ import TaskList from "./components/TaskList"
 import TaskDetails from "./components/TaskDetails"
 import EquipmentChecklist from "./components/EquipmentChecklist"
 import TaskCompletion from "./components/TaskCompletion"
-import UnitsView from "./components/UnitsView"
 import Login from "./components/Login"
 import Cadastro from "./components/Cadastro"
 import ProtectedRoute from "./components/ProtectedRoute"
+import TaskAdditionalData from "./components/TaskAdditionalData"
+import NovaTask from "./components/NovaTask"
 import Historico from "./components/Historico"
+import Unidades from "./components/Unidades"
 
 const theme = createTheme({
   palette: {
@@ -61,29 +63,16 @@ export default function App() {
       <TaskProvider>
         <Router>
           <Routes>
+            {/* Rotas públicas */}
             <Route path="/login" element={<Login />} />
             <Route path="/cadastro" element={<Cadastro />} />
+
+            {/* Rotas protegidas */}
             <Route
               path="/"
               element={
                 <ProtectedRoute>
                   <TaskList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/unidades"
-              element={
-                <ProtectedRoute>
-                  <UnitsView />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/historico"
-              element={
-                <ProtectedRoute>
-                  <Historico />
                 </ProtectedRoute>
               }
             />
@@ -108,6 +97,39 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <TaskCompletion />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/task/:id/additional-data"
+              element={
+                <ProtectedRoute>
+                  <TaskAdditionalData />
+                </ProtectedRoute>
+              }
+            />
+            {/* ✅ NOVAS ROTAS FUNCIONAIS */}
+            <Route
+              path="/nova-tarefa"
+              element={
+                <ProtectedRoute>
+                  <NovaTask />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/historico"
+              element={
+                <ProtectedRoute>
+                  <Historico />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/unidades"
+              element={
+                <ProtectedRoute>
+                  <Unidades />
                 </ProtectedRoute>
               }
             />
