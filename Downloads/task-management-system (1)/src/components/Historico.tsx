@@ -1,12 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Box,
   Typography,
   Card,
   CardContent,
-  Button,
   Grid,
   TextField,
   FormControl,
@@ -25,6 +24,9 @@ import {
   Badge,
   Pagination,
   InputAdornment,
+  CircularProgress,
+  Alert,
+  Button,
 } from "@mui/material"
 import {
   ArrowBack,
@@ -39,157 +41,19 @@ import {
   Logout,
   Notifications,
   CheckCircle,
-  Cancel,
-  PlayArrow,
   TrendingUp,
+  Refresh,
+  CalendarToday,
+  Person,
+  LocationOn,
+  Image as ImageIcon,
 } from "@mui/icons-material"
 import { useNavigate, useLocation } from "react-router-dom"
 import { authService } from "../services/authService"
+import { apiService, type Task } from "../services/apiService"
 
 const DRAWER_WIDTH = 240
 const ITEMS_PER_PAGE = 6
-
-interface HistoricoTask {
-  id: number
-  nome: string
-  descricao: string
-  unidade: string
-  tecnico: string
-  status: "Concluído" | "Cancelado" | "Em andamento"
-  dataInicio: string
-  dataFim?: string
-  prioridade: "baixa" | "media" | "alta" | "urgente"
-}
-
-// Dados mockados para o histórico
-const mockHistoricoTasks: HistoricoTask[] = [
-  {
-    id: 1,
-    nome: "Manutenção Preventiva - Ar Condicionado",
-    descricao: "Limpeza e verificação do sistema de ar condicionado",
-    unidade: "Unidade Centro",
-    tecnico: "João Silva",
-    status: "Concluído",
-    dataInicio: "2024-01-15",
-    dataFim: "2024-01-15",
-    prioridade: "media",
-  },
-  {
-    id: 2,
-    nome: "Reparo Elétrico - Sala 201",
-    descricao: "Troca de disjuntor e verificação da instalação elétrica",
-    unidade: "Unidade Norte",
-    tecnico: "Maria Santos",
-    status: "Concluído",
-    dataInicio: "2024-01-14",
-    dataFim: "2024-01-14",
-    prioridade: "alta",
-  },
-  {
-    id: 3,
-    nome: "Instalação de Equipamento",
-    descricao: "Instalação de novo equipamento de segurança",
-    unidade: "Unidade Sul",
-    tecnico: "Pedro Oliveira",
-    status: "Cancelado",
-    dataInicio: "2024-01-13",
-    prioridade: "baixa",
-  },
-  {
-    id: 4,
-    nome: "Manutenção Corretiva - Elevador",
-    descricao: "Reparo do sistema de elevador principal",
-    unidade: "Unidade Centro",
-    tecnico: "Ana Costa",
-    status: "Em andamento",
-    dataInicio: "2024-01-12",
-    prioridade: "urgente",
-  },
-  {
-    id: 5,
-    nome: "Limpeza de Reservatório",
-    descricao: "Limpeza e desinfecção do reservatório de água",
-    unidade: "Unidade Leste",
-    tecnico: "Carlos Ferreira",
-    status: "Concluído",
-    dataInicio: "2024-01-11",
-    dataFim: "2024-01-11",
-    prioridade: "media",
-  },
-  {
-    id: 6,
-    nome: "Pintura Externa",
-    descricao: "Pintura da fachada externa do prédio",
-    unidade: "Unidade Oeste",
-    tecnico: "João Silva",
-    status: "Concluído",
-    dataInicio: "2024-01-10",
-    dataFim: "2024-01-12",
-    prioridade: "baixa",
-  },
-  {
-    id: 7,
-    nome: "Manutenção de Jardim",
-    descricao: "Poda e manutenção das áreas verdes",
-    unidade: "Unidade Norte",
-    tecnico: "Maria Santos",
-    status: "Concluído",
-    dataInicio: "2024-01-09",
-    dataFim: "2024-01-09",
-    prioridade: "baixa",
-  },
-  {
-    id: 8,
-    nome: "Reparo de Vazamento",
-    descricao: "Reparo de vazamento na tubulação principal",
-    unidade: "Unidade Sul",
-    tecnico: "Pedro Oliveira",
-    status: "Cancelado",
-    dataInicio: "2024-01-08",
-    prioridade: "alta",
-  },
-]
-
-const getStatusColor = (status: HistoricoTask["status"]) => {
-  switch (status) {
-    case "Concluído":
-      return "#4caf50"
-    case "Cancelado":
-      return "#f44336"
-    case "Em andamento":
-      return "#ff9800"
-    default:
-      return "#9e9e9e"
-  }
-}
-
-const getStatusBgColor = (status: HistoricoTask["status"]) => {
-  switch (status) {
-    case "Concluído":
-      return "#e8f5e8"
-    case "Cancelado":
-      return "#ffebee"
-    case "Em andamento":
-      return "#fff3e0"
-    default:
-      return "#f5f5f5"
-  }
-}
-
-const getPriorityColor = (prioridade: HistoricoTask["prioridade"]) => {
-  switch (prioridade) {
-    case "urgente":
-      return "#f44336"
-    case "alta":
-      return "#ff9800"
-    case "media":
-      return "#2196f3"
-    case "baixa":
-      return "#4caf50"
-    default:
-      return "#9e9e9e"
-  }
-}
 
 export default function Historico() {
   const navigate = useNavigate()
@@ -198,6 +62,9 @@ export default function Historico() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [currentPage, setCurrentPage] = useState(1)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [historyTasks, setHistoryTasks] = useState<Task[]>([])
 
   const userData = authService.getUserData() || {
     nome: "Usuário",
@@ -206,12 +73,66 @@ export default function Historico() {
 
   const featuresEnabled = authService.shouldEnableFeatures()
 
+  // ✅ Carregar histórico APENAS uma vez ao montar o componente
+  useEffect(() => {
+    loadHistorico()
+  }, []) // Array de dependências vazio = executa apenas uma vez
+
+  const loadHistorico = async () => {
+    console.log("🔄 Carregando histórico de tarefas...")
+    setLoading(true)
+    setError(null)
+
+    try {
+      const data = await apiService.getHistorico()
+      console.log("✅ Histórico carregado com sucesso:", data.length, "tarefas")
+
+      // ✅ IMPORTANTE: Substituir completamente o estado, não concatenar
+      setHistoryTasks(data)
+
+      // Reset página para primeira ao recarregar
+      setCurrentPage(1)
+    } catch (err) {
+      console.error("❌ Erro ao carregar histórico:", err)
+      setError(err instanceof Error ? err.message : "Erro ao carregar histórico")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Concluído":
+        return "#4caf50"
+      case "Cancelado":
+        return "#f44336"
+      case "Em andamento":
+        return "#ff9800"
+      default:
+        return "#9e9e9e"
+    }
+  }
+
+  const getStatusBgColor = (status: string) => {
+    switch (status) {
+      case "Concluído":
+        return "#e8f5e8"
+      case "Cancelado":
+        return "#ffebee"
+      case "Em andamento":
+        return "#fff3e0"
+      default:
+        return "#f5f5f5"
+    }
+  }
+
   // Filtrar tarefas
-  const filteredTasks = mockHistoricoTasks.filter((task) => {
+  const filteredTasks = historyTasks.filter((task) => {
     const matchesSearch =
-      task.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.unidade.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.tecnico.toLowerCase().includes(searchTerm.toLowerCase())
+      task.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.unidade.nome_da_unidade.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.nomeDoTecnico.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.numChamado.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === "all" || task.status === statusFilter
     return matchesSearch && matchesStatus
   })
@@ -221,11 +142,9 @@ export default function Historico() {
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
   const paginatedTasks = filteredTasks.slice(startIndex, startIndex + ITEMS_PER_PAGE)
 
-  // Estatísticas
-  const totalTasks = mockHistoricoTasks.length
-  const completedTasks = mockHistoricoTasks.filter((task) => task.status === "Concluído").length
-  const canceledTasks = mockHistoricoTasks.filter((task) => task.status === "Cancelado").length
-  const inProgressTasks = mockHistoricoTasks.filter((task) => task.status === "Em andamento").length
+  // ✅ Estatísticas - APENAS tarefas concluídas
+  const totalTasks = historyTasks.length
+  const completedTasks = historyTasks.filter((task) => task.status === "Concluído").length
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
@@ -239,23 +158,18 @@ export default function Historico() {
     return location.pathname === path
   }
 
-  const handleNavigateToDashboard = () => {
-    navigate("/")
-  }
-
-  const handleNavigateToNewTask = () => {
-    if (featuresEnabled) {
-      navigate("/nova-tarefa")
-    }
-  }
-
-  const handleNavigateToHistory = () => {
-    navigate("/historico")
-  }
-
-  const handleNavigateToUnits = () => {
-    if (featuresEnabled) {
-      navigate("/unidades")
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "Data não disponível"
+    try {
+      return new Date(dateString).toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    } catch {
+      return "Data inválida"
     }
   }
 
@@ -273,7 +187,7 @@ export default function Historico() {
 
       <List sx={{ px: 2, py: 1 }}>
         <ListItem
-          onClick={handleNavigateToDashboard}
+          onClick={() => navigate("/")}
           sx={{
             borderRadius: 2,
             mb: 1,
@@ -296,7 +210,7 @@ export default function Historico() {
         </ListItem>
 
         <ListItem
-          onClick={handleNavigateToNewTask}
+          onClick={() => featuresEnabled && navigate("/nova-tarefa")}
           sx={{
             borderRadius: 2,
             mb: 1,
@@ -321,7 +235,7 @@ export default function Historico() {
         </ListItem>
 
         <ListItem
-          onClick={handleNavigateToHistory}
+          onClick={() => navigate("/historico")}
           sx={{
             borderRadius: 2,
             mb: 1,
@@ -345,7 +259,7 @@ export default function Historico() {
         </ListItem>
 
         <ListItem
-          onClick={handleNavigateToUnits}
+          onClick={() => featuresEnabled && navigate("/unidades")}
           sx={{
             borderRadius: 2,
             mb: 1,
@@ -449,6 +363,9 @@ export default function Historico() {
             <Typography variant="h5" sx={{ fontWeight: 600, color: "#333" }}>
               Histórico de Tarefas
             </Typography>
+            <IconButton onClick={loadHistorico} disabled={loading} color="primary" title="Atualizar lista">
+              <Refresh />
+            </IconButton>
           </Box>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -473,288 +390,322 @@ export default function Historico() {
 
         {/* Content */}
         <Box sx={{ p: 3 }}>
-          {/* Estatísticas */}
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ bgcolor: "white", border: "1px solid #e0e0e0" }}>
-                <CardContent>
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <Box>
-                      <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-                        Total
-                      </Typography>
-                      <Typography variant="h4" sx={{ fontWeight: 700, color: "#333" }}>
-                        {totalTasks}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: "#4caf50", display: "flex", alignItems: "center" }}>
-                        <TrendingUp sx={{ fontSize: 16, mr: 0.5 }} />
-                        Histórico
-                      </Typography>
-                    </Box>
-                    <Assignment sx={{ fontSize: 40, color: "#e0e0e0" }} />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
 
-            <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ bgcolor: "white", border: "1px solid #e0e0e0" }}>
-                <CardContent>
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <Box>
-                      <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-                        Concluídas
-                      </Typography>
-                      <Typography variant="h4" sx={{ fontWeight: 700, color: "#4caf50" }}>
-                        {completedTasks}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: "#4caf50" }}>
-                        Finalizadas
-                      </Typography>
-                    </Box>
-                    <CheckCircle sx={{ fontSize: 40, color: "#e8f5e8" }} />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ bgcolor: "white", border: "1px solid #e0e0e0" }}>
-                <CardContent>
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <Box>
-                      <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-                        Canceladas
-                      </Typography>
-                      <Typography variant="h4" sx={{ fontWeight: 700, color: "#f44336" }}>
-                        {canceledTasks}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: "#f44336" }}>
-                        Não realizadas
-                      </Typography>
-                    </Box>
-                    <Cancel sx={{ fontSize: 40, color: "#ffebee" }} />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ bgcolor: "white", border: "1px solid #e0e0e0" }}>
-                <CardContent>
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <Box>
-                      <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-                        Em Andamento
-                      </Typography>
-                      <Typography variant="h4" sx={{ fontWeight: 700, color: "#ff9800" }}>
-                        {inProgressTasks}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: "#ff9800" }}>
-                        Ativas
-                      </Typography>
-                    </Box>
-                    <PlayArrow sx={{ fontSize: 40, color: "#fff3e0" }} />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-
-          {/* Filtros */}
-          <Card sx={{ mb: 3, bgcolor: "white", border: "1px solid #e0e0e0" }}>
-            <CardContent>
-              <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} md={8}>
-                  <TextField
-                    fullWidth
-                    variant="outlined"
-                    placeholder="Buscar por nome, unidade ou técnico..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Search sx={{ color: "#999", fontSize: 20 }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 2,
-                        fontSize: "0.95rem",
-                      },
-                    }}
-                  />
+          {loading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "400px" }}>
+              <CircularProgress size={60} />
+            </Box>
+          ) : (
+            <>
+              {/* ✅ Estatísticas - APENAS Total e Concluídas */}
+              <Grid container spacing={3} sx={{ mb: 4 }}>
+                <Grid item xs={12} md={6}>
+                  <Card sx={{ bgcolor: "white", border: "1px solid #e0e0e0" }}>
+                    <CardContent>
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <Box>
+                          <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
+                            Total de Tarefas
+                          </Typography>
+                          <Typography variant="h4" sx={{ fontWeight: 700, color: "#333" }}>
+                            {totalTasks}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{ color: "#4caf50", display: "flex", alignItems: "center" }}
+                          >
+                            <TrendingUp sx={{ fontSize: 16, mr: 0.5 }} />
+                            Histórico completo
+                          </Typography>
+                        </Box>
+                        <Assignment sx={{ fontSize: 48, color: "#e0e0e0" }} />
+                      </Box>
+                    </CardContent>
+                  </Card>
                 </Grid>
-                <Grid item xs={12} md={4}>
-                  <FormControl fullWidth>
-                    <Select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      displayEmpty
-                      sx={{ borderRadius: 2, fontSize: "0.95rem" }}
-                    >
-                      <MenuItem value="all">Todos os status</MenuItem>
-                      <MenuItem value="Concluído">Concluído</MenuItem>
-                      <MenuItem value="Cancelado">Cancelado</MenuItem>
-                      <MenuItem value="Em andamento">Em andamento</MenuItem>
-                    </Select>
-                  </FormControl>
+
+                <Grid item xs={12} md={6}>
+                  <Card sx={{ bgcolor: "white", border: "1px solid #e0e0e0" }}>
+                    <CardContent>
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <Box>
+                          <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
+                            Tarefas Concluídas
+                          </Typography>
+                          <Typography variant="h4" sx={{ fontWeight: 700, color: "#4caf50" }}>
+                            {completedTasks}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: "#4caf50" }}>
+                            {totalTasks > 0 ? `${((completedTasks / totalTasks) * 100).toFixed(1)}% do total` : "0%"}
+                          </Typography>
+                        </Box>
+                        <CheckCircle sx={{ fontSize: 48, color: "#e8f5e8" }} />
+                      </Box>
+                    </CardContent>
+                  </Card>
                 </Grid>
               </Grid>
-            </CardContent>
-          </Card>
 
-          {/* Lista de Tarefas */}
-          <Box>
-            <Typography variant="h6" sx={{ mb: 3, color: "#333", fontWeight: 600 }}>
-              Tarefas ({filteredTasks.length})
-            </Typography>
-
-            {paginatedTasks.length === 0 ? (
-              <Paper sx={{ p: 6, textAlign: "center", bgcolor: "white" }}>
-                <History sx={{ fontSize: 64, color: "#e0e0e0", mb: 2 }} />
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  Nenhuma tarefa encontrada
-                </Typography>
-                <Button
-                  variant="outlined"
-                  onClick={() => {
-                    setSearchTerm("")
-                    setStatusFilter("all")
-                  }}
-                >
-                  Limpar Filtros
-                </Button>
-              </Paper>
-            ) : (
-              <>
-                <Grid container spacing={3}>
-                  {paginatedTasks.map((task) => (
-                    <Grid item xs={12} sm={6} lg={4} key={task.id}>
-                      <Card
+              {/* Filtros */}
+              <Card sx={{ mb: 3, bgcolor: "white", border: "1px solid #e0e0e0" }}>
+                <CardContent>
+                  <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} md={8}>
+                      <TextField
+                        fullWidth
+                        variant="outlined"
+                        placeholder="Buscar por descrição, unidade, técnico ou número do chamado..."
+                        value={searchTerm}
+                        onChange={(e) => {
+                          setSearchTerm(e.target.value)
+                          setCurrentPage(1) // Reset para primeira página ao buscar
+                        }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Search sx={{ color: "#999", fontSize: 20 }} />
+                            </InputAdornment>
+                          ),
+                        }}
                         sx={{
-                          height: "100%",
-                          display: "flex",
-                          flexDirection: "column",
-                          bgcolor: "white",
-                          border: "1px solid #e0e0e0",
-                          borderRadius: 2,
-                          transition: "all 0.2s ease",
-                          "&:hover": {
-                            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                            transform: "translateY(-2px)",
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 2,
+                            fontSize: "0.95rem",
                           },
                         }}
-                      >
-                        <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                          {/* Header com status e prioridade */}
-                          <Box
-                            sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}
-                          >
-                            <Chip
-                              label={task.status}
-                              sx={{
-                                bgcolor: getStatusBgColor(task.status),
-                                color: getStatusColor(task.status),
-                                fontWeight: 600,
-                                fontSize: "0.75rem",
-                                height: 28,
-                                borderRadius: 2,
-                              }}
-                            />
-                            <Chip
-                              label={task.prioridade.toUpperCase()}
-                              size="small"
-                              sx={{
-                                bgcolor: getPriorityColor(task.prioridade),
-                                color: "white",
-                                fontWeight: 600,
-                                fontSize: "0.7rem",
-                              }}
-                            />
-                          </Box>
-
-                          {/* Título */}
-                          <Typography
-                            variant="h6"
-                            component="h3"
-                            sx={{
-                              fontWeight: 600,
-                              color: "#333",
-                              mb: 2,
-                              lineHeight: 1.3,
-                              fontSize: "1.1rem",
-                            }}
-                          >
-                            {task.nome}
-                          </Typography>
-
-                          {/* Descrição */}
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: "#666",
-                              fontSize: "0.9rem",
-                              lineHeight: 1.5,
-                              mb: 2,
-                              display: "-webkit-box",
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: "vertical",
-                              overflow: "hidden",
-                            }}
-                          >
-                            {task.descricao}
-                          </Typography>
-
-                          {/* Unidade */}
-                          <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-                            <strong>Unidade:</strong> {task.unidade}
-                          </Typography>
-
-                          {/* Técnico */}
-                          <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                            <Avatar sx={{ width: 24, height: 24, bgcolor: "#2196f3", mr: 1, fontSize: "0.75rem" }}>
-                              {task.tecnico.charAt(0)}
-                            </Avatar>
-                            <Typography variant="caption" sx={{ color: "#666" }}>
-                              {task.tecnico}
-                            </Typography>
-                          </Box>
-
-                          {/* Datas */}
-                          <Box sx={{ mt: "auto" }}>
-                            <Typography variant="caption" sx={{ color: "#999", display: "block" }}>
-                              Início: {new Date(task.dataInicio).toLocaleDateString("pt-BR")}
-                            </Typography>
-                            {task.dataFim && (
-                              <Typography variant="caption" sx={{ color: "#999", display: "block" }}>
-                                Fim: {new Date(task.dataFim).toLocaleDateString("pt-BR")}
-                              </Typography>
-                            )}
-                          </Box>
-                        </CardContent>
-                      </Card>
+                      />
                     </Grid>
-                  ))}
-                </Grid>
+                    <Grid item xs={12} md={4}>
+                      <FormControl fullWidth>
+                        <Select
+                          value={statusFilter}
+                          onChange={(e) => {
+                            setStatusFilter(e.target.value)
+                            setCurrentPage(1) // Reset para primeira página ao filtrar
+                          }}
+                          displayEmpty
+                          sx={{ borderRadius: 2, fontSize: "0.95rem" }}
+                        >
+                          <MenuItem value="all">Todos os status</MenuItem>
+                          <MenuItem value="Concluído">Concluído</MenuItem>
+                          <MenuItem value="Cancelado">Cancelado</MenuItem>
+                          <MenuItem value="Em andamento">Em andamento</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
 
-                {/* Paginação */}
-                {totalPages > 1 && (
-                  <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-                    <Pagination
-                      count={totalPages}
-                      page={currentPage}
-                      onChange={(_, page) => setCurrentPage(page)}
-                      color="primary"
-                      size="large"
-                    />
-                  </Box>
+              {/* Lista de Tarefas */}
+              <Box>
+                <Typography variant="h6" sx={{ mb: 3, color: "#333", fontWeight: 600 }}>
+                  Tarefas Finalizadas ({filteredTasks.length})
+                </Typography>
+
+                {paginatedTasks.length === 0 ? (
+                  <Paper sx={{ p: 6, textAlign: "center", bgcolor: "white" }}>
+                    <History sx={{ fontSize: 64, color: "#e0e0e0", mb: 2 }} />
+                    <Typography variant="h6" color="text.secondary" gutterBottom>
+                      Nenhuma tarefa encontrada
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      {searchTerm || statusFilter !== "all"
+                        ? "Tente ajustar os filtros de busca"
+                        : "Não há tarefas no histórico"}
+                    </Typography>
+                    <Button variant="outlined" onClick={loadHistorico} startIcon={<Refresh />}>
+                      Recarregar
+                    </Button>
+                  </Paper>
+                ) : (
+                  <>
+                    <Grid container spacing={3}>
+                      {paginatedTasks.map((task) => (
+                        <Grid item xs={12} lg={6} key={`task-${task.id}`}>
+                          <Card
+                            sx={{
+                              height: "100%",
+                              bgcolor: "white",
+                              border: "1px solid #e0e0e0",
+                              borderRadius: 2,
+                              transition: "all 0.2s ease",
+                              "&:hover": {
+                                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                                transform: "translateY(-2px)",
+                              },
+                            }}
+                          >
+                            <CardContent sx={{ p: 3 }}>
+                              {/* Header com status e chamado */}
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "flex-start",
+                                  mb: 2,
+                                }}
+                              >
+                                <Chip
+                                  label={task.status}
+                                  sx={{
+                                    bgcolor: getStatusBgColor(task.status),
+                                    color: getStatusColor(task.status),
+                                    fontWeight: 600,
+                                    fontSize: "0.75rem",
+                                    height: 28,
+                                    borderRadius: 2,
+                                  }}
+                                />
+                                <Chip
+                                  label={`#${task.numChamado}`}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: "#f5f5f5",
+                                    color: "#666",
+                                    fontWeight: 600,
+                                  }}
+                                />
+                              </Box>
+
+                              {/* Descrição */}
+                              <Typography
+                                variant="h6"
+                                sx={{
+                                  fontWeight: 600,
+                                  color: "#333",
+                                  mb: 2,
+                                  lineHeight: 1.3,
+                                  fontSize: "1rem",
+                                }}
+                              >
+                                {task.descricao}
+                              </Typography>
+
+                              {/* Informações principais */}
+                              <Box sx={{ mb: 2 }}>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                                  <Business sx={{ fontSize: 16, color: "#666" }} />
+                                  <Typography variant="body2" sx={{ color: "#666" }}>
+                                    {task.unidade.nome_da_unidade}
+                                  </Typography>
+                                </Box>
+
+                                {task.nomeDoTecnico.nome && (
+                                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                                    <Person sx={{ fontSize: 16, color: "#666" }} />
+                                    <Typography variant="body2" sx={{ color: "#666" }}>
+                                      {task.nomeDoTecnico.nome}
+                                    </Typography>
+                                  </Box>
+                                )}
+
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                                  <LocationOn sx={{ fontSize: 16, color: "#666" }} />
+                                  <Typography variant="body2" sx={{ color: "#666" }}>
+                                    Lat: {task.latitude.toFixed(5)}, Long: {task.longitude.toFixed(5)}
+                                  </Typography>
+                                </Box>
+
+                                {(task.fotoTotemEntrada || task.fotoTotemSaida) && (
+                                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                    <ImageIcon sx={{ fontSize: 16, color: "#666" }} />
+                                    <Typography variant="body2" sx={{ color: "#666" }}>
+                                      {task.fotoTotemEntrada && task.fotoTotemSaida
+                                        ? "2 fotos anexadas"
+                                        : "1 foto anexada"}
+                                    </Typography>
+                                  </Box>
+                                )}
+                              </Box>
+
+                              {/* Diagnóstico e Solução */}
+                              {(task.diagnostico || task.solucao) && (
+                                <Box sx={{ mb: 2, p: 2, bgcolor: "#f8f9fa", borderRadius: 1 }}>
+                                  {task.diagnostico && (
+                                    <Typography variant="caption" sx={{ display: "block", mb: 1, color: "#666" }}>
+                                      <strong>Diagnóstico:</strong> {task.diagnostico}
+                                    </Typography>
+                                  )}
+                                  {task.solucao && (
+                                    <Typography variant="caption" sx={{ display: "block", color: "#666" }}>
+                                      <strong>Solução:</strong> {task.solucao}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              )}
+
+                              {/* Datas */}
+                              <Divider sx={{ my: 2 }} />
+                              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <Box>
+                                  <Typography
+                                    variant="caption"
+                                    sx={{ color: "#999", display: "flex", alignItems: "center" }}
+                                  >
+                                    <CalendarToday sx={{ fontSize: 12, mr: 0.5 }} />
+                                    Criada
+                                  </Typography>
+                                  <Typography
+                                    variant="caption"
+                                    sx={{ color: "#666", fontWeight: 500, display: "block" }}
+                                  >
+                                    {formatDate(task.dataTarefa)}
+                                  </Typography>
+                                </Box>
+                                {task.dataTarefaFinalizada && (
+                                  <Box sx={{ textAlign: "right" }}>
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        color: "#999",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "flex-end",
+                                      }}
+                                    >
+                                      <CheckCircle sx={{ fontSize: 12, mr: 0.5 }} />
+                                      Finalizada
+                                    </Typography>
+                                    <Typography
+                                      variant="caption"
+                                      sx={{ color: "#666", fontWeight: 500, display: "block" }}
+                                    >
+                                      {formatDate(task.dataTarefaFinalizada)}
+                                    </Typography>
+                                  </Box>
+                                )}
+                              </Box>
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                      ))}
+                    </Grid>
+
+                    {/* Paginação */}
+                    {totalPages > 1 && (
+                      <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+                        <Pagination
+                          count={totalPages}
+                          page={currentPage}
+                          onChange={(_, page) => setCurrentPage(page)}
+                          color="primary"
+                          size="large"
+                          showFirstButton
+                          showLastButton
+                        />
+                      </Box>
+                    )}
+                  </>
                 )}
-              </>
-            )}
-          </Box>
+              </Box>
+            </>
+          )}
         </Box>
       </Box>
     </Box>

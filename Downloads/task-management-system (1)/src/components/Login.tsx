@@ -133,7 +133,7 @@ export default function Login() {
       }
 
       // Salvar tokens no localStorage
-      localStorage.setItem("access_token", data.access)
+      localStorage.setItem("token", data.access)
       localStorage.setItem("refresh_token", data.refresh)
       if (data.user) {
         localStorage.setItem("user_data", JSON.stringify(data.user))
@@ -144,11 +144,11 @@ export default function Login() {
       // Configurar tokens no authService
       authService.setTokens(data.access, data.refresh, data.user)
 
-      console.log("🚀 Redirecionando para home...")
+      console.log("🚀 Redirecionando para nova-tarefa...")
 
       // Pequeno delay para garantir que tudo foi salvo
       setTimeout(() => {
-        navigate("/", { replace: true })
+        navigate("/nova-tarefa", { replace: true })
       }, 100)
     } catch (err) {
       console.error("❌ Erro no login:", err)
