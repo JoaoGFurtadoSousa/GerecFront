@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
   Box,
   Card,
@@ -15,18 +15,17 @@ import {
   CircularProgress,
   Link,
 } from "@mui/material"
-import { Email, Lock, Visibility, VisibilityOff, Engineering } from "@mui/icons-material"
+import { Person, Email, Lock, Visibility, VisibilityOff, Engineering, CheckCircle } from "@mui/icons-material"
 import { useNavigate } from "react-router-dom"
-import { authService } from "../services/authService"
 
-interface LoginFormData {
+interface CadastroFormData {
+  nome: string
   email: string
   password: string
 }
 
-interface LoginResponse {
-  access: string
-  refresh: string
+interface CadastroResponse {
+  message?: string
   user?: {
     id: number
     nome: string
@@ -34,75 +33,96 @@ interface LoginResponse {
   }
 }
 
-export default function Login() {
+export default function Cadastro() {
   const navigate = useNavigate()
-  const [formData, setFormData] = useState<LoginFormData>({
+  const [formData, setFormData] = useState<CadastroFormData>({
+    nome: "",
     email: "",
     password: "",
   })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<Partial<CadastroFormData>>({})
 
-  useEffect(() => {
-    console.log("🔍 Login: Verificando se já está autenticado...")
-
-    // Registrar callback de navegação
-    authService.setNavigationCallback((path: string) => {
-      console.log("🔄 Login: Navegando para:", path)
-      navigate(path, { replace: true })
-    })
-
-    // Verificar se já está autenticado
-    const accessToken = localStorage.getItem("access_token")
-    const refreshToken = localStorage.getItem("refresh_token")
-    const userData = localStorage.getItem("user_data")
-
-    if (accessToken && refreshToken && userData) {
-      console.log("✅ Já autenticado, redirecionando para home...")
-      navigate("/", { replace: true })
-    }
-  }, [navigate])
-
-  const handleInputChange = (field: keyof LoginFormData, value: string) => {
+  const handleInputChange = (field: keyof CadastroFormData, value: string) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }))
+
     if (error) setError(null)
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        [field]: "",
+      }))
+    }
+
+    validateField(field, value)
+  }
+
+  const validateField = (field: keyof CadastroFormData, value: string) => {
+    let fieldError = ""
+
+    switch (field) {
+      case "nome":
+        if (!value.trim()) {
+          fieldError = "Nome é obrigatório"
+        } else if (value.trim().length < 2) {
+          fieldError = "Nome deve ter pelo menos 2 caracteres"
+        }
+        break
+
+      case "email":
+        if (!value.trim()) {
+          fieldError = "Email é obrigatório"
+        } else if (!value.includes("@") || !value.includes(".")) {
+          fieldError = "Email deve ter um formato válido"
+        }
+        break
+
+      case "password":
+        if (!value.trim()) {
+          fieldError = "Senha é obrigatória"
+        } else if (value.length < 6) {
+          fieldError = "Senha deve ter pelo menos 6 caracteres"
+        }
+        break
+    }
+
+    setFieldErrors((prev) => ({
+      ...prev,
+      [field]: fieldError,
+    }))
+
+    return fieldError === ""
   }
 
   const validateForm = (): boolean => {
-    if (!formData.email.trim()) {
-      setError("Email é obrigatório")
-      return false
-    }
+    const nomeValid = validateField("nome", formData.nome)
+    const emailValid = validateField("email", formData.email)
+    const passwordValid = validateField("password", formData.password)
 
-    if (!formData.email.includes("@")) {
-      setError("Email deve ter um formato válido")
-      return false
-    }
-
-    if (!formData.password.trim()) {
-      setError("Senha é obrigatória")
-      return false
-    }
-
-    return true
+    return nomeValid && emailValid && passwordValid
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!validateForm()) return
+    if (!validateForm()) {
+      setError("Por favor, corrija os erros nos campos")
+      return
+    }
 
     setLoading(true)
     setError(null)
 
     try {
-      console.log("🔐 Fazendo login com:", formData.email)
+      console.log("👤 Fazendo cadastro com:", formData.nome, formData.email)
 
-      const response = await fetch("http://192.168.0.103:8000/api/v1/login/", {
+      const response = await fetch("http://.26:8000/api/v1/cadastrar/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -114,49 +134,84 @@ export default function Login() {
       console.log("📡 Status da resposta:", response.status)
 
       if (!response.ok) {
-        let errorMessage = "Erro ao fazer login"
+        let errorMessage = "Erro ao fazer cadastro"
+
         try {
           const errorData = await response.json()
           console.log("❌ Erro do servidor:", errorData)
-          errorMessage = errorData.message || errorData.detail || "Email ou senha incorretos"
+
+          if (response.status === 400 && errorData.message?.includes("email")) {
+            errorMessage = "Este email já está cadastrado"
+          } else {
+            errorMessage = errorData.message || errorData.detail || "Erro ao criar conta"
+          }
         } catch (e) {
           console.log("⚠️ Não foi possível parsear erro")
         }
+
         throw new Error(errorMessage)
       }
 
-      const data: LoginResponse = await response.json()
-      console.log("✅ Login bem-sucedido:", data)
+      const data: CadastroResponse = await response.json()
+      console.log("✅ Cadastro realizado com sucesso:", data)
 
-      if (!data.access || !data.refresh) {
-        throw new Error("Tokens não recebidos do servidor")
-      }
+      setSuccess(true)
 
-      // Salvar tokens no localStorage
-      localStorage.setItem("token", data.access)
-      localStorage.setItem("refresh_token", data.refresh)
-      if (data.user) {
-        localStorage.setItem("user_data", JSON.stringify(data.user))
-      }
+      setFormData({
+        nome: "",
+        email: "",
+        password: "",
+      })
 
-      console.log("💾 Tokens salvos no localStorage")
-
-      // Configurar tokens no authService
-      authService.setTokens(data.access, data.refresh, data.user)
-
-      console.log("🚀 Redirecionando para nova-tarefa...")
-
-      // Pequeno delay para garantir que tudo foi salvo
       setTimeout(() => {
-        navigate("/nova-tarefa", { replace: true })
-      }, 100)
+        navigate("/login")
+      }, 2000)
     } catch (err) {
-      console.error("❌ Erro no login:", err)
-      const errorMessage = err instanceof Error ? err.message : "Erro inesperado ao fazer login"
+      console.error("❌ Erro no cadastro:", err)
+      const errorMessage = err instanceof Error ? err.message : "Erro inesperado ao criar conta"
       setError(errorMessage)
     } finally {
       setLoading(false)
     }
+  }
+
+  if (success) {
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          bgcolor: "white",
+          p: 2,
+        }}
+      >
+        <Card
+          sx={{
+            maxWidth: 400,
+            width: "100%",
+            bgcolor: "#1a1a2e",
+            border: "1px solid #333",
+            borderRadius: 3,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+            textAlign: "center",
+          }}
+        >
+          <CardContent sx={{ p: 6 }}>
+            <CheckCircle sx={{ fontSize: 80, color: "#4caf50", mb: 3 }} />
+            <Typography variant="h4" sx={{ fontWeight: 700, mb: 2, color: "white" }}>
+              Cadastro realizado!
+            </Typography>
+            <Typography variant="body1" sx={{ color: "rgba(255,255,255,0.7)", mb: 3 }}>
+              Sua conta foi criada com sucesso. Você será redirecionado para a tela de login.
+            </Typography>
+            <CircularProgress sx={{ color: "#4caf50" }} />
+          </CardContent>
+        </Card>
+      </Box>
+    )
   }
 
   return (
@@ -207,7 +262,7 @@ export default function Login() {
               fontSize: "1.75rem",
             }}
           >
-            Login
+            Cadastro
           </Typography>
           <Typography
             variant="body2"
@@ -218,7 +273,7 @@ export default function Login() {
               fontSize: "0.9rem",
             }}
           >
-            Entre com suas credenciais para acessar o sistema
+            Crie sua conta para acessar o sistema
           </Typography>
 
           {error && (
@@ -248,6 +303,71 @@ export default function Login() {
                 fontSize: "0.9rem",
               }}
             >
+              Nome
+            </Typography>
+            <TextField
+              fullWidth
+              type="text"
+              placeholder="Seu nome completo"
+              value={formData.nome}
+              onChange={(e) => handleInputChange("nome", e.target.value)}
+              disabled={loading}
+              error={!!fieldErrors.nome}
+              helperText={fieldErrors.nome}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Person sx={{ color: "rgba(255,255,255,0.5)", fontSize: 20 }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                mb: 3,
+                "& .MuiOutlinedInput-root": {
+                  bgcolor: "#2a2a3e",
+                  border: "1px solid #444",
+                  borderRadius: 2,
+                  color: "white",
+                  height: "48px",
+                  "& fieldset": {
+                    border: "none",
+                  },
+                  "&:hover": {
+                    bgcolor: "#2a2a3e",
+                    border: "1px solid #555",
+                  },
+                  "&.Mui-focused": {
+                    bgcolor: "#2a2a3e",
+                    border: "1px solid #4285f4",
+                  },
+                  "&.Mui-error": {
+                    border: "1px solid #ff6b6b",
+                  },
+                },
+                "& .MuiInputBase-input": {
+                  color: "white",
+                  fontSize: "0.9rem",
+                  "&::placeholder": {
+                    color: "rgba(255,255,255,0.5)",
+                    opacity: 1,
+                  },
+                },
+                "& .MuiFormHelperText-root": {
+                  color: "#ff6b6b",
+                  fontSize: "0.75rem",
+                },
+              }}
+            />
+
+            <Typography
+              variant="body2"
+              sx={{
+                color: "rgba(255,255,255,0.9)",
+                mb: 1,
+                fontWeight: 500,
+                fontSize: "0.9rem",
+              }}
+            >
               Email
             </Typography>
             <TextField
@@ -257,6 +377,8 @@ export default function Login() {
               value={formData.email}
               onChange={(e) => handleInputChange("email", e.target.value)}
               disabled={loading}
+              error={!!fieldErrors.email}
+              helperText={fieldErrors.email}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -283,6 +405,9 @@ export default function Login() {
                     bgcolor: "#2a2a3e",
                     border: "1px solid #4285f4",
                   },
+                  "&.Mui-error": {
+                    border: "1px solid #ff6b6b",
+                  },
                 },
                 "& .MuiInputBase-input": {
                   color: "white",
@@ -291,6 +416,10 @@ export default function Login() {
                     color: "rgba(255,255,255,0.5)",
                     opacity: 1,
                   },
+                },
+                "& .MuiFormHelperText-root": {
+                  color: "#ff6b6b",
+                  fontSize: "0.75rem",
                 },
               }}
             />
@@ -309,10 +438,12 @@ export default function Login() {
             <TextField
               fullWidth
               type={showPassword ? "text" : "password"}
-              placeholder="Digite sua senha"
+              placeholder="Mínimo 6 caracteres"
               value={formData.password}
               onChange={(e) => handleInputChange("password", e.target.value)}
               disabled={loading}
+              error={!!fieldErrors.password}
+              helperText={fieldErrors.password}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -337,6 +468,7 @@ export default function Login() {
                 "& .MuiOutlinedInput-root": {
                   bgcolor: "#2a2a3e",
                   border: "1px solid #444",
+                  borderRadius: 2,
                   color: "white",
                   height: "48px",
                   "& fieldset": {
@@ -350,6 +482,9 @@ export default function Login() {
                     bgcolor: "#2a2a3e",
                     border: "1px solid #4285f4",
                   },
+                  "&.Mui-error": {
+                    border: "1px solid #ff6b6b",
+                  },
                 },
                 "& .MuiInputBase-input": {
                   color: "white",
@@ -358,6 +493,10 @@ export default function Login() {
                     color: "rgba(255,255,255,0.5)",
                     opacity: 1,
                   },
+                },
+                "& .MuiFormHelperText-root": {
+                  color: "#ff6b6b",
+                  fontSize: "0.75rem",
                 },
               }}
             />
@@ -387,17 +526,17 @@ export default function Login() {
                 },
               }}
             >
-              {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Entrar"}
+              {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Cadastrar"}
             </Button>
           </Box>
 
           <Box sx={{ textAlign: "center", mt: 3 }}>
             <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.7)", fontSize: "0.9rem" }}>
-              Não tem uma conta?{" "}
+              Já tem uma conta?{" "}
               <Link
                 component="button"
                 type="button"
-                onClick={() => navigate("/cadastro")}
+                onClick={() => navigate("/login")}
                 sx={{
                   color: "#4285f4",
                   textDecoration: "none",
@@ -408,7 +547,7 @@ export default function Login() {
                   },
                 }}
               >
-                Cadastre-se
+                Faça login
               </Link>
             </Typography>
           </Box>

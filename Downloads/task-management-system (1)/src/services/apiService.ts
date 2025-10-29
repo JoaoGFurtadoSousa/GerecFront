@@ -1,6 +1,6 @@
 import { authService } from "./authService"
 
-const API_BASE_URL = "http://192.168.15.14:8000/api/v1"
+const API_BASE_URL = "http://192.168.0.103:8000/api/v1"
 
 export interface Task {
   id: number
@@ -47,7 +47,12 @@ export interface EquipmentChecklistItem {
   danificado_a_saida: boolean
 }
 
-// Interface para dados adicionais
+export interface Unit {
+  id: number
+  nome_da_unidade: string
+  status: boolean
+}
+
 export interface AdditionalDataForm {
   diagnostico: string
   solucao: string
@@ -58,7 +63,6 @@ export interface AdditionalDataForm {
   longitude: number
 }
 
-// Mapeamento de status: Frontend <-> Backend
 const STATUS_TO_NUMBER = {
   "Para iniciar": "1",
   "Em andamento": "2",
@@ -91,9 +95,7 @@ const handleFetchError = async (response: Response) => {
   }
 }
 
-// Função para normalizar os dados da tarefa
 const normalizeTask = (task: any): Task => {
-  // Converter status numérico para string
   let statusString: "Para iniciar" | "Em andamento" | "Concluído" = "Para iniciar"
   if (typeof task.status === "string" && NUMBER_TO_STATUS[task.status as keyof typeof NUMBER_TO_STATUS]) {
     statusString = NUMBER_TO_STATUS[task.status as keyof typeof NUMBER_TO_STATUS]
@@ -166,7 +168,6 @@ class ApiService {
         return []
       }
 
-      // Normalizar as tarefas do histórico
       const normalizedHistory = data.map(normalizeTask)
 
       console.log("✅ Histórico normalizado:", {
@@ -281,8 +282,6 @@ class ApiService {
     console.log("📤 INÍCIO DO ENVIO - updateTaskWithAdditionalData")
     console.log("=".repeat(80))
 
-    // ✅ PASSO 1: Buscar a tarefa atual para preservar a unidade
-    console.log("🔍 PASSO 1: Buscando tarefa atual para preservar unidade...")
     const currentTask = await this.getTaskById(taskId)
     console.log("📦 Tarefa atual recuperada:", {
       id: currentTask.id,
@@ -291,7 +290,6 @@ class ApiService {
       status_atual: currentTask.status,
     })
 
-    // ✅ PASSO 2: Validar e preparar os dados recebidos
     console.log("🔍 PASSO 2: Validando dados recebidos do formulário...")
     console.log("📋 Dados BRUTOS recebidos:", {
       diagnostico: data.diagnostico,
@@ -308,11 +306,9 @@ class ApiService {
       fotoTotemSaida: data.fotoTotemSaida ? `File: ${data.fotoTotemSaida.name}` : "null",
     })
 
-    // ✅ PASSO 3: Criar FormData com TODOS os campos
     console.log("📦 PASSO 3: Criando FormData...")
     const formData = new FormData()
 
-    // ✅ Campos de texto - garantir que não sejam undefined
     const diagnostico = String(data.diagnostico || "").trim()
     const solucao = String(data.solucao || "").trim()
     const substituicao_de_pecas = String(data.substituicao_de_pecas || "").trim()
@@ -326,18 +322,15 @@ class ApiService {
       substituicao_de_pecas_processed: substituicao_de_pecas,
     })
 
-    // ✅ Adicionar TODOS os campos ao FormData (ORDEM IMPORTANTE)
     formData.append("diagnostico", diagnostico)
     formData.append("solucao", solucao)
     formData.append("substituicao_de_pecas", substituicao_de_pecas)
     formData.append("latitude", String(data.latitude))
     formData.append("longitude", String(data.longitude))
-    formData.append("status", "3") // 3 = Concluído
+    formData.append("status", "3")
 
-    // ✅ CRÍTICO: NÃO enviar o campo 'unidade' - deixar o backend manter o valor atual
     console.log("⚠️ IMPORTANTE: Campo 'unidade' NÃO será enviado para preservar o valor atual")
 
-    // ✅ Adicionar fotos se existirem
     if (data.fotoTotemEntrada) {
       formData.append("fotoTotemEntrada", data.fotoTotemEntrada, data.fotoTotemEntrada.name)
       console.log("📷 Foto de entrada adicionada:", {
@@ -356,7 +349,6 @@ class ApiService {
       })
     }
 
-    // ✅ PASSO 4: Verificar conteúdo completo do FormData
     console.log("🔍 PASSO 4: Verificando FormData completo antes do envio...")
     const formDataEntries: Array<[string, any]> = []
     formData.forEach((value, key) => {
@@ -370,7 +362,6 @@ class ApiService {
     console.log("📦 FormData COMPLETO que será enviado:")
     console.table(formDataEntries)
 
-    // ✅ Verificação adicional de campos críticos
     console.log("🔍 Verificação de campos críticos:")
     console.log("  ✓ diagnostico presente:", formData.has("diagnostico"))
     console.log("  ✓ diagnostico valor:", formData.get("diagnostico"))
@@ -380,7 +371,6 @@ class ApiService {
     console.log("  ✓ status valor:", formData.get("status"))
     console.log("  ✓ unidade presente (DEVE SER FALSE):", formData.has("unidade"))
 
-    // ✅ PASSO 5: Enviar para o backend
     console.log("🚀 PASSO 5: Enviando requisição PATCH para o backend...")
     console.log(`URL: ${API_BASE_URL}/tarefas/${taskId}/`)
 
@@ -390,7 +380,6 @@ class ApiService {
         body: formData,
         headers: {
           Accept: "application/json",
-          // ✅ NÃO definir Content-Type - deixar o browser configurar automaticamente com boundary
         },
       })
 
@@ -402,7 +391,6 @@ class ApiService {
 
       await handleFetchError(response)
 
-      // ✅ PASSO 6: Processar resposta do backend
       const updatedTask = await response.json()
       console.log("📦 PASSO 6: Resposta do backend processada:")
       console.log({
@@ -419,7 +407,6 @@ class ApiService {
         longitude: updatedTask.longitude,
       })
 
-      // ✅ Verificar se a unidade foi preservada
       if (updatedTask.unidade?.id !== currentTask.unidade.id) {
         console.error("❌ ERRO CRÍTICO: Unidade foi alterada incorretamente!")
         console.error({
@@ -430,7 +417,6 @@ class ApiService {
         console.log("✅ Unidade preservada corretamente!")
       }
 
-      // ✅ Verificar se o diagnóstico foi salvo
       if (!updatedTask.diagnostico || updatedTask.diagnostico.trim() === "") {
         console.error("❌ ERRO CRÍTICO: Campo diagnostico não foi salvo!")
         console.error({
@@ -464,6 +450,31 @@ class ApiService {
 
     await handleFetchError(response)
     console.log("✅ Dados salvos com sucesso")
+  }
+
+  async getUnits(): Promise<Unit[]> {
+    console.log("🌐 Buscando unidades...")
+
+    try {
+      const response = await authService.authenticatedFetch(`${API_BASE_URL}/unidades/`, {
+        method: "GET",
+      })
+
+      await handleFetchError(response)
+
+      const data = await response.json()
+      console.log("📦 Unidades recebidas:", data.length)
+
+      if (!Array.isArray(data)) {
+        console.warn("⚠️ API não retornou um array")
+        return []
+      }
+
+      return data
+    } catch (error) {
+      console.error("❌ Erro ao buscar unidades:", error)
+      throw error
+    }
   }
 }
 

@@ -46,7 +46,7 @@ import {
 } from "@mui/icons-material"
 import { useNavigate, useLocation } from "react-router-dom"
 import { authService } from "../services/authService"
-import { apiService, type Unit, type Equipment } from "../services/apiService"
+import { apiService, type Unit, type UnitEquipment } from "../services/apiService"
 
 const DRAWER_WIDTH = 240
 
@@ -101,7 +101,7 @@ export default function Unidades() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null)
-  const [equipment, setEquipment] = useState<Equipment[]>([])
+  const [equipment, setEquipment] = useState<UnitEquipment[]>([])
   const [loadingEquipment, setLoadingEquipment] = useState(false)
   const [equipmentError, setEquipmentError] = useState<string | null>(null)
 
@@ -178,7 +178,7 @@ export default function Unidades() {
 
     try {
       console.log("🔍 Buscando equipamentos para unidade:", unit.id)
-      const equipmentData = await apiService.getEquipmentByUnitId(unit.id)
+      const equipmentData = await apiService.getEquipmentByUnit(unit.id)
       setEquipment(equipmentData)
       console.log("✅ Equipamentos carregados:", equipmentData)
     } catch (err) {
@@ -196,7 +196,7 @@ export default function Unidades() {
     setEquipmentError(null)
   }
 
-  const getEquipmentStatus = (eq: Equipment) => {
+  const getEquipmentStatus = (eq: UnitEquipment) => {
     if (eq.danificado_a_entrada || eq.danificado_a_saida) {
       return { label: "Danificado", color: "#ff9800", icon: <Warning sx={{ fontSize: 16 }} /> }
     }
