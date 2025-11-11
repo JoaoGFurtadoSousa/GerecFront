@@ -41,29 +41,15 @@ import {
 } from "@mui/icons-material"
 import { useNavigate, useLocation } from "react-router-dom"
 import { authService } from "../services/authService"
+import { apiService, type Technician, type Unit } from "../services/apiService"
 
 const DRAWER_WIDTH = 240
 
 interface NovaTaskForm {
-  numChamado: string
-  diagnostico: string
-  solucao: string
-  substituicao_de_pecas: string
-  latitude: string
-  longitude: string
+  descricao: string
   unidade: string
   tecnico: string
-}
-
-interface Unidade {
-  id: number
-  nome_da_unidade: string
-  status: boolean
-}
-
-interface Usuario {
-  id: number
-  username: string
+  numChamado: string
 }
 
 export default function NovaTask() {
@@ -73,20 +59,16 @@ export default function NovaTask() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
-
-  const [unidades, setUnidades] = useState<Unidade[]>([])
-  const [usuarios, setUsuarios] = useState<Usuario[]>([])
-  const [loadingData, setLoadingData] = useState(true)
+  const [technicians, setTechnicians] = useState<Technician[]>([])
+  const [units, setUnits] = useState<Unit[]>([])
+  const [loadingTechnicians, setLoadingTechnicians] = useState(true)
+  const [loadingUnits, setLoadingUnits] = useState(true)
 
   const [form, setForm] = useState<NovaTaskForm>({
-    numChamado: "",
-    diagnostico: "",
-    solucao: "",
-    substituicao_de_pecas: "",
-    latitude: "",
-    longitude: "",
+    descricao: "",
     unidade: "",
     tecnico: "",
+    numChamado: "",
   })
 
   const [errors, setErrors] = useState<Partial<NovaTaskForm>>({})
@@ -99,61 +81,36 @@ export default function NovaTask() {
   const featuresEnabled = authService.shouldEnableFeatures()
 
   useEffect(() => {
-    const token = localStorage.getItem("token")
-    if (!token) {
-      console.log("🔒 Token não encontrado, redirecionando para login...")
-      navigate("/login", { replace: true })
-      return
-    }
-  }, [navigate])
-
-  useEffect(() => {
-    const loadData = async () => {
+    const fetchTechnicians = async () => {
       try {
-        setLoadingData(true)
-
-        const token = localStorage.getItem("token")
-        const headers = {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        }
-
-        const unidadesResponse = await fetch("http://192.168.0.103:8000/api/v1/unidades/", {
-          headers,
-        })
-
-        if (unidadesResponse.ok) {
-          const unidadesData = await unidadesResponse.json()
-          const unidadesArray = unidadesData.results || unidadesData
-          setUnidades(Array.isArray(unidadesArray) ? unidadesArray : [])
-        } else {
-          console.error("Erro ao carregar unidades:", unidadesResponse.status)
-          setUnidades([])
-        }
-
-        const usuariosResponse = await fetch("http://192.168.0.103:8000/api/v1/usuarios/", {
-          headers,
-        })
-
-        if (usuariosResponse.ok) {
-          const usuariosData = await usuariosResponse.json()
-          const usuariosArray = usuariosData.results || usuariosData
-          setUsuarios(Array.isArray(usuariosArray) ? usuariosArray : [])
-        } else {
-          console.error("Erro ao carregar usuários:", usuariosResponse.status)
-          setUsuarios([])
-        }
-      } catch (error) {
-        console.error("Erro ao carregar dados:", error)
-        setError("Erro ao carregar dados do sistema")
-        setUnidades([])
-        setUsuarios([])
+        setLoadingTechnicians(true)
+        const data = await apiService.getTechnicians()
+        setTechnicians(data)
+        console.log("[v0] Técnicos carregados:", data.length)
+      } catch (err) {
+        console.error("[v0] Erro ao carregar técnicos:", err)
+        setError("Erro ao carregar lista de técnicos. Tente recarregar a página.")
       } finally {
-        setLoadingData(false)
+        setLoadingTechnicians(false)
       }
     }
 
-    loadData()
+    const fetchUnits = async () => {
+      try {
+        setLoadingUnits(true)
+        const data = await apiService.getUnits()
+        setUnits(data)
+        console.log("[v0] Unidades carregadas:", data.length)
+      } catch (err) {
+        console.error("[v0] Erro ao carregar unidades:", err)
+        setError("Erro ao carregar lista de unidades. Tente recarregar a página.")
+      } finally {
+        setLoadingUnits(false)
+      }
+    }
+
+    fetchTechnicians()
+    fetchUnits()
   }, [])
 
   const handleInputChange = (field: keyof NovaTaskForm, value: string) => {
@@ -166,14 +123,10 @@ export default function NovaTask() {
   const validateForm = (): boolean => {
     const newErrors: Partial<NovaTaskForm> = {}
 
-    if (!form.numChamado.trim()) newErrors.numChamado = "Número do chamado é obrigatório"
-    if (!form.diagnostico.trim()) newErrors.diagnostico = "Diagnóstico é obrigatório"
-    if (!form.solucao.trim()) newErrors.solucao = "Solução é obrigatória"
-    if (!form.substituicao_de_pecas.trim()) newErrors.substituicao_de_pecas = "Substituição de peças é obrigatória"
-    if (!form.latitude.trim()) newErrors.latitude = "Latitude é obrigatória"
-    if (!form.longitude.trim()) newErrors.longitude = "Longitude é obrigatória"
+    if (!form.descricao.trim()) newErrors.descricao = "Descrição é obrigatória"
     if (!form.unidade) newErrors.unidade = "Unidade é obrigatória"
     if (!form.tecnico) newErrors.tecnico = "Técnico é obrigatório"
+    if (!form.numChamado.trim()) newErrors.numChamado = "Número do chamado é obrigatório"
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -186,50 +139,27 @@ export default function NovaTask() {
     setError("")
 
     try {
-      const token = localStorage.getItem("token")
-      if (!token) {
-        alert("Token não encontrado!")
-        return
-      }
-
-      const body = {
+      const taskData = {
+        nomeDoTecnico: Number.parseInt(form.tecnico),
+        unidade: Number.parseInt(form.unidade),
+        descricao: form.descricao,
         numChamado: form.numChamado,
-        nomeDoTecnico: Number.parseInt(form.tecnico), // ID do técnico
-        unidade: Number.parseInt(form.unidade), // ID da unidade
-        diagnostico: form.diagnostico,
-        solucao: form.solucao,
-        substituicao_de_pecas: form.substituicao_de_pecas,
-        latitude: form.latitude,
-        longitude: form.longitude,
+        status: "1",
       }
 
-      console.log("Enviando dados:", body)
+      console.log("[v0] Task data to send:", taskData)
+      await apiService.submitNovaTask(taskData)
 
-      const response = await fetch("http://192.168.0.103:8000/api/v1/tarefas/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(body),
-      })
+      console.log("✅ Nova tarefa criada com sucesso")
+      setSuccess(true)
 
-      const data = await response.json()
-      console.log("Resposta criar tarefa:", data)
-
-      if (response.ok) {
-        alert("Tarefa criada com sucesso!")
-        setSuccess(true)
-        setTimeout(() => {
-          navigate("/")
-        }, 2000)
-      } else {
-        console.error("Erro da API:", data)
-        alert("Erro ao criar tarefa")
-      }
+      setTimeout(() => {
+        navigate("/")
+      }, 2000)
     } catch (err) {
-      console.error("Erro no submit:", err)
-      alert("Erro ao criar tarefa. Tente novamente.")
+      const errorMessage = err instanceof Error ? err.message : "Erro ao criar tarefa. Tente novamente."
+      setError(errorMessage)
+      console.error("[v0] Erro ao enviar tarefa:", err)
     } finally {
       setLoading(false)
     }
@@ -247,26 +177,6 @@ export default function NovaTask() {
     return location.pathname === path
   }
 
-  const handleNavigateToDashboard = () => {
-    navigate("/")
-  }
-
-  const handleNavigateToNewTask = () => {
-    navigate("/nova-tarefa")
-  }
-
-  const handleNavigateToHistory = () => {
-    if (featuresEnabled) {
-      navigate("/historico")
-    }
-  }
-
-  const handleNavigateToUnits = () => {
-    if (featuresEnabled) {
-      navigate("/unidades")
-    }
-  }
-
   const drawer = (
     <Box sx={{ height: "100%", bgcolor: "#1a1a1a", color: "white" }}>
       <Box sx={{ p: 3, borderBottom: "1px solid #333" }}>
@@ -280,7 +190,7 @@ export default function NovaTask() {
 
       <List sx={{ px: 2, py: 1 }}>
         <ListItem
-          onClick={handleNavigateToDashboard}
+          onClick={() => navigate("/")}
           sx={{
             borderRadius: 2,
             mb: 1,
@@ -303,7 +213,7 @@ export default function NovaTask() {
         </ListItem>
 
         <ListItem
-          onClick={handleNavigateToNewTask}
+          onClick={() => navigate("/nova-tarefa")}
           sx={{
             borderRadius: 2,
             mb: 1,
@@ -327,7 +237,7 @@ export default function NovaTask() {
         </ListItem>
 
         <ListItem
-          onClick={handleNavigateToHistory}
+          onClick={() => navigate("/historico")}
           sx={{
             borderRadius: 2,
             mb: 1,
@@ -352,7 +262,7 @@ export default function NovaTask() {
         </ListItem>
 
         <ListItem
-          onClick={handleNavigateToUnits}
+          onClick={() => navigate("/unidades")}
           sx={{
             borderRadius: 2,
             mb: 1,
@@ -497,7 +407,7 @@ export default function NovaTask() {
                   Tarefa Criada com Sucesso!
                 </Typography>
                 <Typography variant="body1" sx={{ color: "#666" }}>
-                  A tarefa "{form.numChamado}" foi criada e será redirecionada para o dashboard.
+                  A tarefa foi criada e será redirecionada para o dashboard.
                 </Typography>
               </Box>
               <CircularProgress size={24} />
@@ -515,90 +425,28 @@ export default function NovaTask() {
                   </Alert>
                 )}
 
-                {loadingData && (
-                  <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
-                    <CircularProgress size={24} />
-                    <Typography sx={{ ml: 2 }}>Carregando dados...</Typography>
-                  </Box>
-                )}
-
                 <Grid container spacing={3}>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Número do Chamado"
-                      value={form.numChamado}
-                      onChange={(e) => handleInputChange("numChamado", e.target.value)}
-                      error={!!errors.numChamado}
-                      helperText={errors.numChamado}
-                      disabled={loading || loadingData}
-                    />
-                  </Grid>
-
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Diagnóstico"
-                      multiline
-                      rows={3}
-                      value={form.diagnostico}
-                      onChange={(e) => handleInputChange("diagnostico", e.target.value)}
-                      error={!!errors.diagnostico}
-                      helperText={errors.diagnostico}
-                      disabled={loading || loadingData}
-                    />
-                  </Grid>
-
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Solução"
-                      multiline
-                      rows={3}
-                      value={form.solucao}
-                      onChange={(e) => handleInputChange("solucao", e.target.value)}
-                      error={!!errors.solucao}
-                      helperText={errors.solucao}
-                      disabled={loading || loadingData}
-                    />
-                  </Grid>
-
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Substituição de Peças"
-                      value={form.substituicao_de_pecas}
-                      onChange={(e) => handleInputChange("substituicao_de_pecas", e.target.value)}
-                      error={!!errors.substituicao_de_pecas}
-                      helperText={errors.substituicao_de_pecas}
-                      disabled={loading || loadingData}
-                    />
-                  </Grid>
-
                   <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Latitude"
-                      value={form.latitude}
-                      onChange={(e) => handleInputChange("latitude", e.target.value)}
-                      error={!!errors.latitude}
-                      helperText={errors.latitude}
-                      disabled={loading || loadingData}
-                      placeholder="-22.9"
-                    />
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Longitude"
-                      value={form.longitude}
-                      onChange={(e) => handleInputChange("longitude", e.target.value)}
-                      error={!!errors.longitude}
-                      helperText={errors.longitude}
-                      disabled={loading || loadingData}
-                      placeholder="-43.2"
-                    />
+                    <FormControl fullWidth error={!!errors.tecnico}>
+                      <InputLabel>Técnico Responsável</InputLabel>
+                      <Select
+                        value={form.tecnico}
+                        label="Técnico Responsável"
+                        onChange={(e) => handleInputChange("tecnico", e.target.value)}
+                        disabled={loading || loadingTechnicians}
+                      >
+                        {technicians.map((tech) => (
+                          <MenuItem key={tech.id} value={String(tech.id)}>
+                            {tech.nome}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      {errors.tecnico && (
+                        <Typography variant="caption" sx={{ color: "#d32f2f", mt: 0.5, ml: 1.5 }}>
+                          {errors.tecnico}
+                        </Typography>
+                      )}
+                    </FormControl>
                   </Grid>
 
                   <Grid item xs={12} md={6}>
@@ -608,11 +456,11 @@ export default function NovaTask() {
                         value={form.unidade}
                         label="Unidade"
                         onChange={(e) => handleInputChange("unidade", e.target.value)}
-                        disabled={loading || loadingData}
+                        disabled={loading || loadingUnits}
                       >
-                        {unidades.map((unidade) => (
-                          <MenuItem key={unidade.id} value={unidade.id.toString()}>
-                            {unidade.nome_da_unidade}
+                        {units.map((unit) => (
+                          <MenuItem key={unit.id} value={String(unit.id)}>
+                            {unit.nome_da_unidade}
                           </MenuItem>
                         ))}
                       </Select>
@@ -624,27 +472,32 @@ export default function NovaTask() {
                     </FormControl>
                   </Grid>
 
-                  <Grid item xs={12} md={6}>
-                    <FormControl fullWidth error={!!errors.tecnico}>
-                      <InputLabel>Técnico Responsável</InputLabel>
-                      <Select
-                        value={form.tecnico}
-                        label="Técnico Responsável"
-                        onChange={(e) => handleInputChange("tecnico", e.target.value)}
-                        disabled={loading || loadingData}
-                      >
-                        {usuarios.map((usuario) => (
-                          <MenuItem key={usuario.id} value={usuario.id.toString()}>
-                            {usuario.username}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                      {errors.tecnico && (
-                        <Typography variant="caption" sx={{ color: "#d32f2f", mt: 0.5, ml: 1.5 }}>
-                          {errors.tecnico}
-                        </Typography>
-                      )}
-                    </FormControl>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Descrição"
+                      multiline
+                      rows={4}
+                      value={form.descricao}
+                      onChange={(e) => handleInputChange("descricao", e.target.value)}
+                      error={!!errors.descricao}
+                      helperText={errors.descricao}
+                      disabled={loading}
+                      placeholder="Ex: Ajuste na haste da cancela, Motoredutor danificado, etc."
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Número do Chamado"
+                      value={form.numChamado}
+                      onChange={(e) => handleInputChange("numChamado", e.target.value)}
+                      error={!!errors.numChamado}
+                      helperText={errors.numChamado}
+                      disabled={loading}
+                      placeholder="Ex: 35, 36, etc."
+                    />
                   </Grid>
                 </Grid>
 
@@ -652,7 +505,7 @@ export default function NovaTask() {
                   <Button
                     variant="outlined"
                     onClick={() => navigate("/")}
-                    disabled={loading || loadingData}
+                    disabled={loading}
                     sx={{ textTransform: "none" }}
                   >
                     Cancelar
@@ -661,7 +514,7 @@ export default function NovaTask() {
                     variant="contained"
                     startIcon={loading ? <CircularProgress size={20} /> : <Save />}
                     onClick={handleSubmit}
-                    disabled={loading || loadingData}
+                    disabled={loading || loadingTechnicians || loadingUnits}
                     sx={{ textTransform: "none", minWidth: 120 }}
                   >
                     {loading ? "Salvando..." : "Criar Tarefa"}

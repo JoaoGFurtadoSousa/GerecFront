@@ -102,7 +102,7 @@ export default function Login() {
     try {
       console.log("🔐 Fazendo login com:", formData.email)
 
-      const response = await fetch("http://192.168.0.103:8000/api/v1/login/", {
+      const response = await fetch("http://192.168.0.102:8000/api/v1/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -132,8 +132,7 @@ export default function Login() {
         throw new Error("Tokens não recebidos do servidor")
       }
 
-      // Salvar tokens no localStorage
-      localStorage.setItem("token", data.access)
+      localStorage.setItem("access_token", data.access)
       localStorage.setItem("refresh_token", data.refresh)
       if (data.user) {
         localStorage.setItem("user_data", JSON.stringify(data.user))
@@ -144,11 +143,11 @@ export default function Login() {
       // Configurar tokens no authService
       authService.setTokens(data.access, data.refresh, data.user)
 
-      console.log("🚀 Redirecionando para nova-tarefa...")
+      console.log("✅ Redirecionando para Dashboard (rota raiz /)...")
 
-      // Pequeno delay para garantir que tudo foi salvo
       setTimeout(() => {
-        navigate("/nova-tarefa", { replace: true })
+        navigate("/", { replace: true })
+        console.log("🚀 Usuário redirecionado para Dashboard")
       }, 100)
     } catch (err) {
       console.error("❌ Erro no login:", err)

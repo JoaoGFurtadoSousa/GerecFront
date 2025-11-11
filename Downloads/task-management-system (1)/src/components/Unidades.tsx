@@ -57,7 +57,7 @@ interface Unidade {
   telefone: string
   email: string
   responsavel: string
-  status: "Ativa" | "Manutenção" | "Inativa"
+  status: "Ativa" | "Manutenção" | "Desativada"
   totalTarefas: number
   tarefasConcluidas: number
   equipamentos: number
@@ -70,7 +70,7 @@ const getStatusColor = (status: Unidade["status"]) => {
       return "#4caf50"
     case "Manutenção":
       return "#ff9800"
-    case "Inativa":
+    case "Desativada":
       return "#f44336"
     default:
       return "#9e9e9e"
@@ -83,7 +83,7 @@ const getStatusBgColor = (status: Unidade["status"]) => {
       return "#e8f5e8"
     case "Manutenção":
       return "#fff3e0"
-    case "Inativa":
+    case "Desativada":
       return "#ffebee"
     default:
       return "#f5f5f5"
@@ -477,13 +477,13 @@ export default function Unidades() {
                   <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <Box>
                       <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-                        Ativas
+                        Unidades Ativadas
                       </Typography>
                       <Typography variant="h4" sx={{ fontWeight: 700, color: "#4caf50" }}>
                         {activeUnits}
                       </Typography>
                       <Typography variant="caption" sx={{ color: "#4caf50" }}>
-                        Operacionais
+                        Em funcionamento
                       </Typography>
                     </Box>
                     <CheckCircle sx={{ fontSize: 40, color: "#e8f5e8" }} />
@@ -498,13 +498,13 @@ export default function Unidades() {
                   <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <Box>
                       <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-                        Inativas
+                        Unidades Desativadas
                       </Typography>
                       <Typography variant="h4" sx={{ fontWeight: 700, color: "#f44336" }}>
                         {inactiveUnits}
                       </Typography>
                       <Typography variant="caption" sx={{ color: "#f44336" }}>
-                        Desativadas
+                        Para manutenção
                       </Typography>
                     </Box>
                     <ErrorIcon sx={{ fontSize: 40, color: "#ffebee" }} />
@@ -581,7 +581,7 @@ export default function Unidades() {
                         {/* Header com status */}
                         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
                           <Chip
-                            label={unit.status ? "Ativa" : "Inativa"}
+                            label={unit.status ? "Ativa" : "Desativada"}
                             sx={{
                               bgcolor: unit.status ? "#e8f5e8" : "#ffebee",
                               color: unit.status ? "#4caf50" : "#f44336",
@@ -660,7 +660,7 @@ export default function Unidades() {
                 </IconButton>
               </Box>
               <Chip
-                label={selectedUnit.status ? "Ativa" : "Inativa"}
+                label={selectedUnit.status ? "Ativa" : "Desativada"}
                 sx={{
                   bgcolor: selectedUnit.status ? "#e8f5e8" : "#ffebee",
                   color: selectedUnit.status ? "#4caf50" : "#f44336",

@@ -100,7 +100,7 @@ export default function TaskList() {
     try {
       console.log("🔄 Enviando requisição POST para salvar dados...")
 
-      const response = await authService.authenticatedFetch("http://192.168.0.103:8000/api/v1/salvar/", {
+      const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/salvar/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -662,7 +662,7 @@ export default function TaskList() {
                     }}
                   />
                   <Typography variant="body2" sx={{ color: "#666" }}>
-                    Auto-atualização: {autoRefreshEnabled ? "Ativa" : "Inativa"}
+                    Auto-atualização: {autoRefreshEnabled ? "Ativa" : "Desativada"}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "#999" }}>
                     Última atualização: {lastUpdateTime.toLocaleTimeString("pt-BR")}

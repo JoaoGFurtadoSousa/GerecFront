@@ -1,6 +1,6 @@
 import { authService } from "./authService"
 
-const API_BASE_URL = "http://192.168.0.103:8000/api/v1"
+const API_BASE_URL = "http://192.168.0.102:8000/api/v1"
 
 export interface Task {
   id: number
@@ -61,6 +61,11 @@ export interface AdditionalDataForm {
   fotoTotemSaida: File | null
   latitude: number
   longitude: number
+}
+
+export interface Technician {
+  id: number
+  nome: string
 }
 
 const STATUS_TO_NUMBER = {
@@ -475,6 +480,51 @@ class ApiService {
       console.error("❌ Erro ao buscar unidades:", error)
       throw error
     }
+  }
+
+  async getTechnicians(): Promise<Technician[]> {
+    console.log("🌐 Buscando técnicos...")
+
+    try {
+      const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/usuarios/nometecnicos/", {
+        method: "GET",
+      })
+
+      await handleFetchError(response)
+
+      const data = await response.json()
+      console.log("📦 Técnicos recebidos:", data.length)
+
+      if (!Array.isArray(data)) {
+        console.warn("⚠️ API não retornou um array")
+        return []
+      }
+
+      return data
+    } catch (error) {
+      console.error("❌ Erro ao buscar técnicos:", error)
+      throw error
+    }
+  }
+
+  async submitNovaTask(taskData: {
+    nomeDoTecnico: number
+    unidade: number
+    descricao: string
+    numChamado: string
+    dataTarefa: string
+    status: string
+  }): Promise<void> {
+    console.log("📤 Enviando nova tarefa para: http://192.168.0.102:8000/api/v1/enviar/")
+    console.log("📋 Dados enviados:", taskData)
+
+    const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/enviar/", {
+      method: "POST",
+      body: JSON.stringify(taskData),
+    })
+
+    await handleFetchError(response)
+    console.log("✅ Nova tarefa enviada com sucesso")
   }
 }
 

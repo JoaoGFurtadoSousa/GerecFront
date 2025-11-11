@@ -37,7 +37,7 @@ import { authService } from "../services/authService"
 import NewTaskModal from "./NewTaskModal"
 
 const DRAWER_WIDTH = 240
-const API_BASE_URL = "http://192.168.0.103:8000/api/v1"
+const API_BASE_URL = "http://192.168.0.102:8000/api/v1"
 
 export default function UnitsView() {
   const navigate = useNavigate()
@@ -428,7 +428,7 @@ export default function UnitsView() {
                         {/* Header com status */}
                         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
                           <Chip
-                            label={unit.status ? "✅ Ativa" : "❌ Inativa"}
+                            label={unit.status ? "✅ Ativa" : "❌ Desativada"}
                             sx={{
                               bgcolor: unit.status ? "#e8f5e8" : "#ffebee",
                               color: unit.status ? "#2e7d32" : "#d32f2f",

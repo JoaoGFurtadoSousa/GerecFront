@@ -959,7 +959,7 @@ export default function Historico() {
                       onClick={handleLoadEquipment}
                       disabled={equipmentLoading}
                     >
-                      Ver Situação da Unidade
+                      Visualizar equipamentos da unidade
                     </Button>
                   )}
                 </Box>

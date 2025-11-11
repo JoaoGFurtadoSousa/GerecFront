@@ -101,7 +101,17 @@ export default function Historico() {
     try {
       const data = await apiService.getHistorico()
       console.log("✅ Histórico carregado com sucesso:", data.length, "tarefas")
-      setHistoryTasks(data)
+
+      const sortedData = data.sort((a, b) => {
+        if (!a.dataTarefaFinalizada || !b.dataTarefaFinalizada) return 0
+
+        const dateA = new Date(a.dataTarefaFinalizada).getTime()
+        const dateB = new Date(b.dataTarefaFinalizada).getTime()
+
+        return dateB - dateA // descending order (most recent first)
+      })
+
+      setHistoryTasks(sortedData)
       setCurrentPage(1)
     } catch (err) {
       console.error("❌ Erro ao carregar histórico:", err)
@@ -230,6 +240,17 @@ export default function Historico() {
     } catch {
       return "Data inválida"
     }
+  }
+
+  const hasPhotos = (task: Task): boolean => {
+    return !!(task.fotoTotemEntrada || task.fotoTotemSaida)
+  }
+
+  const getPhotoCount = (task: Task): number => {
+    let count = 0
+    if (task.fotoTotemEntrada) count++
+    if (task.fotoTotemSaida) count++
+    return count
   }
 
   const drawer = (
@@ -581,6 +602,8 @@ export default function Historico() {
                           <Card
                             sx={{
                               height: "100%",
+                              display: "flex",
+                              flexDirection: "column",
                               bgcolor: "white",
                               border: "1px solid #e0e0e0",
                               borderRadius: 2,
@@ -592,13 +615,14 @@ export default function Historico() {
                               },
                             }}
                           >
-                            <CardContent sx={{ p: 3 }}>
+                            <CardContent
+                              sx={{ p: 3, display: "flex", flexDirection: "column", height: "100%", gap: 2 }}
+                            >
                               <Box
                                 sx={{
                                   display: "flex",
                                   justifyContent: "space-between",
                                   alignItems: "flex-start",
-                                  mb: 2,
                                 }}
                               >
                                 <Chip
@@ -628,15 +652,18 @@ export default function Historico() {
                                 sx={{
                                   fontWeight: 600,
                                   color: "#333",
-                                  mb: 2,
                                   lineHeight: 1.3,
                                   fontSize: "1rem",
+                                  display: "-webkit-box",
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: "vertical",
+                                  overflow: "hidden",
                                 }}
                               >
                                 {task.descricao}
                               </Typography>
 
-                              <Box sx={{ mb: 2 }}>
+                              <Box sx={{ mb: 1 }}>
                                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
                                   <Business sx={{ fontSize: 16, color: "#666" }} />
                                   <Typography variant="body2" sx={{ color: "#666" }}>
@@ -655,25 +682,17 @@ export default function Historico() {
 
                                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
                                   <LocationOn sx={{ fontSize: 16, color: "#666" }} />
-                                  <Typography variant="body2" sx={{ color: "#666" }}>
+                                  <Typography
+                                    variant="body2"
+                                    sx={{ color: "#666", fontSize: "0.85rem", lineHeight: 1.2 }}
+                                  >
                                     Lat: {task.latitude.toFixed(5)}, Long: {task.longitude.toFixed(5)}
                                   </Typography>
                                 </Box>
-
-                                {(task.fotoTotemEntrada || task.fotoTotemSaida) && (
-                                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                    <ImageIcon sx={{ fontSize: 16, color: "#666" }} />
-                                    <Typography variant="body2" sx={{ color: "#666" }}>
-                                      {task.fotoTotemEntrada && task.fotoTotemSaida
-                                        ? "2 fotos anexadas"
-                                        : "1 foto anexada"}
-                                    </Typography>
-                                  </Box>
-                                )}
                               </Box>
 
                               {(task.diagnostico || task.solucao) && (
-                                <Box sx={{ mb: 2, p: 2, bgcolor: "#f8f9fa", borderRadius: 1 }}>
+                                <Box sx={{ p: 2, bgcolor: "#f8f9fa", borderRadius: 1 }}>
                                   {task.diagnostico && (
                                     <Typography variant="caption" sx={{ display: "block", mb: 1, color: "#666" }}>
                                       <strong>Diagnóstico:</strong> {task.diagnostico}
@@ -687,68 +706,110 @@ export default function Historico() {
                                 </Box>
                               )}
 
-                              <Divider sx={{ my: 2 }} />
-
                               <Box
-                                sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}
+                                sx={{
+                                  flex: 1,
+                                  minHeight: 200,
+                                  p: 2,
+                                  bgcolor: "#f8f9fa",
+                                  borderRadius: 1,
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  border: "1px solid #e0e0e0",
+                                }}
                               >
-                                <Box>
-                                  <Typography
-                                    variant="caption"
-                                    sx={{ color: "#999", display: "flex", alignItems: "center" }}
-                                  >
-                                    <CalendarToday sx={{ fontSize: 12, mr: 0.5 }} />
-                                    Criada
-                                  </Typography>
-                                  <Typography
-                                    variant="caption"
-                                    sx={{ color: "#666", fontWeight: 500, display: "block" }}
-                                  >
-                                    {formatDate(task.dataTarefa)}
-                                  </Typography>
-                                </Box>
-                                {task.dataTarefaFinalizada && (
-                                  <Box sx={{ textAlign: "right" }}>
-                                    <Typography
-                                      variant="caption"
-                                      sx={{
-                                        color: "#999",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "flex-end",
-                                      }}
-                                    >
-                                      <CheckCircle sx={{ fontSize: 12, mr: 0.5 }} />
-                                      Finalizada
+                                {hasPhotos(task) ? (
+                                  <Box sx={{ width: "100%", textAlign: "center" }}>
+                                    <Typography variant="caption" sx={{ color: "#666", fontWeight: 600 }}>
+                                      {getPhotoCount(task) === 2 ? "2 fotos anexadas" : "1 foto anexada"}
                                     </Typography>
                                     <Typography
                                       variant="caption"
-                                      sx={{ color: "#666", fontWeight: 500, display: "block" }}
+                                      sx={{ color: "#999", display: "block", fontSize: "0.8rem", mt: 0.5 }}
                                     >
-                                      {formatDate(task.dataTarefaFinalizada)}
+                                      Clique em "Ver Detalhes da Tarefa" para visualizar
+                                    </Typography>
+                                  </Box>
+                                ) : (
+                                  <Box sx={{ textAlign: "center" }}>
+                                    <ImageIcon sx={{ fontSize: 32, color: "#ccc", mb: 1, display: "block" }} />
+                                    <Typography
+                                      variant="body2"
+                                      sx={{ color: "#999", fontWeight: 500, lineHeight: 1.4 }}
+                                    >
+                                      Sem fotos anexadas.
                                     </Typography>
                                   </Box>
                                 )}
                               </Box>
 
-                              <Button
-                                fullWidth
-                                variant="contained"
-                                endIcon={<ArrowForward />}
-                                onClick={() => handleCardClick(task)}
-                                sx={{
-                                  bgcolor: "#2196f3",
-                                  color: "white",
-                                  textTransform: "none",
-                                  fontWeight: 600,
-                                  py: 1.5,
-                                  "&:hover": {
-                                    bgcolor: "#1976d2",
-                                  },
-                                }}
-                              >
-                                Ver Detalhes da Tarefa
-                              </Button>
+                              <Divider sx={{ my: 1 }} />
+
+                              <Box sx={{ marginTop: "auto" }}>
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    mb: 2,
+                                    gap: 1,
+                                  }}
+                                >
+                                  <Box>
+                                    <Typography variant="caption" sx={{ color: "#999", display: "block" }}>
+                                      <CalendarToday sx={{ fontSize: 12, mr: 0.5, verticalAlign: "middle" }} />
+                                      Criada
+                                    </Typography>
+                                    <Typography
+                                      variant="caption"
+                                      sx={{ color: "#666", fontWeight: 500, display: "block" }}
+                                    >
+                                      {formatDate(task.dataTarefa)}
+                                    </Typography>
+                                  </Box>
+                                  {task.dataTarefaFinalizada && (
+                                    <Box sx={{ textAlign: "right" }}>
+                                      <Typography variant="caption" sx={{ color: "#999", display: "block" }}>
+                                        <CheckCircle sx={{ fontSize: 12, mr: 0.5, verticalAlign: "middle" }} />
+                                        Finalizada
+                                      </Typography>
+                                      <Typography
+                                        variant="caption"
+                                        sx={{ color: "#666", fontWeight: 500, display: "block" }}
+                                      >
+                                        {formatDate(task.dataTarefaFinalizada)}
+                                      </Typography>
+                                    </Box>
+                                  )}
+                                </Box>
+
+                                <Button
+                                  fullWidth
+                                  variant="contained"
+                                  endIcon={<ArrowForward />}
+                                  onClick={() => {
+                                    console.log("[v0] Botão Ver Detalhes clicado! Tarefa ID:", task.id)
+                                    handleCardClick(task)
+                                  }}
+                                  sx={{
+                                    bgcolor: "#2196f3",
+                                    color: "white",
+                                    textTransform: "none",
+                                    fontWeight: 600,
+                                    py: 1.5,
+                                    borderRadius: 2,
+                                    boxShadow: "0 2px 8px rgba(33, 150, 243, 0.3)",
+                                    "&:hover": {
+                                      bgcolor: "#1976d2",
+                                      boxShadow: "0 4px 12px rgba(33, 150, 243, 0.4)",
+                                    },
+                                  }}
+                                >
+                                  Ver Detalhes da Tarefa
+                                </Button>
+                              </Box>
                             </CardContent>
                           </Card>
                         </Grid>
@@ -870,55 +931,62 @@ export default function Historico() {
                 </Box>
               )}
 
-              {(selectedTask.fotoTotemEntrada || selectedTask.fotoTotemSaida) && (
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle2" sx={{ color: "#666", mb: 2 }}>
-                    Fotos Anexadas
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" sx={{ color: "#666", mb: 2 }}>
+                  Fotos Anexadas
+                </Typography>
+                <Grid container spacing={2}>
+                  {selectedTask.fotoTotemEntrada && (
+                    <Grid item xs={12} sm={6}>
+                      <Box>
+                        <Typography variant="caption" sx={{ color: "#666", mb: 1, display: "block" }}>
+                          Foto de Entrada
+                        </Typography>
+                        <Box
+                          component="img"
+                          src={selectedTask.fotoTotemEntrada}
+                          alt="Foto de entrada"
+                          sx={{
+                            width: "100%",
+                            height: 200,
+                            objectFit: "cover",
+                            borderRadius: 2,
+                            border: "1px solid #e0e0e0",
+                          }}
+                        />
+                      </Box>
+                    </Grid>
+                  )}
+                  {selectedTask.fotoTotemSaida && (
+                    <Grid item xs={12} sm={6}>
+                      <Box>
+                        <Typography variant="caption" sx={{ color: "#666", mb: 1, display: "block" }}>
+                          Foto de Saída
+                        </Typography>
+                        <Box
+                          component="img"
+                          src={selectedTask.fotoTotemSaida}
+                          alt="Foto de saída"
+                          sx={{
+                            width: "100%",
+                            height: 200,
+                            objectFit: "cover",
+                            borderRadius: 2,
+                            border: "1px solid #e0e0e0",
+                          }}
+                        />
+                      </Box>
+                    </Grid>
+                  )}
+                </Grid>
+              </Box>
+
+              {!hasPhotos(selectedTask) && (
+                <Box sx={{ mb: 3, p: 3, bgcolor: "#f8f9fa", borderRadius: 2, textAlign: "center" }}>
+                  <ImageIcon sx={{ fontSize: 48, color: "#ccc", mb: 1, display: "block" }} />
+                  <Typography variant="body2" sx={{ color: "#999", fontWeight: 500 }}>
+                    Sem fotos anexadas.
                   </Typography>
-                  <Grid container spacing={2}>
-                    {selectedTask.fotoTotemEntrada && (
-                      <Grid item xs={12} sm={6}>
-                        <Box>
-                          <Typography variant="caption" sx={{ color: "#666", mb: 1, display: "block" }}>
-                            Foto de Entrada
-                          </Typography>
-                          <Box
-                            component="img"
-                            src={selectedTask.fotoTotemEntrada}
-                            alt="Foto de entrada"
-                            sx={{
-                              width: "100%",
-                              height: 200,
-                              objectFit: "cover",
-                              borderRadius: 2,
-                              border: "1px solid #e0e0e0",
-                            }}
-                          />
-                        </Box>
-                      </Grid>
-                    )}
-                    {selectedTask.fotoTotemSaida && (
-                      <Grid item xs={12} sm={6}>
-                        <Box>
-                          <Typography variant="caption" sx={{ color: "#666", mb: 1, display: "block" }}>
-                            Foto de Saída
-                          </Typography>
-                          <Box
-                            component="img"
-                            src={selectedTask.fotoTotemSaida}
-                            alt="Foto de saída"
-                            sx={{
-                              width: "100%",
-                              height: 200,
-                              objectFit: "cover",
-                              borderRadius: 2,
-                              border: "1px solid #e0e0e0",
-                            }}
-                          />
-                        </Box>
-                      </Grid>
-                    )}
-                  </Grid>
                 </Box>
               )}
 
