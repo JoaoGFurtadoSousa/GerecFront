@@ -109,7 +109,7 @@ export default function NovaTask() {
           ...(token && { Authorization: `Bearer ${token}` }),
         }
 
-        const unidadesResponse = await fetch("http://192.168.0.102:8000/api/v1/unidades/", {
+        const unidadesResponse = await fetch("http://192.168.0.103:8000/api/v1/unidades/", {
           headers,
         })
 
@@ -122,7 +122,7 @@ export default function NovaTask() {
           setUnidades([])
         }
 
-        const usuariosResponse = await fetch("http://192.168.0.102:8000/api/v1/usuarios/", {
+        const usuariosResponse = await fetch("http://192.168.0.103:8000/api/v1/usuarios/", {
           headers,
         })
 
@@ -179,7 +179,7 @@ export default function NovaTask() {
         ...(token && { Authorization: `Bearer ${token}` }),
       }
 
-      const response = await fetch("http://192.168.0.102:8000/api/v1/tarefas/", {
+      const response = await fetch("http://192.168.0.103:8000/api/v1/tarefas/", {
         method: "POST",
         headers,
         body: JSON.stringify({

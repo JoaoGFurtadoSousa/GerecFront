@@ -1,6 +1,6 @@
 import { authService } from "./authService"
 
-const API_BASE_URL = "http://192.168.0.102:8000/api/v1"
+const API_BASE_URL = "http://192.168.0.103:8000/api/v1"
 
 export interface Task {
   id: number
@@ -486,7 +486,7 @@ class ApiService {
     console.log("🌐 Buscando técnicos...")
 
     try {
-      const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/usuarios/nometecnicos/", {
+      const response = await authService.authenticatedFetch("http://192.168.0.103:8000/api/v1/usuarios/nometecnicos/", {
         method: "GET",
       })
 
@@ -515,10 +515,10 @@ class ApiService {
     dataTarefa: string
     status: string
   }): Promise<void> {
-    console.log("📤 Enviando nova tarefa para: http://192.168.0.102:8000/api/v1/enviar/")
+    console.log("📤 Enviando nova tarefa para: http://192.168.0.103:8000/api/v1/enviar/")
     console.log("📋 Dados enviados:", taskData)
 
-    const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/enviar/", {
+    const response = await authService.authenticatedFetch("http://192.168.0.103:8000/api/v1/enviar/", {
       method: "POST",
       body: JSON.stringify(taskData),
     })

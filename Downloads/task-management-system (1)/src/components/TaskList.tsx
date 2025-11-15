@@ -56,8 +56,6 @@ const getStatusColor = (status: Task["status"]) => {
       return "#2196f3"
     case "Em andamento":
       return "#ff9800"
-    case "Concluído":
-      return "#4caf50"
     default:
       return "#9e9e9e"
   }
@@ -69,8 +67,6 @@ const getStatusBgColor = (status: Task["status"]) => {
       return "#e3f2fd"
     case "Em andamento":
       return "#fff3e0"
-    case "Concluído":
-      return "#e8f5e8"
     default:
       return "#f5f5f5"
   }
@@ -100,7 +96,7 @@ export default function TaskList() {
     try {
       console.log("🔄 Enviando requisição POST para salvar dados...")
 
-      const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/salvar/", {
+      const response = await authService.authenticatedFetch("http://192.168.15.10:8000/api/v1/salvar/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -180,7 +176,6 @@ export default function TaskList() {
   const totalTasks = tasks.length
   const pendingTasks = tasks.filter((task) => task.status === "Para iniciar").length
   const inProgressTasks = tasks.filter((task) => task.status === "Em andamento").length
-  const completedTasks = tasks.filter((task) => task.status === "Concluído").length
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
@@ -190,27 +185,23 @@ export default function TaskList() {
     authService.logout()
   }
 
-  // ✅ CORREÇÃO: Verificar se funcionalidades devem estar habilitadas
-  const featuresEnabled = authService.shouldEnableFeatures()
-  console.log("🔍 Funcionalidades habilitadas:", featuresEnabled)
-
   // ✅ NOVO: Funções de navegação
   const handleNavigateToNewTask = () => {
-    if (featuresEnabled) {
+    if (authService.shouldEnableFeatures()) {
       console.log("🚀 Navegando para Nova Tarefa")
       navigate("/nova-tarefa")
     }
   }
 
   const handleNavigateToHistory = () => {
-    if (featuresEnabled) {
+    if (authService.shouldEnableFeatures()) {
       console.log("🚀 Navegando para Histórico")
       navigate("/historico")
     }
   }
 
   const handleNavigateToUnits = () => {
-    if (featuresEnabled) {
+    if (authService.shouldEnableFeatures()) {
       console.log("🚀 Navegando para Unidades")
       navigate("/unidades")
     }
@@ -271,23 +262,23 @@ export default function TaskList() {
             mb: 1,
             bgcolor: isActiveRoute("/nova-tarefa") ? "#4caf50" : "transparent",
             "&:hover": {
-              bgcolor: featuresEnabled ? (isActiveRoute("/nova-tarefa") ? "#388e3c" : "#333") : "transparent",
+              bgcolor: authService.shouldEnableFeatures() ? (isActiveRoute("/nova-tarefa") ? "#388e3c" : "#333") : "transparent",
             },
-            cursor: featuresEnabled ? "pointer" : "not-allowed",
-            opacity: featuresEnabled ? 1 : 0.5,
+            cursor: authService.shouldEnableFeatures() ? "pointer" : "not-allowed",
+            opacity: authService.shouldEnableFeatures() ? 1 : 0.5,
           }}
         >
           <ListItemIcon>
-            <Add sx={{ color: featuresEnabled ? (isActiveRoute("/nova-tarefa") ? "white" : "#4caf50") : "#666" }} />
+            <Add sx={{ color: authService.shouldEnableFeatures() ? (isActiveRoute("/nova-tarefa") ? "white" : "#4caf50") : "#666" }} />
           </ListItemIcon>
           <ListItemText
             primary="Nova Tarefa"
             primaryTypographyProps={{
               fontSize: "0.9rem",
-              color: featuresEnabled ? (isActiveRoute("/nova-tarefa") ? "white" : "#ccc") : "#666",
+              color: authService.shouldEnableFeatures() ? (isActiveRoute("/nova-tarefa") ? "white" : "#ccc") : "#666",
             }}
           />
-          {!featuresEnabled && (
+          {!authService.shouldEnableFeatures() && (
             <Typography variant="caption" sx={{ color: "#666", fontSize: "0.7rem" }}>
               Tokens válidos
             </Typography>
@@ -302,20 +293,20 @@ export default function TaskList() {
             mb: 1,
             bgcolor: isActiveRoute("/historico") ? "#2196f3" : "transparent",
             "&:hover": {
-              bgcolor: featuresEnabled ? (isActiveRoute("/historico") ? "#1976d2" : "#333") : "transparent",
+              bgcolor: authService.shouldEnableFeatures() ? (isActiveRoute("/historico") ? "#1976d2" : "#333") : "transparent",
             },
-            cursor: featuresEnabled ? "pointer" : "not-allowed",
-            opacity: featuresEnabled ? 1 : 0.5,
+            cursor: authService.shouldEnableFeatures() ? "pointer" : "not-allowed",
+            opacity: authService.shouldEnableFeatures() ? 1 : 0.5,
           }}
         >
           <ListItemIcon>
-            <History sx={{ color: featuresEnabled ? (isActiveRoute("/historico") ? "white" : "#ccc") : "#666" }} />
+            <History sx={{ color: authService.shouldEnableFeatures() ? (isActiveRoute("/historico") ? "white" : "#ccc") : "#666" }} />
           </ListItemIcon>
           <ListItemText
             primary="Histórico"
             primaryTypographyProps={{
               fontSize: "0.9rem",
-              color: featuresEnabled ? (isActiveRoute("/historico") ? "white" : "#ccc") : "#666",
+              color: authService.shouldEnableFeatures() ? (isActiveRoute("/historico") ? "white" : "#ccc") : "#666",
             }}
           />
         </ListItem>
@@ -328,20 +319,20 @@ export default function TaskList() {
             mb: 1,
             bgcolor: isActiveRoute("/unidades") ? "#2196f3" : "transparent",
             "&:hover": {
-              bgcolor: featuresEnabled ? (isActiveRoute("/unidades") ? "#1976d2" : "#333") : "transparent",
+              bgcolor: authService.shouldEnableFeatures() ? (isActiveRoute("/unidades") ? "#1976d2" : "#333") : "transparent",
             },
-            cursor: featuresEnabled ? "pointer" : "not-allowed",
-            opacity: featuresEnabled ? 1 : 0.5,
+            cursor: authService.shouldEnableFeatures() ? "pointer" : "not-allowed",
+            opacity: authService.shouldEnableFeatures() ? 1 : 0.5,
           }}
         >
           <ListItemIcon>
-            <Business sx={{ color: featuresEnabled ? (isActiveRoute("/unidades") ? "white" : "#ccc") : "#666" }} />
+            <Business sx={{ color: authService.shouldEnableFeatures() ? (isActiveRoute("/unidades") ? "white" : "#ccc") : "#666" }} />
           </ListItemIcon>
           <ListItemText
             primary="Unidades"
             primaryTypographyProps={{
               fontSize: "0.9rem",
-              color: featuresEnabled ? (isActiveRoute("/unidades") ? "white" : "#ccc") : "#666",
+              color: authService.shouldEnableFeatures() ? (isActiveRoute("/unidades") ? "white" : "#ccc") : "#666",
             }}
           />
         </ListItem>
@@ -471,7 +462,7 @@ export default function TaskList() {
         {/* Content */}
         <Box sx={{ p: 3 }}>
           {/* Status de Autenticação */}
-          <Card sx={{ mb: 3, bgcolor: featuresEnabled ? "#e8f5e8" : "#fff3e0", border: "1px solid #e0e0e0" }}>
+          <Card sx={{ mb: 3, bgcolor: authService.shouldEnableFeatures() ? "#e8f5e8" : "#fff3e0", border: "1px solid #e0e0e0" }}>
             <CardContent>
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -480,14 +471,14 @@ export default function TaskList() {
                       width: 12,
                       height: 12,
                       borderRadius: "50%",
-                      bgcolor: featuresEnabled ? "#4caf50" : "#ff9800",
+                      bgcolor: authService.shouldEnableFeatures() ? "#4caf50" : "#ff9800",
                     }}
                   />
                   <Typography variant="body2" sx={{ color: "#666" }}>
-                    Status: {featuresEnabled ? "Autenticado (Tokens Válidos)" : "Tokens Inválidos"}
+                    Status: {authService.shouldEnableFeatures() ? "Autenticado (Tokens Válidos)" : "Tokens Inválidos"}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "#999" }}>
-                    Funcionalidades: {featuresEnabled ? "Habilitadas" : "Limitadas"}
+                    Funcionalidades: {authService.shouldEnableFeatures() ? "Habilitadas" : "Limitadas"}
                   </Typography>
                 </Box>
               </Box>
@@ -509,7 +500,7 @@ export default function TaskList() {
                       </Typography>
                       <Typography variant="caption" sx={{ color: "#4caf50", display: "flex", alignItems: "center" }}>
                         <TrendingUp sx={{ fontSize: 16, mr: 0.5 }} />
-                        +2.5%
+                        Número total de chamados em aberto
                       </Typography>
                     </Box>
                     <Assignment sx={{ fontSize: 40, color: "#e0e0e0" }} />
@@ -530,7 +521,7 @@ export default function TaskList() {
                         {inProgressTasks}
                       </Typography>
                       <Typography variant="caption" sx={{ color: "#ff9800" }}>
-                        Hoje
+                        Em Atendimento
                       </Typography>
                     </Box>
                     <PlayArrow sx={{ fontSize: 40, color: "#fff3e0" }} />
@@ -556,28 +547,6 @@ export default function TaskList() {
                       </Typography>
                     </Box>
                     <Schedule sx={{ fontSize: 40, color: "#e3f2fd" }} />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ bgcolor: "white", border: "1px solid #e0e0e0" }}>
-                <CardContent>
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <Box>
-                      <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-                        Concluídas
-                      </Typography>
-                      <Typography variant="h4" sx={{ fontWeight: 700, color: "#4caf50" }}>
-                        {completedTasks}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: "#4caf50", display: "flex", alignItems: "center" }}>
-                        <TrendingUp sx={{ fontSize: 16, mr: 0.5 }} />
-                        +12.3%
-                      </Typography>
-                    </Box>
-                    <CheckCircle sx={{ fontSize: 40, color: "#e8f5e8" }} />
                   </Box>
                 </CardContent>
               </Card>
@@ -640,7 +609,6 @@ export default function TaskList() {
                       <MenuItem value="all">Todos os status</MenuItem>
                       <MenuItem value="Para iniciar">Para iniciar</MenuItem>
                       <MenuItem value="Em andamento">Em andamento</MenuItem>
-                      <MenuItem value="Concluído">Concluído</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>

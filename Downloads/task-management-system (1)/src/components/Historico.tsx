@@ -70,7 +70,6 @@ export default function Historico() {
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
   const [currentPage, setCurrentPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -204,8 +203,7 @@ export default function Historico() {
       task.unidade.nome_da_unidade.toLowerCase().includes(searchTerm.toLowerCase()) ||
       task.nomeDoTecnico.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       task.numChamado.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === "all" || task.status === statusFilter
-    return matchesSearch && matchesStatus
+    return matchesSearch
   })
 
   const totalPages = Math.ceil(filteredTasks.length / ITEMS_PER_PAGE)
@@ -526,51 +524,29 @@ export default function Historico() {
 
               <Card sx={{ mb: 3, bgcolor: "white", border: "1px solid #e0e0e0" }}>
                 <CardContent>
-                  <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} md={8}>
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        placeholder="Buscar por descrição, unidade, técnico ou número do chamado..."
-                        value={searchTerm}
-                        onChange={(e) => {
-                          setSearchTerm(e.target.value)
-                          setCurrentPage(1)
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Search sx={{ color: "#999", fontSize: 20 }} />
-                            </InputAdornment>
-                          ),
-                        }}
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: 2,
-                            fontSize: "0.95rem",
-                          },
-                        }}
-                      />
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                      <FormControl fullWidth>
-                        <Select
-                          value={statusFilter}
-                          onChange={(e) => {
-                            setStatusFilter(e.target.value)
-                            setCurrentPage(1)
-                          }}
-                          displayEmpty
-                          sx={{ borderRadius: 2, fontSize: "0.95rem" }}
-                        >
-                          <MenuItem value="all">Todos os status</MenuItem>
-                          <MenuItem value="Concluído">Concluído</MenuItem>
-                          <MenuItem value="Cancelado">Cancelado</MenuItem>
-                          <MenuItem value="Em andamento">Em andamento</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                  </Grid>
+                  <TextField
+                    fullWidth
+                    variant="outlined"
+                    placeholder="Buscar por descrição, unidade, técnico ou número do chamado..."
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value)
+                      setCurrentPage(1)
+                    }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Search sx={{ color: "#999", fontSize: 20 }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 2,
+                        fontSize: "0.95rem",
+                      },
+                    }}
+                  />
                 </CardContent>
               </Card>
 
@@ -586,9 +562,7 @@ export default function Historico() {
                       Nenhuma tarefa encontrada
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      {searchTerm || statusFilter !== "all"
-                        ? "Tente ajustar os filtros de busca"
-                        : "Não há tarefas no histórico"}
+                      {searchTerm ? "Tente ajustar os filtros de busca" : "Não há tarefas no histórico"}
                     </Typography>
                     <Button variant="outlined" onClick={loadHistorico} startIcon={<Refresh />}>
                       Recarregar

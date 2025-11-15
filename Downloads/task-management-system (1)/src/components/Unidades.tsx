@@ -9,6 +9,9 @@ import {
   Button,
   Grid,
   TextField,
+  FormControl,
+  Select,
+  MenuItem,
   Chip,
   Paper,
   Avatar,
@@ -95,6 +98,7 @@ export default function Unidades() {
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
+  const [unitStatusFilter, setUnitStatusFilter] = useState<"all" | "ativas" | "desativadas">("all")
   const [dialogOpen, setDialogOpen] = useState(false)
 
   const [units, setUnits] = useState<Unit[]>([])
@@ -131,7 +135,13 @@ export default function Unidades() {
     fetchUnits()
   }, [])
 
-  const filteredUnits = units.filter((unit) => unit.nome_da_unidade.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredUnits = units
+    .filter((unit) => {
+      if (unitStatusFilter === "ativas") return unit.status === true
+      if (unitStatusFilter === "desativadas") return unit.status === false
+      return true // "all"
+    })
+    .filter((unit) => unit.nome_da_unidade.toLowerCase().includes(searchTerm.toLowerCase()))
 
   const totalUnits = units.length
   const activeUnits = units.filter((u) => u.status === true).length
@@ -477,13 +487,13 @@ export default function Unidades() {
                   <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <Box>
                       <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-                        Unidades Ativadas
+                        Ativas
                       </Typography>
                       <Typography variant="h4" sx={{ fontWeight: 700, color: "#4caf50" }}>
                         {activeUnits}
                       </Typography>
                       <Typography variant="caption" sx={{ color: "#4caf50" }}>
-                        Em funcionamento
+                        Operacionais
                       </Typography>
                     </Box>
                     <CheckCircle sx={{ fontSize: 40, color: "#e8f5e8" }} />
@@ -498,13 +508,13 @@ export default function Unidades() {
                   <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <Box>
                       <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-                        Unidades Desativadas
+                        Desativadas
                       </Typography>
                       <Typography variant="h4" sx={{ fontWeight: 700, color: "#f44336" }}>
                         {inactiveUnits}
                       </Typography>
                       <Typography variant="caption" sx={{ color: "#f44336" }}>
-                        Para manutenção
+                        Desativadas
                       </Typography>
                     </Box>
                     <ErrorIcon sx={{ fontSize: 40, color: "#ffebee" }} />
@@ -517,26 +527,53 @@ export default function Unidades() {
           {/* Filtro de Busca */}
           <Card sx={{ mb: 3, bgcolor: "white", border: "1px solid #e0e0e0" }}>
             <CardContent>
-              <TextField
-                fullWidth
-                variant="outlined"
-                placeholder="Buscar por nome da unidade..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search sx={{ color: "#999", fontSize: 20 }} />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 2,
-                    fontSize: "0.95rem",
-                  },
-                }}
-              />
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} md={8}>
+                  <TextField
+                    fullWidth
+                    variant="outlined"
+                    placeholder="Buscar por nome da unidade..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Search sx={{ color: "#999", fontSize: 20 }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 2,
+                        fontSize: "0.95rem",
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <FormControl fullWidth>
+                    <Select
+                      value={unitStatusFilter}
+                      onChange={(e) => setUnitStatusFilter(e.target.value as "all" | "ativas" | "desativadas")}
+                      displayEmpty
+                      sx={{
+                        borderRadius: 2,
+                        fontSize: "0.95rem",
+                        "&:hover .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "#ccc",
+                        },
+                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "#2196f3",
+                        },
+                      }}
+                    >
+                      <MenuItem value="all">Todos os status</MenuItem>
+                      <MenuItem value="ativas">Ativas</MenuItem>
+                      <MenuItem value="desativadas">Desativadas</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
             </CardContent>
           </Card>
 
