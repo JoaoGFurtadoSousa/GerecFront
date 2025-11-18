@@ -1,6 +1,6 @@
 import { authService } from "./authService"
 
-const API_BASE_URL = "http://192.168.0.103:8000/api/v1"
+const API_BASE_URL = "http://192.168.0.102:8000/api/v1"
 
 export interface Task {
   id: number
@@ -66,6 +66,12 @@ export interface AdditionalDataForm {
 export interface Technician {
   id: number
   nome: string
+}
+
+export interface CurrentUser {
+  email: string
+  nome: string
+  grupo?: string
 }
 
 const STATUS_TO_NUMBER = {
@@ -486,7 +492,7 @@ class ApiService {
     console.log("🌐 Buscando técnicos...")
 
     try {
-      const response = await authService.authenticatedFetch("http://192.168.0.103:8000/api/v1/usuarios/nometecnicos/", {
+      const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/usuarios/nometecnicos/", {
         method: "GET",
       })
 
@@ -515,16 +521,42 @@ class ApiService {
     dataTarefa: string
     status: string
   }): Promise<void> {
-    console.log("📤 Enviando nova tarefa para: http://192.168.0.103:8000/api/v1/enviar/")
+    console.log("📤 Enviando nova tarefa para: http://192.168.0.102:8000/api/v1/enviar/")
     console.log("📋 Dados enviados:", taskData)
 
-    const response = await authService.authenticatedFetch("http://192.168.0.103:8000/api/v1/enviar/", {
+    const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/enviar/", {
       method: "POST",
       body: JSON.stringify(taskData),
     })
 
     await handleFetchError(response)
     console.log("✅ Nova tarefa enviada com sucesso")
+  }
+
+  async getCurrentUser(): Promise<CurrentUser> {
+    console.log("🌐 Buscando dados do usuário atual...")
+
+    try {
+      const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/usuario-unico", {
+        method: "GET",
+      })
+
+      await handleFetchError(response)
+
+      const data = await response.json()
+      console.log("📦 Dados do usuário recebidos:", {
+        email: data.email,
+        nome: data.nome,
+      })
+
+      return {
+        email: data.email || "",
+        nome: data.nome || "",
+      }
+    } catch (error) {
+      console.error("❌ Erro ao buscar dados do usuário:", error)
+      throw error
+    }
   }
 }
 

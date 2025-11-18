@@ -60,7 +60,7 @@ interface Unidade {
   telefone: string
   email: string
   responsavel: string
-  status: "Ativa" | "Manutenção" | "Desativada"
+  status: "Ativa" | "Manutenção" | "Inativa"
   totalTarefas: number
   tarefasConcluidas: number
   equipamentos: number
@@ -73,7 +73,7 @@ const getStatusColor = (status: Unidade["status"]) => {
       return "#4caf50"
     case "Manutenção":
       return "#ff9800"
-    case "Desativada":
+    case "Inativa":
       return "#f44336"
     default:
       return "#9e9e9e"
@@ -86,7 +86,7 @@ const getStatusBgColor = (status: Unidade["status"]) => {
       return "#e8f5e8"
     case "Manutenção":
       return "#fff3e0"
-    case "Desativada":
+    case "Inativa":
       return "#ffebee"
     default:
       return "#f5f5f5"
@@ -109,12 +109,32 @@ export default function Unidades() {
   const [loadingEquipment, setLoadingEquipment] = useState(false)
   const [equipmentError, setEquipmentError] = useState<string | null>(null)
 
-  const userData = authService.getUserData() || {
+  const [userData, setUserData] = useState<{ nome: string; email: string }>({
     nome: "Usuário",
     email: "usuario@sistema.com",
-  }
+  })
+  const [userLoading, setUserLoading] = useState(true)
 
   const featuresEnabled = authService.shouldEnableFeatures()
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const user = await apiService.getCurrentUser()
+        setUserData(user)
+      } catch (error) {
+        console.error("❌ Erro ao carregar dados do usuário:", error)
+        setUserData({
+          nome: authService.getUserData()?.nome || "Usuário",
+          email: authService.getUserData()?.email || "usuario@sistema.com",
+        })
+      } finally {
+        setUserLoading(false)
+      }
+    }
+
+    loadUserData()
+  }, [])
 
   useEffect(() => {
     const fetchUnits = async () => {
@@ -348,7 +368,7 @@ export default function Unidades() {
     </Box>
   )
 
-  if (loading) {
+  if (loading || userLoading) {
     return (
       <Box sx={{ display: "flex", height: "100vh" }}>
         <Box sx={{ width: DRAWER_WIDTH, flexShrink: 0, display: { xs: "none", md: "block" } }}>{drawer}</Box>
@@ -436,22 +456,15 @@ export default function Unidades() {
             </Typography>
           </Box>
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <IconButton>
-              <Badge badgeContent={3} color="error">
-                <Notifications />
-              </Badge>
-            </IconButton>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.nome?.charAt(0) || "U"}</Avatar>
-              <Box sx={{ display: { xs: "none", sm: "block" } }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: "#333" }}>
-                  {userData.nome || "Usuário"}
-                </Typography>
-                <Typography variant="caption" sx={{ color: "#666" }}>
-                  {userData.email || "usuario@sistema.com"}
-                </Typography>
-              </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.nome?.charAt(0) || "U"}</Avatar>
+            <Box sx={{ display: { xs: "none", sm: "block" } }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: "#333" }}>
+                {userData.nome || "Usuário"}
+              </Typography>
+              <Typography variant="caption" sx={{ color: "#666" }}>
+                {userData.email || "usuario@sistema.com"}
+              </Typography>
             </Box>
           </Box>
         </Box>
@@ -508,7 +521,7 @@ export default function Unidades() {
                   <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <Box>
                       <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-                        Desativadas
+                        Inativas
                       </Typography>
                       <Typography variant="h4" sx={{ fontWeight: 700, color: "#f44336" }}>
                         {inactiveUnits}
@@ -618,7 +631,7 @@ export default function Unidades() {
                         {/* Header com status */}
                         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
                           <Chip
-                            label={unit.status ? "Ativa" : "Desativada"}
+                            label={unit.status ? "Ativa" : "Inativa"}
                             sx={{
                               bgcolor: unit.status ? "#e8f5e8" : "#ffebee",
                               color: unit.status ? "#4caf50" : "#f44336",
@@ -697,7 +710,7 @@ export default function Unidades() {
                 </IconButton>
               </Box>
               <Chip
-                label={selectedUnit.status ? "Ativa" : "Desativada"}
+                label={selectedUnit.status ? "Ativa" : "Inativa"}
                 sx={{
                   bgcolor: selectedUnit.status ? "#e8f5e8" : "#ffebee",
                   color: selectedUnit.status ? "#4caf50" : "#f44336",

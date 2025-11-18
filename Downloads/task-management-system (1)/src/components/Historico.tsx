@@ -81,12 +81,32 @@ export default function Historico() {
   const [equipmentList, setEquipmentList] = useState<Equipment[]>([])
   const [showEquipment, setShowEquipment] = useState(false)
 
-  const userData = authService.getUserData() || {
+  const [userData, setUserData] = useState<{ nome: string; email: string }>({
     nome: "Usuário",
     email: "usuario@sistema.com",
-  }
+  })
+  const [userLoading, setUserLoading] = useState(true)
 
   const featuresEnabled = authService.shouldEnableFeatures()
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const user = await apiService.getCurrentUser()
+        setUserData(user)
+      } catch (error) {
+        console.error("❌ Erro ao carregar dados do usuário:", error)
+        setUserData({
+          nome: authService.getUserData()?.nome || "Usuário",
+          email: authService.getUserData()?.email || "usuario@sistema.com",
+        })
+      } finally {
+        setUserLoading(false)
+      }
+    }
+
+    loadUserData()
+  }, [])
 
   useEffect(() => {
     loadHistorico()
@@ -386,6 +406,17 @@ export default function Historico() {
     </Box>
   )
 
+  if (loading || userLoading) {
+    return (
+      <Box sx={{ display: "flex", height: "100vh" }}>
+        <Box sx={{ width: DRAWER_WIDTH, flexShrink: 0 }}>{drawer}</Box>
+        <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center", alignItems: "center", bgcolor: "#f8f9fa" }}>
+          <CircularProgress size={60} />
+        </Box>
+      </Box>
+    )
+  }
+
   return (
     <Box sx={{ display: "flex", height: "100vh", bgcolor: "#f8f9fa" }}>
       <Box
@@ -441,22 +472,15 @@ export default function Historico() {
             </IconButton>
           </Box>
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <IconButton>
-              <Badge badgeContent={3} color="error">
-                <Notifications />
-              </Badge>
-            </IconButton>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.nome?.charAt(0) || "U"}</Avatar>
-              <Box sx={{ display: { xs: "none", sm: "block" } }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: "#333" }}>
-                  {userData.nome || "Usuário"}
-                </Typography>
-                <Typography variant="caption" sx={{ color: "#666" }}>
-                  {userData.email || "usuario@sistema.com"}
-                </Typography>
-              </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.nome?.charAt(0) || "U"}</Avatar>
+            <Box sx={{ display: { xs: "none", sm: "block" } }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: "#333" }}>
+                {userData.nome || "Usuário"}
+              </Typography>
+              <Typography variant="caption" sx={{ color: "#666" }}>
+                {userData.email || "usuario@sistema.com"}
+              </Typography>
             </Box>
           </Box>
         </Box>

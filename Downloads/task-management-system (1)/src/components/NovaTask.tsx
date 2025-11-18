@@ -63,6 +63,11 @@ export default function NovaTask() {
   const [units, setUnits] = useState<Unit[]>([])
   const [loadingTechnicians, setLoadingTechnicians] = useState(true)
   const [loadingUnits, setLoadingUnits] = useState(true)
+  const [userData, setUserData] = useState<{ nome: string; email: string }>({
+    nome: "Usuário",
+    email: "usuario@sistema.com",
+  })
+  const [userLoading, setUserLoading] = useState(true)
 
   const [form, setForm] = useState<NovaTaskForm>({
     descricao: "",
@@ -73,12 +78,26 @@ export default function NovaTask() {
 
   const [errors, setErrors] = useState<Partial<NovaTaskForm>>({})
 
-  const userData = authService.getUserData() || {
-    nome: "Usuário",
-    email: "usuario@sistema.com",
-  }
-
   const featuresEnabled = authService.shouldEnableFeatures()
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const user = await apiService.getCurrentUser()
+        setUserData(user)
+      } catch (error) {
+        console.error("❌ Erro ao carregar dados do usuário:", error)
+        setUserData({
+          nome: authService.getUserData()?.nome || "Usuário",
+          email: authService.getUserData()?.email || "usuario@sistema.com",
+        })
+      } finally {
+        setUserLoading(false)
+      }
+    }
+
+    loadUserData()
+  }, [])
 
   useEffect(() => {
     const fetchTechnicians = async () => {
@@ -364,22 +383,15 @@ export default function NovaTask() {
             </Typography>
           </Box>
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <IconButton>
-              <Badge badgeContent={3} color="error">
-                <Notifications />
-              </Badge>
-            </IconButton>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.nome?.charAt(0) || "U"}</Avatar>
-              <Box sx={{ display: { xs: "none", sm: "block" } }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: "#333" }}>
-                  {userData.nome || "Usuário"}
-                </Typography>
-                <Typography variant="caption" sx={{ color: "#666" }}>
-                  {userData.email || "usuario@sistema.com"}
-                </Typography>
-              </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.nome?.charAt(0) || "U"}</Avatar>
+            <Box sx={{ display: { xs: "none", sm: "block" } }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: "#333" }}>
+                {userData.nome || "Usuário"}
+              </Typography>
+              <Typography variant="caption" sx={{ color: "#666" }}>
+                {userData.email || "usuario@sistema.com"}
+              </Typography>
             </Box>
           </Box>
         </Box>

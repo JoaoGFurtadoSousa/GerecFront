@@ -47,6 +47,7 @@ import {
 import { useNavigate, useLocation } from "react-router-dom"
 import { useTask, type Task } from "../contexts/TaskContext"
 import { authService } from "../services/authService"
+import { apiService } from "../services/apiService"
 
 const DRAWER_WIDTH = 240
 
@@ -79,6 +80,11 @@ export default function TaskList() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [userData, setUserData] = useState<{ nome: string; email: string }>({
+    nome: "Usuário",
+    email: "usuario@sistema.com",
+  })
+  const [userLoading, setUserLoading] = useState(true)
 
   // Estado para controlar o auto-refresh
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true)
@@ -96,7 +102,7 @@ export default function TaskList() {
     try {
       console.log("🔄 Enviando requisição POST para salvar dados...")
 
-      const response = await authService.authenticatedFetch("http://192.168.15.10:8000/api/v1/salvar/", {
+      const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/salvar/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -151,10 +157,25 @@ export default function TaskList() {
   }
 
   // ✅ CORREÇÃO: Obter dados do usuário com fallback robusto
-  const userData = authService.getUserData() || {
-    nome: "Usuário",
-    email: "usuario@sistema.com",
-  }
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const user = await apiService.getCurrentUser()
+        setUserData(user)
+      } catch (error) {
+        console.error("❌ Erro ao carregar dados do usuário:", error)
+        // Fallback para dados padrão se falhar
+        setUserData({
+          nome: authService.getUserData()?.nome || "Usuário",
+          email: authService.getUserData()?.email || "usuario@sistema.com",
+        })
+      } finally {
+        setUserLoading(false)
+      }
+    }
+
+    loadUserData()
+  }, [])
 
   console.log("👤 Dados do usuário no TaskList:", userData)
 
@@ -365,7 +386,7 @@ export default function TaskList() {
     </Box>
   )
 
-  if (loading) {
+  if (loading || userLoading) {
     return (
       <Box sx={{ display: "flex", height: "100vh" }}>
         <Box sx={{ width: DRAWER_WIDTH, flexShrink: 0 }}>{drawer}</Box>
@@ -440,11 +461,6 @@ export default function TaskList() {
           </Box>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <IconButton>
-              <Badge badgeContent={3} color="error">
-                <Notifications />
-              </Badge>
-            </IconButton>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.nome?.charAt(0) || "U"}</Avatar>
               <Box sx={{ display: { xs: "none", sm: "block" } }}>
@@ -500,7 +516,7 @@ export default function TaskList() {
                       </Typography>
                       <Typography variant="caption" sx={{ color: "#4caf50", display: "flex", alignItems: "center" }}>
                         <TrendingUp sx={{ fontSize: 16, mr: 0.5 }} />
-                        Número total de chamados em aberto
+                        +2.5%
                       </Typography>
                     </Box>
                     <Assignment sx={{ fontSize: 40, color: "#e0e0e0" }} />
@@ -521,7 +537,7 @@ export default function TaskList() {
                         {inProgressTasks}
                       </Typography>
                       <Typography variant="caption" sx={{ color: "#ff9800" }}>
-                        Em Atendimento
+                        Hoje
                       </Typography>
                     </Box>
                     <PlayArrow sx={{ fontSize: 40, color: "#fff3e0" }} />
@@ -630,7 +646,7 @@ export default function TaskList() {
                     }}
                   />
                   <Typography variant="body2" sx={{ color: "#666" }}>
-                    Auto-atualização: {autoRefreshEnabled ? "Ativa" : "Desativada"}
+                    Auto-atualização: {autoRefreshEnabled ? "Ativa" : "Inativa"}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "#999" }}>
                     Última atualização: {lastUpdateTime.toLocaleTimeString("pt-BR")}
@@ -754,7 +770,7 @@ export default function TaskList() {
                           <Avatar sx={{ width: 24, height: 24, bgcolor: "#2196f3", mr: 1, fontSize: "0.75rem" }}>
                             {task.nomeDoTecnico?.nome?.charAt(0) || "T"}
                           </Avatar>
-                          <Typography variant="caption" sx={{ color: "#666" }}>
+                          <Typography variant="caption" sx={{ color: "#999" }}>
                             {task.nomeDoTecnico?.nome || "Não atribuído"}
                           </Typography>
                         </Box>
