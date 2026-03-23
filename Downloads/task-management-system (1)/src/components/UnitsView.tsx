@@ -37,7 +37,7 @@ import { authService } from "../services/authService"
 import NewTaskModal from "./NewTaskModal"
 
 const DRAWER_WIDTH = 240
-const API_BASE_URL = "http://192.168.0.102:8000/api/v1"
+const API_BASE_URL = "http://192.168.15.20:8000/api/v1"
 
 export default function UnitsView() {
   const navigate = useNavigate()

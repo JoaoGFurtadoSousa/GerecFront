@@ -20,7 +20,7 @@ import { useNavigate } from "react-router-dom"
 import { authService } from "../services/authService"
 
 interface LoginFormData {
-  email: string
+  username: string
   password: string
 }
 
@@ -37,7 +37,7 @@ interface LoginResponse {
 export default function Login() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState<LoginFormData>({
-    email: "",
+    username: "",
     password: "",
   })
   const [showPassword, setShowPassword] = useState(false)
@@ -73,13 +73,8 @@ export default function Login() {
   }
 
   const validateForm = (): boolean => {
-    if (!formData.email.trim()) {
-      setError("Email é obrigatório")
-      return false
-    }
-
-    if (!formData.email.includes("@")) {
-      setError("Email deve ter um formato válido")
+    if (!formData.username.trim()) {
+      setError("Username é obrigatório")
       return false
     }
 
@@ -100,9 +95,9 @@ export default function Login() {
     setError(null)
 
     try {
-      console.log("🔐 Fazendo login com:", formData.email)
+      console.log("🔐 Fazendo login com:", formData.username)
 
-      const response = await fetch("http://192.168.0.102:8000/api/v1/login/", {
+      const response = await fetch("http://192.168.15.20:8000/api/v1/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -247,14 +242,14 @@ export default function Login() {
                 fontSize: "0.9rem",
               }}
             >
-              Email
+              Username
             </Typography>
             <TextField
               fullWidth
-              type="email"
-              placeholder="seu@email.com"
-              value={formData.email}
-              onChange={(e) => handleInputChange("email", e.target.value)}
+              type="text"
+              placeholder="seu_username"
+              value={formData.username}
+              onChange={(e) => handleInputChange("username", e.target.value)}
               disabled={loading}
               InputProps={{
                 startAdornment: (

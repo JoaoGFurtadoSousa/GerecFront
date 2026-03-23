@@ -19,7 +19,7 @@ import { Person, Email, Lock, Visibility, VisibilityOff, Engineering, CheckCircl
 import { useNavigate } from "react-router-dom"
 
 interface CadastroFormData {
-  nome: string
+  username: string
   email: string
   password: string
 }
@@ -28,7 +28,7 @@ interface CadastroResponse {
   message?: string
   user?: {
     id: number
-    nome: string
+    username: string
     email: string
   }
 }
@@ -36,7 +36,7 @@ interface CadastroResponse {
 export default function Cadastro() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState<CadastroFormData>({
-    nome: "",
+    username: "",
     email: "",
     password: "",
   })
@@ -67,11 +67,11 @@ export default function Cadastro() {
     let fieldError = ""
 
     switch (field) {
-      case "nome":
+      case "username":
         if (!value.trim()) {
-          fieldError = "Nome é obrigatório"
+          fieldError = "Username é obrigatório"
         } else if (value.trim().length < 2) {
-          fieldError = "Nome deve ter pelo menos 2 caracteres"
+          fieldError = "Username deve ter pelo menos 2 caracteres"
         }
         break
 
@@ -101,11 +101,11 @@ export default function Cadastro() {
   }
 
   const validateForm = (): boolean => {
-    const nomeValid = validateField("nome", formData.nome)
+    const usernameValid = validateField("username", formData.username)
     const emailValid = validateField("email", formData.email)
     const passwordValid = validateField("password", formData.password)
 
-    return nomeValid && emailValid && passwordValid
+    return usernameValid && emailValid && passwordValid
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -120,9 +120,9 @@ export default function Cadastro() {
     setError(null)
 
     try {
-      console.log("👤 Fazendo cadastro com:", formData.nome, formData.email)
+      console.log("👤 Fazendo cadastro com:", formData.username, formData.email)
 
-      const response = await fetch("http://.26:8000/api/v1/cadastrar/", {
+      const response = await fetch("http://192.168.15.20:8000/api/v1/register/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -158,7 +158,7 @@ export default function Cadastro() {
       setSuccess(true)
 
       setFormData({
-        nome: "",
+        username: "",
         email: "",
         password: "",
       })
@@ -303,17 +303,17 @@ export default function Cadastro() {
                 fontSize: "0.9rem",
               }}
             >
-              Nome
+              Username
             </Typography>
             <TextField
               fullWidth
               type="text"
-              placeholder="Seu nome completo"
-              value={formData.nome}
-              onChange={(e) => handleInputChange("nome", e.target.value)}
+              placeholder="Seu username completo"
+              value={formData.username}
+              onChange={(e) => handleInputChange("username", e.target.value)}
               disabled={loading}
-              error={!!fieldErrors.nome}
-              helperText={fieldErrors.nome}
+              error={!!fieldErrors.username}
+              helperText={fieldErrors.username}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
