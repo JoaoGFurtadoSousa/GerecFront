@@ -92,7 +92,7 @@ export default function TaskDetails() {
               Técnico Responsável
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              {task.nomeDoTecnico?.nome || "Não atribuído"}
+              {task.nomeDoTecnico?.username || "Não atribuído"}
             </Typography>
 
             <Typography variant="h6" gutterBottom>

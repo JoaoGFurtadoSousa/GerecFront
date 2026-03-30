@@ -81,7 +81,7 @@ export default function TaskList() {
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [mobileOpen, setMobileOpen] = useState(false)
   const [userData, setUserData] = useState<{ nome: string; email: string }>({
-    nome: "Usuário",
+    username: "Usuário",
     email: "usuario@sistema.com",
   })
   const [userLoading, setUserLoading] = useState(true)
@@ -166,7 +166,7 @@ export default function TaskList() {
         console.error("❌ Erro ao carregar dados do usuário:", error)
         // Fallback para dados padrão se falhar
         setUserData({
-          nome: authService.getUserData()?.nome || "Usuário",
+          username: authService.getUserData()?.username || "Usuário",
           email: authService.getUserData()?.email || "usuario@sistema.com",
         })
       } finally {
@@ -462,10 +462,10 @@ export default function TaskList() {
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.nome?.charAt(0) || "U"}</Avatar>
+              <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.username?.charAt(0) || "U"}</Avatar>
               <Box sx={{ display: { xs: "none", sm: "block" } }}>
                 <Typography variant="body2" sx={{ fontWeight: 600, color: "#333" }}>
-                  {userData.nome || "Usuário"}
+                  {userData.username || "Usuário"}
                 </Typography>
                 <Typography variant="caption" sx={{ color: "#666" }}>
                   {userData.email || "usuario@sistema.com"}
@@ -768,10 +768,10 @@ export default function TaskList() {
                         {/* Técnico */}
                         <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
                           <Avatar sx={{ width: 24, height: 24, bgcolor: "#2196f3", mr: 1, fontSize: "0.75rem" }}>
-                            {task.nomeDoTecnico?.nome?.charAt(0) || "T"}
+                            {task.nomeDoTecnico?.username?.charAt(0) || "T"}
                           </Avatar>
                           <Typography variant="caption" sx={{ color: "#999" }}>
-                            {task.nomeDoTecnico?.nome || "Não atribuído"}
+                            {task.nomeDoTecnico?.username || "Não atribuído"}
                           </Typography>
                         </Box>
 

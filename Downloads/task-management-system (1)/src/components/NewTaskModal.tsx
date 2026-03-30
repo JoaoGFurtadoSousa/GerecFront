@@ -45,7 +45,7 @@ import { authService } from "../services/authService"
 const DRAWER_WIDTH = 240
 
 interface NovaTaskForm {
-  nome: string
+  username: string
   descricao: string
   unidade: string
   tecnico: string
@@ -58,7 +58,7 @@ interface Unidade {
 
 interface Usuario {
   id: number
-  nome: string
+  username: string
 }
 
 export default function NovaTask() {
@@ -74,7 +74,7 @@ export default function NovaTask() {
   const [loadingData, setLoadingData] = useState(true)
 
   const [form, setForm] = useState<NovaTaskForm>({
-    nome: "",
+    username: "",
     descricao: "",
     unidade: "",
     tecnico: "",
@@ -83,7 +83,7 @@ export default function NovaTask() {
   const [errors, setErrors] = useState<Partial<NovaTaskForm>>({})
 
   const userData = authService.getUserData() || {
-    nome: "Usuário",
+    username: "Usuário",
     email: "usuario@sistema.com",
   }
 
@@ -157,7 +157,7 @@ export default function NovaTask() {
   const validateForm = (): boolean => {
     const newErrors: Partial<NovaTaskForm> = {}
 
-    if (!form.nome.trim()) newErrors.nome = "Nome é obrigatório"
+    if (!form.username.trim()) newErrors.username = "Nome é obrigatório"
     if (!form.descricao.trim()) newErrors.descricao = "Descrição é obrigatória"
     if (!form.unidade) newErrors.unidade = "Unidade é obrigatória"
     if (!form.tecnico) newErrors.tecnico = "Técnico é obrigatório"
@@ -183,7 +183,7 @@ export default function NovaTask() {
         method: "POST",
         headers,
         body: JSON.stringify({
-          nome: form.nome,
+          username: form.username,
           descricao: form.descricao,
           unidade_id: Number.parseInt(form.unidade),
           tecnico_id: Number.parseInt(form.tecnico),
@@ -436,10 +436,10 @@ export default function NovaTask() {
               </Badge>
             </IconButton>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.nome?.charAt(0) || "U"}</Avatar>
+              <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.username?.charAt(0) || "U"}</Avatar>
               <Box sx={{ display: { xs: "none", sm: "block" } }}>
                 <Typography variant="body2" sx={{ fontWeight: 600, color: "#333" }}>
-                  {userData.nome || "Usuário"}
+                  {userData.username || "Usuário"}
                 </Typography>
                 <Typography variant="caption" sx={{ color: "#666" }}>
                   {userData.email || "usuario@sistema.com"}
@@ -472,7 +472,7 @@ export default function NovaTask() {
                   Tarefa Criada com Sucesso!
                 </Typography>
                 <Typography variant="body1" sx={{ color: "#666" }}>
-                  A tarefa "{form.nome}" foi criada e será redirecionada para o dashboard.
+                  A tarefa "{form.username}" foi criada e será redirecionada para o dashboard.
                 </Typography>
               </Box>
               <CircularProgress size={24} />
@@ -502,10 +502,10 @@ export default function NovaTask() {
                     <TextField
                       fullWidth
                       label="Nome da Tarefa"
-                      value={form.nome}
-                      onChange={(e) => handleInputChange("nome", e.target.value)}
-                      error={!!errors.nome}
-                      helperText={errors.nome}
+                      value={form.username}
+                      onChange={(e) => handleInputChange("username", e.target.value)}
+                      error={!!errors.username}
+                      helperText={errors.username}
                       disabled={loading || loadingData}
                     />
                   </Grid>
@@ -558,7 +558,7 @@ export default function NovaTask() {
                       >
                         {usuarios.map((usuario) => (
                           <MenuItem key={usuario.id} value={usuario.id.toString()}>
-                            {usuario.nome}
+                            {usuario.username}
                           </MenuItem>
                         ))}
                       </Select>
