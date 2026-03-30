@@ -109,8 +109,8 @@ export default function Unidades() {
   const [loadingEquipment, setLoadingEquipment] = useState(false)
   const [equipmentError, setEquipmentError] = useState<string | null>(null)
 
-  const [userData, setUserData] = useState<{ nome: string; email: string }>({
-    nome: "Usuário",
+  const [userData, setUserData] = useState<{ username: string; email: string }>({
+    username: "Usuário",
     email: "usuario@sistema.com",
   })
   const [userLoading, setUserLoading] = useState(true)
@@ -125,7 +125,7 @@ export default function Unidades() {
       } catch (error) {
         console.error("❌ Erro ao carregar dados do usuário:", error)
         setUserData({
-          nome: authService.getUserData()?.nome || "Usuário",
+          username: authService.getUserData()?.username || "Usuário",
           email: authService.getUserData()?.email || "usuario@sistema.com",
         })
       } finally {
@@ -457,10 +457,10 @@ export default function Unidades() {
           </Box>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.nome?.charAt(0) || "U"}</Avatar>
+            <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.username?.charAt(0) || "U"}</Avatar>
             <Box sx={{ display: { xs: "none", sm: "block" } }}>
               <Typography variant="body2" sx={{ fontWeight: 600, color: "#333" }}>
-                {userData.nome || "Usuário"}
+                {userData.username || "Usuário"}
               </Typography>
               <Typography variant="caption" sx={{ color: "#666" }}>
                 {userData.email || "usuario@sistema.com"}
@@ -543,7 +543,7 @@ export default function Unidades() {
               <Grid container spacing={2} alignItems="center">
                 <Grid item xs={12} md={8}>
                   <TextField
-                    fullWidth
+                    fullWidth  
                     variant="outlined"
                     placeholder="Buscar por nome da unidade..."
                     value={searchTerm}
