@@ -70,7 +70,7 @@ export interface Technician {
 
 export interface CurrentUser {
   email: string
-  nome: string
+  username: string
   grupo?: string
 }
 
@@ -492,7 +492,7 @@ class ApiService {
     console.log("🌐 Buscando técnicos...")
 
     try {
-      const response = await authService.authenticatedFetch("http://192.168.15.20:8000/api/v1/usuarios/nometecnicos/", {
+      const response = await authService.authenticatedFetch("http://192.168.15.20:8000/api/v1/users/nometecnicos/", {
         method: "GET",
       })
 
@@ -537,7 +537,7 @@ class ApiService {
     console.log("🌐 Buscando dados do usuário atual...")
 
     try {
-      const response = await authService.authenticatedFetch("http://192.168.15.20:8000/api/v1/usuario-unico", {
+      const response = await authService.authenticatedFetch("http://192.168.15.20:8000/api/v1/unique-user", {
         method: "GET",
       })
 
@@ -546,12 +546,12 @@ class ApiService {
       const data = await response.json()
       console.log("📦 Dados do usuário recebidos:", {
         email: data.email,
-        nome: data.nome,
+        username: data.username,
       })
 
       return {
         email: data.email || "",
-        nome: data.nome || "",
+        username: data.username || "",
       }
     } catch (error) {
       console.error("❌ Erro ao buscar dados do usuário:", error)

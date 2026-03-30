@@ -81,8 +81,8 @@ export default function Historico() {
   const [equipmentList, setEquipmentList] = useState<Equipment[]>([])
   const [showEquipment, setShowEquipment] = useState(false)
 
-  const [userData, setUserData] = useState<{ nome: string; email: string }>({
-    nome: "Usuário",
+  const [userData, setUserData] = useState<{ username: string; email: string }>({
+    username: "Usuário",
     email: "usuario@sistema.com",
   })
   const [userLoading, setUserLoading] = useState(true)
@@ -97,7 +97,7 @@ export default function Historico() {
       } catch (error) {
         console.error("❌ Erro ao carregar dados do usuário:", error)
         setUserData({
-          nome: authService.getUserData()?.nome || "Usuário",
+          username: authService.getUserData()?.username || "Usuário",
           email: authService.getUserData()?.email || "usuario@sistema.com",
         })
       } finally {
@@ -221,7 +221,7 @@ export default function Historico() {
     const matchesSearch =
       task.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
       task.unidade.nome_da_unidade.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.nomeDoTecnico.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.nomeDoTecnico.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
       task.numChamado.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesSearch
   })
@@ -473,10 +473,10 @@ export default function Historico() {
           </Box>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.nome?.charAt(0) || "U"}</Avatar>
+            <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.username?.charAt(0) || "U"}</Avatar>
             <Box sx={{ display: { xs: "none", sm: "block" } }}>
               <Typography variant="body2" sx={{ fontWeight: 600, color: "#333" }}>
-                {userData.nome || "Usuário"}
+                {userData.username || "Usuário"}
               </Typography>
               <Typography variant="caption" sx={{ color: "#666" }}>
                 {userData.email || "usuario@sistema.com"}
@@ -669,11 +669,11 @@ export default function Historico() {
                                   </Typography>
                                 </Box>
 
-                                {task.nomeDoTecnico.nome && (
+                                {task.nomeDoTecnico.username && (
                                   <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
                                     <Person sx={{ fontSize: 16, color: "#666" }} />
                                     <Typography variant="body2" sx={{ color: "#666" }}>
-                                      {task.nomeDoTecnico.nome}
+                                      {task.nomeDoTecnico.username}
                                     </Typography>
                                   </Box>
                                 )}
@@ -882,7 +882,7 @@ export default function Historico() {
                   </Typography>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <Person sx={{ fontSize: 20, color: "#2196f3" }} />
-                    <Typography variant="body1">{selectedTask.nomeDoTecnico.nome}</Typography>
+                    <Typography variant="body1">{selectedTask.nomeDoTecnico.username}</Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={12} sm={6}>

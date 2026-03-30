@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState } from "react"
+import { createContext, useContext, useState, useEffect } from "react"
 
 export interface Task {
   id: number
@@ -27,74 +27,40 @@ interface TaskContextType {
   getEquipmentByTaskId: (taskId: number) => Promise<Equipment[]>
   submitEquipmentChecklist: (taskId: number, equipment: Equipment[]) => Promise<void>
   completeTask: (taskId: number, data: any) => Promise<void>
+  fetchTasks: () => Promise<void>
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined)
 
-// Mock data - em produção, isso viria da API
-const mockTasks: Task[] = [
-  {
-    id: 1,
-    nome: "Manutenção Preventiva - Setor A",
-    status: "Para iniciar",
-    unidade: "Unidade Industrial Norte",
-    descricao:
-      "Realizar manutenção preventiva completa nos equipamentos do setor A, incluindo verificação de cabos, conexões e funcionamento geral.",
-  },
-  {
-    id: 2,
-    nome: "Inspeção de Segurança",
-    status: "Em andamento",
-    unidade: "Unidade Industrial Sul",
-    descricao: "Inspeção completa dos sistemas de segurança, incluindo alarmes, sensores e equipamentos de proteção.",
-  },
-  {
-    id: 3,
-    nome: "Calibração de Instrumentos",
-    status: "Concluído",
-    unidade: "Laboratório Central",
-    descricao: "Calibração de todos os instrumentos de medição e controle de qualidade do laboratório.",
-  },
-  {
-    id: 4,
-    nome: "Troca de Filtros",
-    status: "Para iniciar",
-    unidade: "Unidade de Tratamento",
-    descricao: "Substituição dos filtros do sistema de tratamento de ar e água.",
-  },
-]
-
-const mockEquipment: Equipment[] = [
-  {
-    id: 1,
-    nome_do_equipamento: "KIT Chicote de Cabos",
-    danificado_a_entrada: false,
-    danificado_a_saida: true,
-  },
-  {
-    id: 2,
-    nome_do_equipamento: "Sensor de Temperatura",
-    danificado_a_entrada: true,
-    danificado_a_saida: false,
-  },
-  {
-    id: 3,
-    nome_do_equipamento: "Válvula de Controle",
-    danificado_a_entrada: false,
-    danificado_a_saida: false,
-  },
-  {
-    id: 4,
-    nome_do_equipamento: "Motor Principal",
-    danificado_a_entrada: false,
-    danificado_a_saida: true,
-  },
-]
+const API_URL = "https://sua-api.com" // 🔥 troca pela sua API
 
 export function TaskProvider({ children }: { children: React.ReactNode }) {
-  const [tasks, setTasks] = useState<Task[]>(mockTasks)
+  const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // 🔹 Buscar tarefas da API
+  const fetchTasks = async () => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const response = await fetch(`${API_URL}/tasks`)
+      if (!response.ok) throw new Error()
+
+      const data = await response.json()
+      setTasks(data)
+    } catch (err) {
+      setError("Erro ao carregar tarefas")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 🔹 Buscar automaticamente ao carregar
+  useEffect(() => {
+    fetchTasks()
+  }, [])
 
   const getTaskById = (id: number) => {
     return tasks.find((task) => task.id === id)
@@ -102,11 +68,24 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
   const updateTaskStatus = async (id: number, status: Task["status"]) => {
     setLoading(true)
-    try {
-      // Simular chamada da API
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+    setError(null)
 
-      setTasks((prevTasks) => prevTasks.map((task) => (task.id === id ? { ...task, status } : task)))
+    try {
+      const response = await fetch(`${API_URL}/tasks/${id}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      })
+
+      if (!response.ok) throw new Error()
+
+      setTasks((prev) =>
+        prev.map((task) =>
+          task.id === id ? { ...task, status } : task
+        )
+      )
     } catch (err) {
       setError("Erro ao atualizar status da tarefa")
     } finally {
@@ -116,10 +95,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
   const getEquipmentByTaskId = async (taskId: number): Promise<Equipment[]> => {
     setLoading(true)
+    setError(null)
+
     try {
-      // Simular chamada da API
-      await new Promise((resolve) => setTimeout(resolve, 800))
-      return mockEquipment
+      const response = await fetch(`${API_URL}/tasks/${taskId}/equipment`)
+      if (!response.ok) throw new Error()
+
+      return await response.json()
     } catch (err) {
       setError("Erro ao carregar equipamentos")
       return []
@@ -128,12 +110,23 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const submitEquipmentChecklist = async (taskId: number, equipment: Equipment[]) => {
+  const submitEquipmentChecklist = async (
+    taskId: number,
+    equipment: Equipment[]
+  ) => {
     setLoading(true)
+    setError(null)
+
     try {
-      // Simular envio para API
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      console.log("Checklist enviado:", { taskId, equipment })
+      const response = await fetch(`${API_URL}/tasks/${taskId}/equipment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ equipment }),
+      })
+
+      if (!response.ok) throw new Error()
     } catch (err) {
       setError("Erro ao enviar checklist")
       throw err
@@ -144,14 +137,20 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
   const completeTask = async (taskId: number, data: any) => {
     setLoading(true)
+    setError(null)
+
     try {
-      // Simular envio para API
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const response = await fetch(`${API_URL}/tasks/${taskId}/complete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      })
 
-      // Atualizar status para concluído
+      if (!response.ok) throw new Error()
+
       await updateTaskStatus(taskId, "Concluído")
-
-      console.log("Tarefa concluída:", { taskId, data })
     } catch (err) {
       setError("Erro ao concluir tarefa")
       throw err
@@ -171,6 +170,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         getEquipmentByTaskId,
         submitEquipmentChecklist,
         completeTask,
+        fetchTasks,
       }}
     >
       {children}
@@ -180,8 +180,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
 export function useTask() {
   const context = useContext(TaskContext)
-  if (context === undefined) {
+
+  if (!context) {
     throw new Error("useTask must be used within a TaskProvider")
   }
+
   return context
 }

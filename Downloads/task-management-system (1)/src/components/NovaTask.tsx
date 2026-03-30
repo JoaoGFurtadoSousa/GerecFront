@@ -63,8 +63,8 @@ export default function NovaTask() {
   const [units, setUnits] = useState<Unit[]>([])
   const [loadingTechnicians, setLoadingTechnicians] = useState(true)
   const [loadingUnits, setLoadingUnits] = useState(true)
-  const [userData, setUserData] = useState<{ nome: string; email: string }>({
-    nome: "Usuário",
+  const [userData, setUserData] = useState<{ username: string; email: string }>({
+    username: "Usuário",
     email: "usuario@sistema.com",
   })
   const [userLoading, setUserLoading] = useState(true)
@@ -88,7 +88,7 @@ export default function NovaTask() {
       } catch (error) {
         console.error("❌ Erro ao carregar dados do usuário:", error)
         setUserData({
-          nome: authService.getUserData()?.nome || "Usuário",
+          username: authService.getUserData()?.username || "Usuário",
           email: authService.getUserData()?.email || "usuario@sistema.com",
         })
       } finally {
@@ -105,6 +105,7 @@ export default function NovaTask() {
         setLoadingTechnicians(true)
         const data = await apiService.getTechnicians()
         setTechnicians(data)
+        console.log(data)
         console.log("[v0] Técnicos carregados:", data.length)
       } catch (err) {
         console.error("[v0] Erro ao carregar técnicos:", err)
@@ -384,10 +385,10 @@ export default function NovaTask() {
           </Box>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.nome?.charAt(0) || "U"}</Avatar>
+            <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.username?.charAt(0) || "U"}</Avatar>
             <Box sx={{ display: { xs: "none", sm: "block" } }}>
               <Typography variant="body2" sx={{ fontWeight: 600, color: "#333" }}>
-                {userData.nome || "Usuário"}
+                {userData.username || "Usuário"}
               </Typography>
               <Typography variant="caption" sx={{ color: "#666" }}>
                 {userData.email || "usuario@sistema.com"}
@@ -449,7 +450,7 @@ export default function NovaTask() {
                       >
                         {technicians.map((tech) => (
                           <MenuItem key={tech.id} value={String(tech.id)}>
-                            {tech.nome}
+                            {tech.username}
                           </MenuItem>
                         ))}
                       </Select>
