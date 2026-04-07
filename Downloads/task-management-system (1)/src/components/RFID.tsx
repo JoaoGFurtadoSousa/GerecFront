@@ -1,53 +1,160 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
+  Alert,
+  Avatar,
   Box,
-  Typography,
+  Button,
   Card,
   CardContent,
-  Button,
-  Paper,
-  Avatar,
-  IconButton,
+  CircularProgress,
+  Divider,
   Drawer,
+  FormControl,
+  FormControlLabel,
+  Grid,
+  IconButton,
+  InputLabel,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  Divider,
-  Badge,
+  MenuItem,
+  Radio,
+  RadioGroup,
+  Select,
+  Stack,
+  TextField,
+  Typography,
 } from "@mui/material"
 import {
+  Add,
+  ArrowBack,
+  Business,
   Dashboard,
   Engineering,
-  Notifications,
-  Menu,
-  Logout,
-  Add,
-  Business,
   History,
-  ArrowBack,
-  QrCode2,
+  Logout,
+  Menu,
   Nfc,
-  Construction,
+  QrCode2,
+  Save,
 } from "@mui/icons-material"
-import { useNavigate, useLocation } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
+import { apiService, type Unit } from "../services/apiService"
 import { authService } from "../services/authService"
 
 const DRAWER_WIDTH = 240
+
+type AdditionMode = "Unitario" | "Lista"
+
+const extractTickets = (value: string): string[] => {
+  const matches = value.match(/\d+/g) || []
+  return matches.filter((item) => item.length > 0)
+}
+
+const uniqueTickets = (tickets: string[]) => Array.from(new Set(tickets))
 
 export default function RFIDPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
-
-  const userData = authService.getUserData() || {
-    nome: "Usuario",
+  const [unidades, setUnidades] = useState<Unit[]>([])
+  const [loadingUnidades, setLoadingUnidades] = useState(true)
+  const [selectedGaragem, setSelectedGaragem] = useState("")
+  const [adicaoCartao, setAdicaoCartao] = useState<AdditionMode>("Unitario")
+  const [rawTickets, setRawTickets] = useState("")
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [userData, setUserData] = useState<{ username: string; email: string }>({
+    username: "Usuario",
     email: "usuario@sistema.com",
-  }
+  })
 
   const featuresEnabled = authService.shouldEnableFeatures()
+
+  useEffect(() => {
+    const loadPageData = async () => {
+      setLoadingUnidades(true)
+      setError(null)
+
+      try {
+        const [units, user] = await Promise.all([apiService.getQRCodeUnits(), apiService.getCurrentUser()])
+        setUnidades(units)
+        setUserData(user)
+      } catch (err) {
+        console.error("Erro ao carregar tela de RFID:", err)
+        setError("Erro ao carregar dados da tela. Verifique a conexao com o servidor.")
+        setUserData({
+          username: authService.getUserData()?.username || "Usuario",
+          email: authService.getUserData()?.email || "usuario@sistema.com",
+        })
+      } finally {
+        setLoadingUnidades(false)
+      }
+    }
+
+    loadPageData()
+  }, [])
+
+  const identifiedTickets = useMemo(() => uniqueTickets(extractTickets(rawTickets)), [rawTickets])
+  const normalizedTicketString = useMemo(() => identifiedTickets.join(","), [identifiedTickets])
+
+  const validateForm = (): string | null => {
+    if (!selectedGaragem) {
+      return "Selecione uma unidade"
+    }
+
+    if (identifiedTickets.length === 0) {
+      return "Informe ao menos um cartao valido"
+    }
+
+    if (adicaoCartao === "Unitario" && identifiedTickets.length !== 1) {
+      return "No modo Unitario, informe exatamente um cartao valido"
+    }
+
+    return null
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setSuccess(null)
+
+    const validationError = validateForm()
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
+    const ticketCartao = adicaoCartao === "Unitario" ? identifiedTickets[0] : normalizedTicketString
+
+    setSubmitting(true)
+
+    try {
+      await apiService.createRFID({
+        ticket_cartao: ticketCartao,
+        id_garagem: selectedGaragem,
+        adicao_cartao: adicaoCartao,
+      })
+
+      setSuccess(
+        adicaoCartao === "Unitario"
+          ? "Cartao RFID enviado com sucesso!"
+          : `${identifiedTickets.length} cartao(oes) RFID enviado(s) com sucesso!`,
+      )
+      setRawTickets("")
+      setSelectedGaragem("")
+      setAdicaoCartao("Unitario")
+    } catch (err: any) {
+      console.error("Erro ao enviar RFID:", err)
+      setError(err.message || "Erro ao enviar RFID")
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
@@ -57,9 +164,7 @@ export default function RFIDPage() {
     authService.logout()
   }
 
-  const isActiveRoute = (path: string) => {
-    return location.pathname === path
-  }
+  const isActiveRoute = (path: string) => location.pathname === path
 
   const drawer = (
     <Box sx={{ height: "100%", bgcolor: "#1a1a1a", color: "white" }}>
@@ -156,7 +261,7 @@ export default function RFIDPage() {
           <ListItemIcon>
             <QrCode2 sx={{ color: featuresEnabled ? "#9c27b0" : "#666" }} />
           </ListItemIcon>
-          <ListItemText primary="QRCode" primaryTypographyProps={{ fontSize: "0.9rem", color: featuresEnabled ? "#ccc" : "#666" }} />
+          <ListItemText primary="Qrcode" primaryTypographyProps={{ fontSize: "0.9rem", color: featuresEnabled ? "#ccc" : "#666" }} />
         </ListItem>
 
         <ListItem
@@ -236,15 +341,10 @@ export default function RFIDPage() {
           </Box>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <IconButton>
-              <Badge badgeContent={3} color="error">
-                <Notifications />
-              </Badge>
-            </IconButton>
-            <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.nome?.charAt(0) || "U"}</Avatar>
+            <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.username?.charAt(0) || "U"}</Avatar>
             <Box sx={{ display: { xs: "none", sm: "block" } }}>
               <Typography variant="body2" sx={{ fontWeight: 600, color: "#333" }}>
-                {userData.nome || "Usuario"}
+                {userData.username || "Usuario"}
               </Typography>
               <Typography variant="caption" sx={{ color: "#666" }}>
                 {userData.email || "usuario@sistema.com"}
@@ -253,55 +353,180 @@ export default function RFIDPage() {
           </Box>
         </Box>
 
-        <Box sx={{ p: 3, display: "flex", justifyContent: "center", alignItems: "center", minHeight: "calc(100vh - 100px)" }}>
-          <Card sx={{ bgcolor: "white", border: "1px solid #e0e0e0", maxWidth: 500, width: "100%" }}>
-            <CardContent sx={{ p: 6, textAlign: "center" }}>
-              <Box
-                sx={{
-                  width: 120,
-                  height: 120,
-                  borderRadius: "50%",
-                  bgcolor: "#fff3e0",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  mx: "auto",
-                  mb: 4,
-                }}
-              >
-                <Construction sx={{ fontSize: 64, color: "#ff5722" }} />
+        <Box sx={{ p: 3, maxWidth: 920, mx: "auto" }}>
+          <Card sx={{ bgcolor: "white", border: "1px solid #e0e0e0" }}>
+            <CardContent sx={{ p: 4 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 4 }}>
+                <Nfc sx={{ fontSize: 48, color: "#ff5722" }} />
+                <Box>
+                  <Typography variant="h5" sx={{ fontWeight: 600, color: "#333" }}>
+                    Cadastro RFID
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "#666" }}>
+                    Cole um ou mais cartoes. O sistema extrai apenas os numeros e monta o payload automaticamente.
+                  </Typography>
+                </Box>
               </Box>
 
-              <Typography variant="h4" sx={{ fontWeight: 700, color: "#333", mb: 2 }}>
-                RFID
-              </Typography>
+              {error && (
+                <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+                  {error}
+                </Alert>
+              )}
 
-              <Typography variant="body1" sx={{ color: "#666", mb: 4 }}>
-                Funcionalidade em desenvolvimento
-              </Typography>
+              {success && (
+                <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess(null)}>
+                  {success}
+                </Alert>
+              )}
 
-              <Paper
-                sx={{
-                  p: 3,
-                  bgcolor: "#fff3e0",
-                  border: "1px dashed #ff9800",
-                  borderRadius: 2,
-                }}
-              >
-                <Nfc sx={{ fontSize: 32, color: "#ff5722", mb: 1 }} />
-                <Typography variant="body2" sx={{ color: "#e65100" }}>
-                  Em breve voce podera gerenciar tags RFID diretamente por aqui.
-                </Typography>
-              </Paper>
+              <form onSubmit={handleSubmit}>
+                <Grid container spacing={3}>
+                  <Grid item xs={12}>
+                    <FormControl fullWidth>
+                      <InputLabel id="unidade-rfid-label">Unidade *</InputLabel>
+                      <Select
+                        labelId="unidade-rfid-label"
+                        value={selectedGaragem}
+                        label="Unidade *"
+                        onChange={(e) => setSelectedGaragem(e.target.value)}
+                        disabled={loadingUnidades || submitting}
+                      >
+                        {loadingUnidades ? (
+                          <MenuItem disabled>
+                            <CircularProgress size={20} sx={{ mr: 1 }} />
+                            Carregando unidades...
+                          </MenuItem>
+                        ) : (
+                          unidades.map((unidade) => (
+                            <MenuItem key={unidade.id} value={unidade.id_garagem || ""}>
+                              {unidade.nome_da_unidade}
+                            </MenuItem>
+                          ))
+                        )}
+                      </Select>
+                    </FormControl>
+                  </Grid>
 
-              <Button
-                variant="outlined"
-                startIcon={<ArrowBack />}
-                onClick={() => navigate("/")}
-                sx={{ mt: 4, borderColor: "#ff5722", color: "#ff5722", "&:hover": { borderColor: "#e64a19", bgcolor: "#fff3e0" } }}
-              >
-                Voltar ao Dashboard
-              </Button>
+                  <Grid item xs={12}>
+                    <Card
+                      sx={{
+                        border: "1px solid #e0e0e0",
+                        boxShadow: "none",
+                        bgcolor: "#fcfcfc",
+                      }}
+                    >
+                      <CardContent>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#333", mb: 2 }}>
+                          Adicao de cartao
+                        </Typography>
+                        <FormControl>
+                          <RadioGroup
+                            row
+                            value={adicaoCartao}
+                            onChange={(e) => {
+                              setAdicaoCartao(e.target.value as AdditionMode)
+                              setError(null)
+                              setSuccess(null)
+                            }}
+                          >
+                            <FormControlLabel value="Unitario" control={<Radio />} label="Unitario" />
+                            <FormControlLabel value="Lista" control={<Radio />} label="Lista" />
+                          </RadioGroup>
+                        </FormControl>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="ticket_cartao *"
+                      multiline
+                      minRows={8}
+                      value={rawTickets}
+                      onChange={(e) => {
+                        setRawTickets(e.target.value)
+                        setError(null)
+                        setSuccess(null)
+                      }}
+                      disabled={submitting}
+                      placeholder={`Cole aqui os cartoes, mensagens ou listas.\n\nExemplo:\n\n0004543693\n0005170726`}
+                      helperText="Textos, espacos e caracteres invalidos sao ignorados automaticamente."
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Stack
+                      spacing={1.5}
+                      sx={{
+                        p: 2,
+                        borderRadius: 2,
+                        bgcolor: "#fff7f2",
+                        border: "1px solid #ffd9c7",
+                      }}
+                    >
+                      <Typography variant="subtitle2" sx={{ color: "#9a3412", fontWeight: 700 }}>
+                        Cartoes identificados:
+                      </Typography>
+                      {identifiedTickets.length > 0 ? (
+                        identifiedTickets.map((ticket) => (
+                          <Typography key={ticket} variant="body2" sx={{ color: "#7c2d12", fontWeight: 500 }}>
+                            {"\u2714"} {ticket}
+                          </Typography>
+                        ))
+                      ) : (
+                        <Typography variant="body2" sx={{ color: "#9a3412" }}>
+                          Nenhum cartao numerico identificado ainda.
+                        </Typography>
+                      )}
+                    </Stack>
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Card
+                      sx={{
+                        border: "1px dashed #e0e0e0",
+                        boxShadow: "none",
+                        bgcolor: "#fafafa",
+                      }}
+                    >
+                      <CardContent>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#333", mb: 1 }}>
+                          Payload normalizado
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "#666", wordBreak: "break-all" }}>
+                          {adicaoCartao === "Unitario"
+                            ? identifiedTickets[0] || "-"
+                            : normalizedTicketString || "-"}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "#888", display: "block", mt: 1 }}>
+                          No modo Lista, duplicados sao removidos automaticamente e os cartoes ficam separados por virgula.
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      fullWidth
+                      size="large"
+                      disabled={submitting || loadingUnidades}
+                      startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <Save />}
+                      sx={{
+                        bgcolor: "#ff5722",
+                        "&:hover": { bgcolor: "#e64a19" },
+                        py: 1.5,
+                        fontSize: "1rem",
+                      }}
+                    >
+                      {submitting ? "Enviando RFID..." : "Enviar RFID"}
+                    </Button>
+                  </Grid>
+                </Grid>
+              </form>
             </CardContent>
           </Card>
         </Box>

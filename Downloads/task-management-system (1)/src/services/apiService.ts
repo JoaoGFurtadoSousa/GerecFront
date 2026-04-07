@@ -81,6 +81,12 @@ export interface QRCodePayload {
   quantidade: number
 }
 
+export interface RFIDPayload {
+  ticket_cartao: string
+  id_garagem: string
+  adicao_cartao: "Unitario" | "Lista"
+}
+
 const STATUS_TO_NUMBER = {
   "Para iniciar": "1",
   "Em andamento": "2",
@@ -523,6 +529,18 @@ class ApiService {
     console.log("📤 Enviando solicitação de criação de QRCode:", payload)
 
     const response = await authService.authenticatedFetch(`${API_BASE_URL}/qrcode/criar_qrcode/`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
+
+    await handleFetchError(response)
+    return response.json()
+  }
+
+  async createRFID(payload: RFIDPayload): Promise<any> {
+    console.log("📤 Enviando solicitação de RFID:", payload)
+
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/rfid/`, {
       method: "POST",
       body: JSON.stringify(payload),
     })
