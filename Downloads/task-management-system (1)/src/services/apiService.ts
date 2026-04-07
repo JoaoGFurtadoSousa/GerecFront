@@ -1,6 +1,6 @@
 import { authService } from "./authService"
 
-const API_BASE_URL = "http://192.168.15.20:8000/api/v1"
+const API_BASE_URL = "http://192.168.0.101:8000/api/v1"
 
 export interface Task {
   id: number
@@ -51,6 +51,7 @@ export interface Unit {
   id: number
   nome_da_unidade: string
   status: boolean
+  id_garagem?: string
 }
 
 export interface AdditionalDataForm {
@@ -72,6 +73,12 @@ export interface CurrentUser {
   email: string
   username: string
   grupo?: string
+}
+
+export interface QRCodePayload {
+  id_garagem: string
+  status: string
+  quantidade: number
 }
 
 const STATUS_TO_NUMBER = {
@@ -488,11 +495,47 @@ class ApiService {
     }
   }
 
+  async getQRCodeUnits(): Promise<Unit[]> {
+    console.log("🌐 Buscando unidades para QRCode...")
+
+    try {
+      const response = await authService.authenticatedFetch(`${API_BASE_URL}/unidades/`, {
+        method: "GET",
+      })
+
+      await handleFetchError(response)
+
+      const data = await response.json()
+
+      if (!Array.isArray(data)) {
+        console.warn("⚠️ API não retornou um array")
+        return []
+      }
+
+      return data
+    } catch (error) {
+      console.error("❌ Erro ao buscar unidades para QRCode:", error)
+      throw error
+    }
+  }
+
+  async createQRCodes(payload: QRCodePayload): Promise<any> {
+    console.log("📤 Enviando solicitação de criação de QRCode:", payload)
+
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/qrcode/criar_qrcode/`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
+
+    await handleFetchError(response)
+    return response.json()
+  }
+
   async getTechnicians(): Promise<Technician[]> {
     console.log("🌐 Buscando técnicos...")
 
     try {
-      const response = await authService.authenticatedFetch("http://192.168.15.20:8000/api/v1/users/nometecnicos/", {
+      const response = await authService.authenticatedFetch("http://192.168.0.101:8000/api/v1/users/nometecnicos/", {
         method: "GET",
       })
 
@@ -521,10 +564,10 @@ class ApiService {
     dataTarefa: string
     status: string
   }): Promise<void> {
-    console.log("📤 Enviando nova tarefa para: http://192.168.15.20:8000/api/v1/tarefas/")
+    console.log("📤 Enviando nova tarefa para: http://192.168.0.101:8000/api/v1/tarefas/")
     console.log("📋 Dados enviados:", taskData)
 
-    const response = await authService.authenticatedFetch("http://192.168.15.20:8000/api/v1/tarefas/", {
+    const response = await authService.authenticatedFetch("http://192.168.0.101:8000/api/v1/tarefas/", {
       method: "POST",
       body: JSON.stringify(taskData),
     })
@@ -537,7 +580,7 @@ class ApiService {
     console.log("🌐 Buscando dados do usuário atual...")
 
     try {
-      const response = await authService.authenticatedFetch("http://192.168.15.20:8000/api/v1/unique-user", {
+      const response = await authService.authenticatedFetch("http://192.168.0.101:8000/api/v1/unique-user", {
         method: "GET",
       })
 

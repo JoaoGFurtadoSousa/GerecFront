@@ -43,6 +43,8 @@ import {
   Business,
   History,
   Assignment,
+  QrCode2,
+  Nfc,
 } from "@mui/icons-material"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useTask, type Task } from "../contexts/TaskContext"
@@ -102,7 +104,7 @@ export default function TaskList() {
     try {
       console.log("🔄 Enviando requisição POST para salvar dados...")
 
-      const response = await authService.authenticatedFetch("http://192.168.15.20:8000/api/v1/historico/", {
+      const response = await authService.authenticatedFetch("http://192.168.0.101:8000/api/v1/historico/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -234,6 +236,18 @@ export default function TaskList() {
   }
 
   // ✅ NOVO: Verificar rota ativa
+  const handleNavigateToQRCode = () => {
+    if (authService.shouldEnableFeatures()) {
+      navigate("/qrcode")
+    }
+  }
+
+  const handleNavigateToRFID = () => {
+    if (authService.shouldEnableFeatures()) {
+      navigate("/rfid")
+    }
+  }
+
   const isActiveRoute = (path: string) => {
     return location.pathname === path
   }
@@ -354,6 +368,58 @@ export default function TaskList() {
             primaryTypographyProps={{
               fontSize: "0.9rem",
               color: authService.shouldEnableFeatures() ? (isActiveRoute("/unidades") ? "white" : "#ccc") : "#666",
+            }}
+          />
+        </ListItem>
+
+        <Divider sx={{ my: 2, borderColor: "#333" }} />
+
+        <ListItem
+          onClick={handleNavigateToQRCode}
+          sx={{
+            borderRadius: 2,
+            mb: 1,
+            bgcolor: isActiveRoute("/qrcode") ? "#9c27b0" : "transparent",
+            "&:hover": {
+              bgcolor: authService.shouldEnableFeatures() ? (isActiveRoute("/qrcode") ? "#7b1fa2" : "#333") : "transparent",
+            },
+            cursor: authService.shouldEnableFeatures() ? "pointer" : "not-allowed",
+            opacity: authService.shouldEnableFeatures() ? 1 : 0.5,
+          }}
+        >
+          <ListItemIcon>
+            <QrCode2 sx={{ color: authService.shouldEnableFeatures() ? (isActiveRoute("/qrcode") ? "white" : "#9c27b0") : "#666" }} />
+          </ListItemIcon>
+          <ListItemText
+            primary="Qrcode"
+            primaryTypographyProps={{
+              fontSize: "0.9rem",
+              color: authService.shouldEnableFeatures() ? (isActiveRoute("/qrcode") ? "white" : "#ccc") : "#666",
+            }}
+          />
+        </ListItem>
+
+        <ListItem
+          onClick={handleNavigateToRFID}
+          sx={{
+            borderRadius: 2,
+            mb: 1,
+            bgcolor: isActiveRoute("/rfid") ? "#ff5722" : "transparent",
+            "&:hover": {
+              bgcolor: authService.shouldEnableFeatures() ? (isActiveRoute("/rfid") ? "#e64a19" : "#333") : "transparent",
+            },
+            cursor: authService.shouldEnableFeatures() ? "pointer" : "not-allowed",
+            opacity: authService.shouldEnableFeatures() ? 1 : 0.5,
+          }}
+        >
+          <ListItemIcon>
+            <Nfc sx={{ color: authService.shouldEnableFeatures() ? (isActiveRoute("/rfid") ? "white" : "#ff5722") : "#666" }} />
+          </ListItemIcon>
+          <ListItemText
+            primary="RFID"
+            primaryTypographyProps={{
+              fontSize: "0.9rem",
+              color: authService.shouldEnableFeatures() ? (isActiveRoute("/rfid") ? "white" : "#ccc") : "#666",
             }}
           />
         </ListItem>

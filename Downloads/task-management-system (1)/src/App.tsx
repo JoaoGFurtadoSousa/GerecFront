@@ -13,6 +13,8 @@ import TaskAdditionalData from "./components/TaskAdditionalData"
 import NovaTask from "./components/NovaTask"
 import Historico from "./components/Historico"
 import Unidades from "./components/Unidades"
+import QRCodePage from "./components/Qrcode"
+import RFIDPage from "./components/RFID"
 
 const theme = createTheme({
   palette: {
@@ -130,6 +132,22 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <Unidades />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/qrcode"
+              element={
+                <ProtectedRoute>
+                  <QRCodePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/rfid"
+              element={
+                <ProtectedRoute>
+                  <RFIDPage />
                 </ProtectedRoute>
               }
             />

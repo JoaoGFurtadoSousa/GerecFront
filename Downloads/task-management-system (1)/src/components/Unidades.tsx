@@ -46,6 +46,8 @@ import {
   Warning,
   Close,
   Error as ErrorIcon,
+  QrCode2,
+  Nfc,
 } from "@mui/icons-material"
 import { useNavigate, useLocation } from "react-router-dom"
 import { authService } from "../services/authService"
@@ -343,6 +345,56 @@ export default function Unidades() {
         </ListItem>
 
         <Divider sx={{ my: 2, borderColor: "#333" }} />
+
+        <ListItem
+          onClick={() => featuresEnabled && navigate("/qrcode")}
+          sx={{
+            borderRadius: 2,
+            mb: 1,
+            bgcolor: isActiveRoute("/qrcode") ? "#9c27b0" : "transparent",
+            "&:hover": {
+              bgcolor: featuresEnabled ? (isActiveRoute("/qrcode") ? "#7b1fa2" : "#333") : "transparent",
+            },
+            cursor: featuresEnabled ? "pointer" : "not-allowed",
+            opacity: featuresEnabled ? 1 : 0.5,
+          }}
+        >
+          <ListItemIcon>
+            <QrCode2 sx={{ color: featuresEnabled ? (isActiveRoute("/qrcode") ? "white" : "#9c27b0") : "#666" }} />
+          </ListItemIcon>
+          <ListItemText
+            primary="Qrcode"
+            primaryTypographyProps={{
+              fontSize: "0.9rem",
+              color: featuresEnabled ? (isActiveRoute("/qrcode") ? "white" : "#ccc") : "#666",
+            }}
+          />
+        </ListItem>
+
+        <ListItem
+          onClick={() => featuresEnabled && navigate("/rfid")}
+          sx={{
+            borderRadius: 2,
+            mb: 1,
+            bgcolor: isActiveRoute("/rfid") ? "#ff5722" : "transparent",
+            "&:hover": {
+              bgcolor: featuresEnabled ? (isActiveRoute("/rfid") ? "#e64a19" : "#333") : "transparent",
+            },
+            cursor: featuresEnabled ? "pointer" : "not-allowed",
+            opacity: featuresEnabled ? 1 : 0.5,
+          }}
+        >
+          <ListItemIcon>
+            <Nfc sx={{ color: featuresEnabled ? (isActiveRoute("/rfid") ? "white" : "#ff5722") : "#666" }} />
+          </ListItemIcon>
+          <ListItemText
+            primary="RFID"
+            primaryTypographyProps={{
+              fontSize: "0.9rem",
+              color: featuresEnabled ? (isActiveRoute("/rfid") ? "white" : "#ccc") : "#666",
+            }}
+          />
+        </ListItem>
 
         <ListItem
           onClick={handleLogout}
