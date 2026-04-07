@@ -57,6 +57,12 @@ export default function Login() {
     const accessToken = localStorage.getItem("access_token")
     const refreshToken = localStorage.getItem("refresh_token")
     const userData = localStorage.getItem("user_data")
+    const authMessage = sessionStorage.getItem("auth_message")
+
+    if (authMessage) {
+      setError(authMessage)
+      sessionStorage.removeItem("auth_message")
+    }
 
     if (accessToken && refreshToken && userData) {
       console.log("✅ Já autenticado, redirecionando para home...")
@@ -132,6 +138,7 @@ export default function Login() {
       if (data.user) {
         localStorage.setItem("user_data", JSON.stringify(data.user))
       }
+      sessionStorage.removeItem("auth_message")
 
       console.log("💾 Tokens salvos no localStorage")
 
@@ -247,6 +254,7 @@ export default function Login() {
             <TextField
               fullWidth
               type="text"
+              autoComplete="username"
               placeholder="seu_username"
               value={formData.username}
               onChange={(e) => handleInputChange("username", e.target.value)}
@@ -281,6 +289,20 @@ export default function Login() {
                 "& .MuiInputBase-input": {
                   color: "white",
                   fontSize: "0.9rem",
+                  "&:-webkit-autofill": {
+                    WebkitBoxShadow: "0 0 0px 1000px #1e1e2f inset",
+                    WebkitTextFillColor: "#ffffff",
+                    transition: "background-color 5000s ease-in-out 0s",
+                    caretColor: "#ffffff",
+                  },
+                  "&:-webkit-autofill:hover": {
+                    WebkitBoxShadow: "0 0 0px 1000px #1e1e2f inset",
+                    WebkitTextFillColor: "#ffffff",
+                  },
+                  "&:-webkit-autofill:focus": {
+                    WebkitBoxShadow: "0 0 0px 1000px #1e1e2f inset",
+                    WebkitTextFillColor: "#ffffff",
+                  },
                   "&::placeholder": {
                     color: "rgba(255,255,255,0.5)",
                     opacity: 1,
@@ -303,6 +325,7 @@ export default function Login() {
             <TextField
               fullWidth
               type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
               placeholder="Digite sua senha"
               value={formData.password}
               onChange={(e) => handleInputChange("password", e.target.value)}
@@ -348,6 +371,20 @@ export default function Login() {
                 "& .MuiInputBase-input": {
                   color: "white",
                   fontSize: "0.9rem",
+                  "&:-webkit-autofill": {
+                    WebkitBoxShadow: "0 0 0px 1000px #1e1e2f inset",
+                    WebkitTextFillColor: "#ffffff",
+                    transition: "background-color 5000s ease-in-out 0s",
+                    caretColor: "#ffffff",
+                  },
+                  "&:-webkit-autofill:hover": {
+                    WebkitBoxShadow: "0 0 0px 1000px #1e1e2f inset",
+                    WebkitTextFillColor: "#ffffff",
+                  },
+                  "&:-webkit-autofill:focus": {
+                    WebkitBoxShadow: "0 0 0px 1000px #1e1e2f inset",
+                    WebkitTextFillColor: "#ffffff",
+                  },
                   "&::placeholder": {
                     color: "rgba(255,255,255,0.5)",
                     opacity: 1,

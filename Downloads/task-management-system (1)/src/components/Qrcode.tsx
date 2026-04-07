@@ -43,6 +43,8 @@ import { authService } from "../services/authService"
 import { apiService, type Unit } from "../services/apiService"
 
 const DRAWER_WIDTH = 240
+const PRIMARY_BLUE = "#4285f4"
+const PRIMARY_BLUE_HOVER = "#3367d6"
 
 export default function QRCodePage() {
   const navigate = useNavigate()
@@ -224,14 +226,14 @@ export default function QRCodePage() {
           sx={{
             borderRadius: 2,
             mb: 1,
-            bgcolor: isActiveRoute("/qrcode") ? "#9c27b0" : "transparent",
-            "&:hover": { bgcolor: featuresEnabled ? (isActiveRoute("/qrcode") ? "#7b1fa2" : "#333") : "transparent" },
+            bgcolor: isActiveRoute("/qrcode") ? PRIMARY_BLUE : "transparent",
+            "&:hover": { bgcolor: featuresEnabled ? (isActiveRoute("/qrcode") ? PRIMARY_BLUE_HOVER : "#333") : "transparent" },
             cursor: featuresEnabled ? "pointer" : "not-allowed",
             opacity: featuresEnabled ? 1 : 0.5,
           }}
         >
           <ListItemIcon>
-            <QrCode2 sx={{ color: isActiveRoute("/qrcode") ? "white" : featuresEnabled ? "#9c27b0" : "#666" }} />
+            <QrCode2 sx={{ color: isActiveRoute("/qrcode") ? "white" : featuresEnabled ? PRIMARY_BLUE : "#666" }} />
           </ListItemIcon>
           <ListItemText primary="Qrcode" primaryTypographyProps={{ fontSize: "0.9rem", fontWeight: isActiveRoute("/qrcode") ? 600 : 400, color: isActiveRoute("/qrcode") ? "white" : featuresEnabled ? "#ccc" : "#666" }} />
         </ListItem>
@@ -241,14 +243,14 @@ export default function QRCodePage() {
           sx={{
             borderRadius: 2,
             mb: 1,
-            bgcolor: isActiveRoute("/rfid") ? "#ff5722" : "transparent",
-            "&:hover": { bgcolor: featuresEnabled ? (isActiveRoute("/rfid") ? "#e64a19" : "#333") : "transparent" },
+            bgcolor: isActiveRoute("/rfid") ? PRIMARY_BLUE : "transparent",
+            "&:hover": { bgcolor: featuresEnabled ? (isActiveRoute("/rfid") ? PRIMARY_BLUE_HOVER : "#333") : "transparent" },
             cursor: featuresEnabled ? "pointer" : "not-allowed",
             opacity: featuresEnabled ? 1 : 0.5,
           }}
         >
           <ListItemIcon>
-            <Nfc sx={{ color: isActiveRoute("/rfid") ? "white" : featuresEnabled ? "#ff5722" : "#666" }} />
+            <Nfc sx={{ color: isActiveRoute("/rfid") ? "white" : featuresEnabled ? PRIMARY_BLUE : "#666" }} />
           </ListItemIcon>
           <ListItemText primary="RFID" primaryTypographyProps={{ fontSize: "0.9rem", fontWeight: isActiveRoute("/rfid") ? 600 : 400, color: isActiveRoute("/rfid") ? "white" : featuresEnabled ? "#ccc" : "#666" }} />
         </ListItem>
@@ -329,7 +331,7 @@ export default function QRCodePage() {
           <Card sx={{ bgcolor: "white", border: "1px solid #e0e0e0" }}>
             <CardContent sx={{ p: 4 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 4 }}>
-                <QrCode2 sx={{ fontSize: 48, color: "#9c27b0" }} />
+                <QrCode2 sx={{ fontSize: 48, color: PRIMARY_BLUE }} />
                 <Box>
                   <Typography variant="h5" sx={{ fontWeight: 600, color: "#333" }}>
                     Gerador de QRCodes
@@ -363,6 +365,14 @@ export default function QRCodePage() {
                         label="Unidade *"
                         onChange={(e) => setSelectedGaragem(e.target.value)}
                         disabled={loadingUnidades || submitting}
+                        sx={{
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "#d0d7de",
+                          },
+                          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                            borderColor: PRIMARY_BLUE,
+                          },
+                        }}
                       >
                         {loadingUnidades ? (
                           <MenuItem disabled>
@@ -389,6 +399,14 @@ export default function QRCodePage() {
                         label="Status *"
                         onChange={(e) => setSelectedStatus(e.target.value)}
                         disabled={submitting}
+                        sx={{
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "#d0d7de",
+                          },
+                          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                            borderColor: PRIMARY_BLUE,
+                          },
+                        }}
                       >
                         <MenuItem value="0">Para entrar</MenuItem>
                         <MenuItem value="2">Para sair</MenuItem>
@@ -411,27 +429,18 @@ export default function QRCodePage() {
                       inputProps={{ min: 1, max: 10 }}
                       disabled={submitting}
                       helperText="Maximo de 10 QRCodes por vez"
+                      sx={{
+                        "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                          borderColor: PRIMARY_BLUE,
+                        },
+                        "& .MuiFormLabel-root.Mui-focused": {
+                          color: PRIMARY_BLUE,
+                        },
+                      }}
                     />
                   </Grid>
 
                   <Grid item xs={12}>
-                    <Stack
-                      direction={{ xs: "column", md: "row" }}
-                      spacing={2}
-                      sx={{
-                        p: 2,
-                        borderRadius: 2,
-                        bgcolor: "#faf5ff",
-                        border: "1px solid #ead7f7",
-                      }}
-                    >
-                      <Typography variant="body2" sx={{ color: "#5b2b73", flex: 1 }}>
-                        O select mostra <strong>nome_da_unidade</strong>, mas envia <strong>id_garagem</strong> no POST.
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: "#5b2b73", flex: 1 }}>
-                        Os status enviados seguem o serializer: <strong>0</strong> para entrar e <strong>2</strong> para sair.
-                      </Typography>
-                    </Stack>
                   </Grid>
 
                   <Grid item xs={12}>
@@ -443,8 +452,8 @@ export default function QRCodePage() {
                       disabled={submitting || loadingUnidades}
                       startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <Send />}
                       sx={{
-                        bgcolor: "#9c27b0",
-                        "&:hover": { bgcolor: "#7b1fa2" },
+                        bgcolor: PRIMARY_BLUE,
+                        "&:hover": { bgcolor: PRIMARY_BLUE_HOVER },
                         py: 1.5,
                         fontSize: "1rem",
                       }}

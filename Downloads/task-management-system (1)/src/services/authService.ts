@@ -21,6 +21,14 @@ class AuthService {
   private hasInitialized = false
   private navigationCallback: ((path: string) => void) | null = null
 
+  private setAuthMessage(message: string) {
+    try {
+      sessionStorage.setItem("auth_message", message)
+    } catch (error) {
+      console.error("❌ Erro ao salvar mensagem de autenticação:", error)
+    }
+  }
+
   private constructor() {
     // Construtor vazio - sem inicialização automática
   }
@@ -241,7 +249,7 @@ class AuthService {
           console.log("⏰ Executando refresh automático...")
           this.refreshAccessToken().catch((error) => {
             console.error("❌ Erro no refresh automático:", error)
-            this.logout()
+            this.logout("Sessão expirada")
           })
         }
       },
@@ -266,7 +274,7 @@ class AuthService {
     const refreshToken = this.getRefreshToken()
     if (!refreshToken) {
       console.error("❌ Refresh token não encontrado")
-      this.logout()
+      this.logout("Sessão expirada")
       throw new Error("Refresh token não encontrado")
     }
 
@@ -280,7 +288,7 @@ class AuthService {
       return newAccessToken
     } catch (error) {
       console.error("❌ Erro no refresh do token:", error)
-      this.logout()
+      this.logout("Sessão expirada")
       throw error
     } finally {
       this.isRefreshing = false
@@ -321,7 +329,7 @@ class AuthService {
   }
 
   // Logout SEM redirecionamento automático
-  logout() {
+  logout(message?: string) {
     if (this.isLoggingOut) {
       console.log("⚠️ Logout já em andamento")
       return
@@ -346,6 +354,10 @@ class AuthService {
     console.log("🧹 Dados limpos")
 
     // Usar callback de navegação se disponível
+    if (message) {
+      this.setAuthMessage(message)
+    }
+
     if (this.navigationCallback) {
       console.log("🔄 Redirecionando para login via callback")
       this.navigationCallback("/login")
@@ -387,11 +399,11 @@ class AuthService {
           console.log("✅ Token recuperado via refresh")
         } catch (error) {
           console.error("❌ Falha na recuperação do token:", error)
-          this.logout()
+          this.logout("Sessão expirada")
           throw new Error("Token não encontrado e falha na recuperação")
         }
       } else {
-        this.logout()
+        this.logout("Sessão expirada")
         throw new Error("Token não encontrado")
       }
     }
@@ -457,12 +469,12 @@ class AuthService {
 
         if (response.status === 401) {
           console.error("❌ Ainda não autorizado após refresh")
-          this.logout()
+          this.logout("Sessão expirada")
           throw new Error("Sessão expirada")
         }
       } catch (error) {
         console.error("❌ Erro no refresh durante requisição:", error)
-        this.logout()
+        this.logout("Sessão expirada")
         throw error
       }
     }

@@ -46,6 +46,8 @@ import { apiService, type Unit } from "../services/apiService"
 import { authService } from "../services/authService"
 
 const DRAWER_WIDTH = 240
+const PRIMARY_BLUE = "#4285f4"
+const PRIMARY_BLUE_HOVER = "#3367d6"
 
 type AdditionMode = "Unitario" | "Lista"
 
@@ -252,14 +254,14 @@ export default function RFIDPage() {
           sx={{
             borderRadius: 2,
             mb: 1,
-            bgcolor: isActiveRoute("/qrcode") ? "#9c27b0" : "transparent",
+            bgcolor: isActiveRoute("/qrcode") ? PRIMARY_BLUE : "transparent",
             "&:hover": { bgcolor: featuresEnabled ? "#333" : "transparent" },
             cursor: featuresEnabled ? "pointer" : "not-allowed",
             opacity: featuresEnabled ? 1 : 0.5,
           }}
         >
           <ListItemIcon>
-            <QrCode2 sx={{ color: featuresEnabled ? "#9c27b0" : "#666" }} />
+            <QrCode2 sx={{ color: featuresEnabled ? PRIMARY_BLUE : "#666" }} />
           </ListItemIcon>
           <ListItemText primary="Qrcode" primaryTypographyProps={{ fontSize: "0.9rem", color: featuresEnabled ? "#ccc" : "#666" }} />
         </ListItem>
@@ -269,14 +271,14 @@ export default function RFIDPage() {
           sx={{
             borderRadius: 2,
             mb: 1,
-            bgcolor: isActiveRoute("/rfid") ? "#ff5722" : "transparent",
-            "&:hover": { bgcolor: featuresEnabled ? (isActiveRoute("/rfid") ? "#e64a19" : "#333") : "transparent" },
+            bgcolor: isActiveRoute("/rfid") ? PRIMARY_BLUE : "transparent",
+            "&:hover": { bgcolor: featuresEnabled ? (isActiveRoute("/rfid") ? PRIMARY_BLUE_HOVER : "#333") : "transparent" },
             cursor: featuresEnabled ? "pointer" : "not-allowed",
             opacity: featuresEnabled ? 1 : 0.5,
           }}
         >
           <ListItemIcon>
-            <Nfc sx={{ color: isActiveRoute("/rfid") ? "white" : featuresEnabled ? "#ff5722" : "#666" }} />
+            <Nfc sx={{ color: isActiveRoute("/rfid") ? "white" : featuresEnabled ? PRIMARY_BLUE : "#666" }} />
           </ListItemIcon>
           <ListItemText primary="RFID" primaryTypographyProps={{ fontSize: "0.9rem", fontWeight: isActiveRoute("/rfid") ? 600 : 400, color: isActiveRoute("/rfid") ? "white" : featuresEnabled ? "#ccc" : "#666" }} />
         </ListItem>
@@ -357,7 +359,7 @@ export default function RFIDPage() {
           <Card sx={{ bgcolor: "white", border: "1px solid #e0e0e0" }}>
             <CardContent sx={{ p: 4 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 4 }}>
-                <Nfc sx={{ fontSize: 48, color: "#ff5722" }} />
+                <Nfc sx={{ fontSize: 48, color: PRIMARY_BLUE }} />
                 <Box>
                   <Typography variant="h5" sx={{ fontWeight: 600, color: "#333" }}>
                     Cadastro RFID
@@ -391,6 +393,14 @@ export default function RFIDPage() {
                         label="Unidade *"
                         onChange={(e) => setSelectedGaragem(e.target.value)}
                         disabled={loadingUnidades || submitting}
+                        sx={{
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "#d0d7de",
+                          },
+                          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                            borderColor: PRIMARY_BLUE,
+                          },
+                        }}
                       >
                         {loadingUnidades ? (
                           <MenuItem disabled>
@@ -430,8 +440,16 @@ export default function RFIDPage() {
                               setSuccess(null)
                             }}
                           >
-                            <FormControlLabel value="Unitario" control={<Radio />} label="Unitario" />
-                            <FormControlLabel value="Lista" control={<Radio />} label="Lista" />
+                            <FormControlLabel
+                              value="Unitario"
+                              control={<Radio sx={{ "&.Mui-checked": { color: PRIMARY_BLUE } }} />}
+                              label="Unitario"
+                            />
+                            <FormControlLabel
+                              value="Lista"
+                              control={<Radio sx={{ "&.Mui-checked": { color: PRIMARY_BLUE } }} />}
+                              label="Lista"
+                            />
                           </RadioGroup>
                         </FormControl>
                       </CardContent>
@@ -453,6 +471,14 @@ export default function RFIDPage() {
                       disabled={submitting}
                       placeholder={`Cole aqui os cartoes, mensagens ou listas.\n\nExemplo:\n\n0004543693\n0005170726`}
                       helperText="Textos, espacos e caracteres invalidos sao ignorados automaticamente."
+                      sx={{
+                        "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                          borderColor: PRIMARY_BLUE,
+                        },
+                        "& .MuiFormLabel-root.Mui-focused": {
+                          color: PRIMARY_BLUE,
+                        },
+                      }}
                     />
                   </Grid>
 
@@ -462,21 +488,21 @@ export default function RFIDPage() {
                       sx={{
                         p: 2,
                         borderRadius: 2,
-                        bgcolor: "#fff7f2",
-                        border: "1px solid #ffd9c7",
+                        bgcolor: "#eef4ff",
+                        border: "1px solid #c9dafc",
                       }}
                     >
-                      <Typography variant="subtitle2" sx={{ color: "#9a3412", fontWeight: 700 }}>
+                      <Typography variant="subtitle2" sx={{ color: "#244a9b", fontWeight: 700 }}>
                         Cartoes identificados:
                       </Typography>
                       {identifiedTickets.length > 0 ? (
                         identifiedTickets.map((ticket) => (
-                          <Typography key={ticket} variant="body2" sx={{ color: "#7c2d12", fontWeight: 500 }}>
+                          <Typography key={ticket} variant="body2" sx={{ color: "#244a9b", fontWeight: 500 }}>
                             {"\u2714"} {ticket}
                           </Typography>
                         ))
                       ) : (
-                        <Typography variant="body2" sx={{ color: "#9a3412" }}>
+                        <Typography variant="body2" sx={{ color: "#244a9b" }}>
                           Nenhum cartao numerico identificado ainda.
                         </Typography>
                       )}
@@ -516,8 +542,8 @@ export default function RFIDPage() {
                       disabled={submitting || loadingUnidades}
                       startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <Save />}
                       sx={{
-                        bgcolor: "#ff5722",
-                        "&:hover": { bgcolor: "#e64a19" },
+                        bgcolor: PRIMARY_BLUE,
+                        "&:hover": { bgcolor: PRIMARY_BLUE_HOVER },
                         py: 1.5,
                         fontSize: "1rem",
                       }}
