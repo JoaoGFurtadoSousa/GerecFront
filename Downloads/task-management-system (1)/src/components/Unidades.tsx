@@ -536,9 +536,7 @@ export default function Unidades() {
                       <Typography variant="h4" sx={{ fontWeight: 700, color: "#333" }}>
                         {totalUnits}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "#2196f3" }}>
-                        Cadastradas
-                      </Typography>
+  
                     </Box>
                     <Business sx={{ fontSize: 40, color: "#e0e0e0" }} />
                   </Box>
@@ -557,9 +555,7 @@ export default function Unidades() {
                       <Typography variant="h4" sx={{ fontWeight: 700, color: "#4caf50" }}>
                         {activeUnits}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "#4caf50" }}>
-                        Operacionais
-                      </Typography>
+                      
                     </Box>
                     <CheckCircle sx={{ fontSize: 40, color: "#e8f5e8" }} />
                   </Box>
@@ -573,14 +569,12 @@ export default function Unidades() {
                   <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <Box>
                       <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-                        Inativas
+                        Desativadas
                       </Typography>
                       <Typography variant="h4" sx={{ fontWeight: 700, color: "#f44336" }}>
                         {inactiveUnits}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "#f44336" }}>
-                        Desativadas
-                      </Typography>
+                     
                     </Box>
                     <ErrorIcon sx={{ fontSize: 40, color: "#ffebee" }} />
                   </Box>

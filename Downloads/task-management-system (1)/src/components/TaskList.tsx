@@ -544,28 +544,7 @@ export default function TaskList() {
         {/* Content */}
         <Box sx={{ p: 3 }}>
           {/* Status de Autenticação */}
-          <Card sx={{ mb: 3, bgcolor: authService.shouldEnableFeatures() ? "#e8f5e8" : "#fff3e0", border: "1px solid #e0e0e0" }}>
-            <CardContent>
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <Box
-                    sx={{
-                      width: 12,
-                      height: 12,
-                      borderRadius: "50%",
-                      bgcolor: authService.shouldEnableFeatures() ? "#4caf50" : "#ff9800",
-                    }}
-                  />
-                  <Typography variant="body2" sx={{ color: "#666" }}>
-                    Status: {authService.shouldEnableFeatures() ? "Autenticado (Tokens Válidos)" : "Tokens Inválidos"}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: "#999" }}>
-                    Funcionalidades: {authService.shouldEnableFeatures() ? "Habilitadas" : "Limitadas"}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
+         
 
           {/* Métricas */}
           <Grid container spacing={3} sx={{ mb: 4 }}>

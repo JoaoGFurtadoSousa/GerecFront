@@ -471,8 +471,6 @@ export default function Historico() {
                             variant="caption"
                             sx={{ color: "#4caf50", display: "flex", alignItems: "center" }}
                           >
-                            <TrendingUp sx={{ fontSize: 16, mr: 0.5 }} />
-                            Histórico completo
                           </Typography>
                         </Box>
                         <Assignment sx={{ fontSize: 48, color: "#e0e0e0" }} />
