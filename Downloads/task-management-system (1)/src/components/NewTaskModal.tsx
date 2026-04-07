@@ -248,7 +248,7 @@ export default function NovaTask() {
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Engineering sx={{ fontSize: 32, color: "#2196f3" }} />
           <Typography variant="h6" sx={{ fontWeight: 600, color: "white" }}>
-            TaskPulse
+            GerecTech
           </Typography>
         </Box>
       </Box>

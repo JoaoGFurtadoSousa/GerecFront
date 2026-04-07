@@ -237,7 +237,7 @@ export default function Cadastro() {
             fontSize: "2.5rem",
           }}
         >
-          TaskPulse
+          GerecTech
         </Typography>
       </Box>
 

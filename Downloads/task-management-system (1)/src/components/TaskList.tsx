@@ -49,7 +49,6 @@ import {
 import { useNavigate, useLocation } from "react-router-dom"
 import { useTask, type Task } from "../contexts/TaskContext"
 import { authService } from "../services/authService"
-import { apiService } from "../services/apiService"
 
 const DRAWER_WIDTH = 240
 
@@ -82,11 +81,10 @@ export default function TaskList() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [userData, setUserData] = useState<{ nome: string; email: string }>({
+  const [userData, setUserData] = useState<{ username: string; email: string }>({
     username: "Usuário",
     email: "usuario@sistema.com",
   })
-  const [userLoading, setUserLoading] = useState(true)
 
   // Estado para controlar o auto-refresh
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true)
@@ -162,8 +160,10 @@ export default function TaskList() {
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        const user = await apiService.getCurrentUser()
-        setUserData(user)
+        const user = authService.getUserData()
+        if (user) {
+          setUserData(user)
+        }
       } catch (error) {
         console.error("❌ Erro ao carregar dados do usuário:", error)
         // Fallback para dados padrão se falhar
@@ -171,8 +171,6 @@ export default function TaskList() {
           username: authService.getUserData()?.username || "Usuário",
           email: authService.getUserData()?.email || "usuario@sistema.com",
         })
-      } finally {
-        setUserLoading(false)
       }
     }
 
@@ -259,7 +257,7 @@ export default function TaskList() {
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Engineering sx={{ fontSize: 32, color: "#2196f3" }} />
           <Typography variant="h6" sx={{ fontWeight: 600, color: "white" }}>
-            TaskPulse
+            GerecTech
           </Typography>
         </Box>
       </Box>
@@ -379,16 +377,16 @@ export default function TaskList() {
           sx={{
             borderRadius: 2,
             mb: 1,
-            bgcolor: isActiveRoute("/qrcode") ? "#9c27b0" : "transparent",
+            bgcolor: isActiveRoute("/qrcode") ? "#2196f3" : "transparent",
             "&:hover": {
-              bgcolor: authService.shouldEnableFeatures() ? (isActiveRoute("/qrcode") ? "#7b1fa2" : "#333") : "transparent",
+              bgcolor: authService.shouldEnableFeatures() ? (isActiveRoute("/qrcode") ? "#1976d2" : "#333") : "transparent",
             },
             cursor: authService.shouldEnableFeatures() ? "pointer" : "not-allowed",
             opacity: authService.shouldEnableFeatures() ? 1 : 0.5,
           }}
         >
           <ListItemIcon>
-            <QrCode2 sx={{ color: authService.shouldEnableFeatures() ? (isActiveRoute("/qrcode") ? "white" : "#9c27b0") : "#666" }} />
+            <QrCode2 sx={{ color: authService.shouldEnableFeatures() ? (isActiveRoute("/qrcode") ? "white" : "#ccc") : "#666" }} />
           </ListItemIcon>
           <ListItemText
             primary="Qrcode"
@@ -404,16 +402,16 @@ export default function TaskList() {
           sx={{
             borderRadius: 2,
             mb: 1,
-            bgcolor: isActiveRoute("/rfid") ? "#ff5722" : "transparent",
+            bgcolor: isActiveRoute("/rfid") ? "#2196f3" : "transparent",
             "&:hover": {
-              bgcolor: authService.shouldEnableFeatures() ? (isActiveRoute("/rfid") ? "#e64a19" : "#333") : "transparent",
+              bgcolor: authService.shouldEnableFeatures() ? (isActiveRoute("/rfid") ? "#1976d2" : "#333") : "transparent",
             },
             cursor: authService.shouldEnableFeatures() ? "pointer" : "not-allowed",
             opacity: authService.shouldEnableFeatures() ? 1 : 0.5,
           }}
         >
           <ListItemIcon>
-            <Nfc sx={{ color: authService.shouldEnableFeatures() ? (isActiveRoute("/rfid") ? "white" : "#ff5722") : "#666" }} />
+            <Nfc sx={{ color: authService.shouldEnableFeatures() ? (isActiveRoute("/rfid") ? "white" : "#ccc") : "#666" }} />
           </ListItemIcon>
           <ListItemText
             primary="RFID"
@@ -452,7 +450,7 @@ export default function TaskList() {
     </Box>
   )
 
-  if (loading || userLoading) {
+  if (loading) {
     return (
       <Box sx={{ display: "flex", height: "100vh" }}>
         <Box sx={{ width: DRAWER_WIDTH, flexShrink: 0 }}>{drawer}</Box>

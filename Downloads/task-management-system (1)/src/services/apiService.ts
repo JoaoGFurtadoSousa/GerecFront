@@ -351,7 +351,7 @@ class ApiService {
     formData.append("substituicao_de_pecas", substituicao_de_pecas)
     formData.append("latitude", String(data.latitude))
     formData.append("longitude", String(data.longitude))
-    formData.append("status", "3")
+    formData.append("status", "2")
 
     console.log("⚠️ IMPORTANTE: Campo 'unidade' NÃO será enviado para preservar o valor atual")
 

@@ -68,6 +68,16 @@ export default function TaskAdditionalData() {
 
   const task = getTaskById(Number(id))
 
+  if (loading) {
+    return (
+      <Container maxWidth="md">
+        <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+          <CircularProgress />
+        </Box>
+      </Container>
+    )
+  }
+
   // Obter localização automaticamente ao carregar a página
   useEffect(() => {
     getCurrentLocation()
@@ -497,8 +507,8 @@ export default function TaskAdditionalData() {
                   sx={{
                     px: 4,
                     py: 1.5,
-                    bgcolor: "#4caf50",
-                    "&:hover": { bgcolor: "#388e3c" },
+                    bgcolor: "#4285f4",
+                    "&:hover": { bgcolor: "#3367d6" },
                   }}
                 >
                   {submitting ? "Salvando..." : "Finalizar Tarefa"}

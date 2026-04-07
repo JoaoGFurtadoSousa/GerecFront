@@ -122,7 +122,14 @@ class AuthService {
 
       // ✅ Salvar dados do usuário apenas se fornecidos (opcional)
       if (user) {
-        localStorage.setItem("user_data", JSON.stringify(user))
+        localStorage.setItem(
+          "user_data",
+          JSON.stringify({
+            ...user,
+            username: user.username || user.nome || "Usuário",
+            email: user.email || "usuario@sistema.com",
+          }),
+        )
         console.log("👤 Dados do usuário salvos (opcional)")
       } else {
         console.log("⚠️ Dados do usuário não fornecidos - continuando sem userData")
@@ -187,13 +194,21 @@ class AuthService {
         console.log("🔄 Criando userData básico pois tokens são válidos")
         const basicUserData = {
           id: 1,
-          nome: "Usuário",
+          username: "Usuário",
           email: "usuario@sistema.com",
         }
         return basicUserData
       }
 
-      return parsed
+      if (!parsed) {
+        return null
+      }
+
+      return {
+        ...parsed,
+        username: parsed.username || parsed.nome || "Usuário",
+        email: parsed.email || "usuario@sistema.com",
+      }
     } catch (error) {
       console.error("❌ Erro ao obter dados do usuário:", error)
 
@@ -202,7 +217,7 @@ class AuthService {
         console.log("🔄 Fallback: retornando userData básico")
         return {
           id: 1,
-          nome: "Usuário",
+          username: "Usuário",
           email: "usuario@sistema.com",
         }
       }

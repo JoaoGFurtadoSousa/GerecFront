@@ -25,6 +25,16 @@ export default function TaskDetails() {
 
   const task = getTaskById(Number(id))
 
+  if (loading) {
+    return (
+      <Container maxWidth="md">
+        <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+          <CircularProgress />
+        </Box>
+      </Container>
+    )
+  }
+
   if (!task) {
     return (
       <Container maxWidth="md">

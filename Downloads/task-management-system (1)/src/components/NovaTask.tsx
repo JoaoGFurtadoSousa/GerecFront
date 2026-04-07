@@ -85,8 +85,10 @@ export default function NovaTask() {
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        const user = await apiService.getCurrentUser()
-        setUserData(user)
+        const user = authService.getUserData()
+        if (user) {
+          setUserData(user)
+        }
       } catch (error) {
         console.error("❌ Erro ao carregar dados do usuário:", error)
         setUserData({
@@ -205,7 +207,7 @@ export default function NovaTask() {
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Engineering sx={{ fontSize: 32, color: "#2196f3" }} />
           <Typography variant="h6" sx={{ fontWeight: 600, color: "white" }}>
-            TaskPulse
+            GerecTech
           </Typography>
         </Box>
       </Box>
@@ -315,16 +317,16 @@ export default function NovaTask() {
           sx={{
             borderRadius: 2,
             mb: 1,
-            bgcolor: isActiveRoute("/qrcode") ? "#9c27b0" : "transparent",
+            bgcolor: isActiveRoute("/qrcode") ? "#2196f3" : "transparent",
             "&:hover": {
-              bgcolor: featuresEnabled ? (isActiveRoute("/qrcode") ? "#7b1fa2" : "#333") : "transparent",
+              bgcolor: featuresEnabled ? (isActiveRoute("/qrcode") ? "#1976d2" : "#333") : "transparent",
             },
             cursor: featuresEnabled ? "pointer" : "not-allowed",
             opacity: featuresEnabled ? 1 : 0.5,
           }}
         >
           <ListItemIcon>
-            <QrCode2 sx={{ color: featuresEnabled ? (isActiveRoute("/qrcode") ? "white" : "#9c27b0") : "#666" }} />
+            <QrCode2 sx={{ color: featuresEnabled ? (isActiveRoute("/qrcode") ? "white" : "#ccc") : "#666" }} />
           </ListItemIcon>
           <ListItemText
             primary="Qrcode"
@@ -340,16 +342,16 @@ export default function NovaTask() {
           sx={{
             borderRadius: 2,
             mb: 1,
-            bgcolor: isActiveRoute("/rfid") ? "#ff5722" : "transparent",
+            bgcolor: isActiveRoute("/rfid") ? "#2196f3" : "transparent",
             "&:hover": {
-              bgcolor: featuresEnabled ? (isActiveRoute("/rfid") ? "#e64a19" : "#333") : "transparent",
+              bgcolor: featuresEnabled ? (isActiveRoute("/rfid") ? "#1976d2" : "#333") : "transparent",
             },
             cursor: featuresEnabled ? "pointer" : "not-allowed",
             opacity: featuresEnabled ? 1 : 0.5,
           }}
         >
           <ListItemIcon>
-            <Nfc sx={{ color: featuresEnabled ? (isActiveRoute("/rfid") ? "white" : "#ff5722") : "#666" }} />
+            <Nfc sx={{ color: featuresEnabled ? (isActiveRoute("/rfid") ? "white" : "#ccc") : "#666" }} />
           </ListItemIcon>
           <ListItemText
             primary="RFID"

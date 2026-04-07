@@ -183,7 +183,7 @@ export default function Login() {
             fontSize: "2.5rem",
           }}
         >
-          TaskPulse
+          GerecTech
         </Typography>
       </Box>
 
