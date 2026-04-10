@@ -466,38 +466,6 @@ export default function EquipmentChecklist() {
             </Box>
           </Stack>
 
-          {/* Indicador de equipamentos carregados */}
-          <Paper
-            elevation={0}
-            sx={{
-              mb: 1.5,
-              p: 1.5,
-              borderRadius: 2,
-              border: "1px solid #e5e7eb",
-              bgcolor: "#e8f5e8",
-            }}
-          >
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <CheckCircle sx={{ fontSize: 16, color: "#16a34a" }} />
-              <Typography variant="body2" sx={{ fontWeight: 600, color: "#16a34a", fontSize: "0.875rem" }}>
-                Equipamentos Carregados da Unidade
-              </Typography>
-              <Chip
-                label={`${totalEquipment} equipamentos`}
-                size="small"
-                sx={{
-                  bgcolor: "#dcfce7",
-                  color: "#16a34a",
-                  fontWeight: 600,
-                  height: 20,
-                  fontSize: "0.7rem",
-                }}
-              />
-            </Stack>
-            <Typography variant="caption" sx={{ color: "#15803d", fontSize: "0.7rem", display: "block", mt: 0.5 }}>
-              IDs: {equipment.length > 0 ? `${equipment[0].id} - ${equipment[equipment.length - 1].id}` : "N/A"}
-            </Typography>
-          </Paper>
 
           {/* Progresso da Verificação */}
           <Paper

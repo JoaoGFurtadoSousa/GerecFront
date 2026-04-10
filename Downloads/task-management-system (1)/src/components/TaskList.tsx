@@ -102,7 +102,7 @@ export default function TaskList() {
     try {
       console.log("🔄 Enviando requisição POST para salvar dados...")
 
-      const response = await authService.authenticatedFetch("http://192.168.0.101:8000/api/v1/historico/", {
+      const response = await authService.authenticatedFetch("http://192.168.15.20:8000/api/v1/historico/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -557,10 +557,6 @@ export default function TaskList() {
                       <Typography variant="h4" sx={{ fontWeight: 700, color: "#333" }}>
                         {totalTasks}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "#4caf50", display: "flex", alignItems: "center" }}>
-                        <TrendingUp sx={{ fontSize: 16, mr: 0.5 }} />
-                        +2.5%
-                      </Typography>
                     </Box>
                     <Assignment sx={{ fontSize: 40, color: "#e0e0e0" }} />
                   </Box>
@@ -579,9 +575,6 @@ export default function TaskList() {
                       <Typography variant="h4" sx={{ fontWeight: 700, color: "#ff9800" }}>
                         {inProgressTasks}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "#ff9800" }}>
-                        Hoje
-                      </Typography>
                     </Box>
                     <PlayArrow sx={{ fontSize: 40, color: "#fff3e0" }} />
                   </Box>
@@ -599,10 +592,6 @@ export default function TaskList() {
                       </Typography>
                       <Typography variant="h4" sx={{ fontWeight: 700, color: "#2196f3" }}>
                         {pendingTasks}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: "#2196f3", display: "flex", alignItems: "center" }}>
-                        <Schedule sx={{ fontSize: 16, mr: 0.5 }} />
-                        Para iniciar
                       </Typography>
                     </Box>
                     <Schedule sx={{ fontSize: 40, color: "#e3f2fd" }} />

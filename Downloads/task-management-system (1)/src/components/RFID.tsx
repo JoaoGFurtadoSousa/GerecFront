@@ -461,7 +461,7 @@ export default function RFIDPage() {
                         setSuccess(null)
                       }}
                       disabled={submitting}
-                      placeholder={`Cole aqui os cartoes, mensagens ou listas.\n\nExemplo:\n\n0004543693\n0005170726`}
+                      placeholder={`Cole aqui os cartoe ou lista de cartões.\n\nExemplo:\n0004543693\n0005170726`}
                       helperText="Textos, espacos e caracteres invalidos sao ignorados automaticamente."
                       sx={{
                         "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {

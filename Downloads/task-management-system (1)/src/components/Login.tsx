@@ -103,7 +103,7 @@ export default function Login() {
     try {
       console.log("🔐 Fazendo login com:", formData.username)
 
-      const response = await fetch("http://192.168.0.101:8000/api/v1/login/", {
+      const response = await fetch("http://192.168.15.20:8000/api/v1/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -119,7 +119,7 @@ export default function Login() {
         try {
           const errorData = await response.json()
           console.log("❌ Erro do servidor:", errorData)
-          errorMessage = errorData.message || errorData.detail || "Email ou senha incorretos"
+          errorMessage = errorData.detail
         } catch (e) {
           console.log("⚠️ Não foi possível parsear erro")
         }
