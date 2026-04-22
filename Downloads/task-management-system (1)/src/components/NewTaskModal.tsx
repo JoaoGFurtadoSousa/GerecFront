@@ -90,7 +90,7 @@ export default function NovaTask() {
   const featuresEnabled = authService.shouldEnableFeatures()
 
   useEffect(() => {
-    const token = localStorage.getItem("token")
+    const token = localStorage.getItem("access_token")
     if (!token) {
       console.log("🔒 Token não encontrado, redirecionando para login...")
       navigate("/login", { replace: true })
@@ -103,13 +103,13 @@ export default function NovaTask() {
       try {
         setLoadingData(true)
 
-        const token = localStorage.getItem("token")
+        const token = localStorage.getItem("access_token")
         const headers = {
           "Content-Type": "application/json",
           ...(token && { Authorization: `Bearer ${token}` }),
         }
 
-        const unidadesResponse = await fetch("http://192.168.15.20:8000/api/v1/unidades/", {
+        const unidadesResponse = await fetch("http://192.168.15.29:8000/api/v1/unidades/", {
           headers,
         })
 
@@ -122,7 +122,7 @@ export default function NovaTask() {
           setUnidades([])
         }
 
-        const usuariosResponse = await fetch("http://192.168.15.20:8000/api/v1/usuarios/", {
+        const usuariosResponse = await fetch("http://192.168.15.29:8000/api/v1/usuarios/", {
           headers,
         })
 
@@ -173,13 +173,13 @@ export default function NovaTask() {
     setError("")
 
     try {
-      const token = localStorage.getItem("token")
+      const token = localStorage.getItem("access_token")
       const headers = {
         "Content-Type": "application/json",
         ...(token && { Authorization: `Bearer ${token}` }),
       }
 
-      const response = await fetch("http://192.168.15.20:8000/api/v1/tarefas/", {
+      const response = await fetch("http://192.168.15.29:8000/api/v1/tarefas/", {
         method: "POST",
         headers,
         body: JSON.stringify({

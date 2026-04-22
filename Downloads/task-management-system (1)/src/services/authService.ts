@@ -20,6 +20,7 @@ class AuthService {
   private isLoggingOut = false
   private hasInitialized = false
   private navigationCallback: ((path: string) => void) | null = null
+  private currentUserPromise: Promise<any | null> | null = null
 
   private setAuthMessage(message: string) {
     try {
@@ -132,6 +133,8 @@ class AuthService {
         )
         console.log("👤 Dados do usuário salvos (opcional)")
       } else {
+        localStorage.removeItem("user_data")
+        console.log("🧹 user_data antigo removido para recarregar do backend")
         console.log("⚠️ Dados do usuário não fornecidos - continuando sem userData")
       }
 
@@ -140,6 +143,8 @@ class AuthService {
 
       // Configurar refresh automático
       this.scheduleTokenRefresh()
+      this.currentUserPromise = null
+      this.isLoggingOut = false
 
       console.log("✅ Tokens salvos no AuthService")
     } catch (error) {
@@ -224,6 +229,52 @@ class AuthService {
 
       return null
     }
+  }
+
+  async loadCurrentUser(forceRefresh = false): Promise<any | null> {
+    if (!this.hasValidTokens()) {
+      return null
+    }
+
+    if (!forceRefresh) {
+      const cachedUser = this.getUserData()
+      if (cachedUser) {
+        return cachedUser
+      }
+    }
+
+    if (this.currentUserPromise) {
+      return this.currentUserPromise
+    }
+
+    this.currentUserPromise = (async () => {
+      try {
+        const response = await this.authenticatedFetch("http://192.168.15.29:8000/api/v1/unique-user/", {
+          method: "GET",
+        })
+
+        if (!response.ok) {
+          throw new Error(`Erro ao buscar usuário atual: ${response.status}`)
+        }
+
+        const user = await response.json()
+        const normalizedUser = {
+          ...user,
+          username: user?.username || user?.nome || "Usuário",
+          email: user?.email || "usuario@sistema.com",
+        }
+
+        localStorage.setItem("user_data", JSON.stringify(normalizedUser))
+        return normalizedUser
+      } catch (error) {
+        console.error("❌ Erro ao carregar usuário atual:", error)
+        return this.getUserData()
+      } finally {
+        this.currentUserPromise = null
+      }
+    })()
+
+    return this.currentUserPromise
   }
 
   // ✅ CORREÇÃO: Autenticação baseada apenas em tokens
@@ -314,7 +365,7 @@ class AuthService {
   private async performTokenRefresh(refreshToken: string): Promise<string> {
     try {
       console.log("📡 Fazendo requisição de refresh...")
-      const response = await fetch("http://192.168.15.20:8000/api/token/refresh/", {
+      const response = await fetch("http://192.168.15.29:8000/api/token/refresh/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -360,6 +411,7 @@ class AuthService {
     localStorage.removeItem("access_token")
     localStorage.removeItem("refresh_token")
     localStorage.removeItem("user_data")
+    this.currentUserPromise = null
 
     // Resetar estado
     this.isRefreshing = false
@@ -509,7 +561,7 @@ class AuthService {
     try {
       console.log("🔍 Validando token...")
       // Fazer uma requisição simples para validar o token
-      const response = await fetch("http://192.168.15.20:8000/api/v1/tarefas/", {
+      const response = await fetch("http://192.168.15.29:8000/api/v1/tarefas/", {
         method: "HEAD", // Usar HEAD para não retornar dados
         headers: {
           Authorization: `Bearer ${accessToken}`,

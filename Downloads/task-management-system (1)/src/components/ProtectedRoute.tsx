@@ -24,7 +24,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
       navigate(path, { replace: true })
     })
 
-    const checkAuth = () => {
+    const checkAuth = async () => {
       try {
         // ✅ CORREÇÃO: Verificar apenas tokens obrigatórios
         const accessToken = localStorage.getItem("access_token")
@@ -47,6 +47,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
         // Inicializar authService apenas se tiver tokens
         authService.initialize()
+        await authService.loadCurrentUser()
 
         console.log("✅ Usuário autenticado (baseado em tokens), permitindo acesso")
         setIsAuthenticated(true)

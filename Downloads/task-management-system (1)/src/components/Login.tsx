@@ -56,7 +56,6 @@ export default function Login() {
     // Verificar se já está autenticado
     const accessToken = localStorage.getItem("access_token")
     const refreshToken = localStorage.getItem("refresh_token")
-    const userData = localStorage.getItem("user_data")
     const authMessage = sessionStorage.getItem("auth_message")
 
     if (authMessage) {
@@ -64,7 +63,7 @@ export default function Login() {
       sessionStorage.removeItem("auth_message")
     }
 
-    if (accessToken && refreshToken && userData) {
+    if (accessToken && refreshToken) {
       console.log("✅ Já autenticado, redirecionando para home...")
       navigate("/", { replace: true })
     }
@@ -103,7 +102,7 @@ export default function Login() {
     try {
       console.log("🔐 Fazendo login com:", formData.username)
 
-      const response = await fetch("http://192.168.15.20:8000/api/v1/login/", {
+      const response = await fetch("http://192.168.15.29:8000/api/v1/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -133,17 +132,11 @@ export default function Login() {
         throw new Error("Tokens não recebidos do servidor")
       }
 
-      localStorage.setItem("access_token", data.access)
-      localStorage.setItem("refresh_token", data.refresh)
-      if (data.user) {
-        localStorage.setItem("user_data", JSON.stringify(data.user))
-      }
       sessionStorage.removeItem("auth_message")
 
-      console.log("💾 Tokens salvos no localStorage")
-
-      // Configurar tokens no authService
+      // Configurar tokens e cache de usuário no authService
       authService.setTokens(data.access, data.refresh, data.user)
+      await authService.loadCurrentUser()
 
       console.log("✅ Redirecionando para Dashboard (rota raiz /)...")
 

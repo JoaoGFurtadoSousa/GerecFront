@@ -1,6 +1,6 @@
 import { authService } from "./authService"
 
-const API_BASE_URL = "http://192.168.15.20:8000/api/v1"
+const API_BASE_URL = "http://192.168.15.29:8000/api/v1"
 
 export interface Task {
   id: number
@@ -553,7 +553,7 @@ class ApiService {
     console.log("🌐 Buscando técnicos...")
 
     try {
-      const response = await authService.authenticatedFetch("http://192.168.15.20:8000/api/v1/users/nometecnicos/", {
+      const response = await authService.authenticatedFetch("http://192.168.15.29:8000/api/v1/users/nometecnicos/", {
         method: "GET",
       })
 
@@ -582,10 +582,10 @@ class ApiService {
     dataTarefa: string
     status: string
   }): Promise<void> {
-    console.log("📤 Enviando nova tarefa para: http://192.168.15.20:8000/api/v1/tarefas/")
+    console.log("📤 Enviando nova tarefa para: http://192.168.15.29:8000/api/v1/tarefas/")
     console.log("📋 Dados enviados:", taskData)
 
-    const response = await authService.authenticatedFetch("http://192.168.15.20:8000/api/v1/tarefas/", {
+    const response = await authService.authenticatedFetch("http://192.168.15.29:8000/api/v1/tarefas/", {
       method: "POST",
       body: JSON.stringify(taskData),
     })
@@ -598,13 +598,10 @@ class ApiService {
     console.log("🌐 Buscando dados do usuário atual...")
 
     try {
-      const response = await authService.authenticatedFetch("http://192.168.15.20:8000/api/v1/unique-user", {
-        method: "GET",
-      })
-
-      await handleFetchError(response)
-
-      const data = await response.json()
+      const data = await authService.loadCurrentUser()
+      if (!data) {
+        throw new Error("Não foi possível carregar os dados do usuário autenticado.")
+      }
       console.log("📦 Dados do usuário recebidos:", {
         email: data.email,
         username: data.username,
