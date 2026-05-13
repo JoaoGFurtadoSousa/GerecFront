@@ -26,6 +26,10 @@ import {
   ListItemText,
   Divider,
   Badge,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material"
 import {
   Visibility,
@@ -45,9 +49,11 @@ import {
   Assignment,
   QrCode2,
   Nfc,
+  Close,
 } from "@mui/icons-material"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useTask, type Task } from "../contexts/TaskContext"
+import { apiService } from "../services/apiService"
 import { authService } from "../services/authService"
 
 const DRAWER_WIDTH = 240
@@ -85,6 +91,10 @@ export default function TaskList() {
     username: "Usuário",
     email: "usuario@sistema.com",
   })
+  const [generatingPdfTaskId, setGeneratingPdfTaskId] = useState<number | null>(null)
+  const [pdfError, setPdfError] = useState<string | null>(null)
+  const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null)
+  const [previewPdfFileName, setPreviewPdfFileName] = useState("")
 
   // Estado para controlar o auto-refresh
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true)
@@ -177,6 +187,14 @@ export default function TaskList() {
     loadUserData()
   }, [])
 
+  useEffect(() => {
+    return () => {
+      if (previewPdfUrl) {
+        window.URL.revokeObjectURL(previewPdfUrl)
+      }
+    }
+  }, [previewPdfUrl])
+
   console.log("👤 Dados do usuário no TaskList:", userData)
 
   const filteredTasks = tasks.filter((task) => {
@@ -204,6 +222,49 @@ export default function TaskList() {
 
   const handleLogout = () => {
     authService.logout()
+  }
+
+  const handleClosePdfPreview = () => {
+    if (previewPdfUrl) {
+      window.URL.revokeObjectURL(previewPdfUrl)
+    }
+
+    setPreviewPdfUrl(null)
+    setPreviewPdfFileName("")
+  }
+
+  const handleDownloadPdf = () => {
+    if (!previewPdfUrl) {
+      return
+    }
+
+    const downloadLink = document.createElement("a")
+    downloadLink.href = previewPdfUrl
+    downloadLink.download = previewPdfFileName || "checklist-tarefa.pdf"
+    document.body.appendChild(downloadLink)
+    downloadLink.click()
+    document.body.removeChild(downloadLink)
+  }
+
+  const handleGenerateChecklist = async (taskId: number) => {
+    try {
+      setPdfError(null)
+      setGeneratingPdfTaskId(taskId)
+      const { blob, fileName } = await apiService.generateTaskChecklistPdf(taskId)
+
+      if (previewPdfUrl) {
+        window.URL.revokeObjectURL(previewPdfUrl)
+      }
+
+      const pdfUrl = window.URL.createObjectURL(blob)
+      setPreviewPdfUrl(pdfUrl)
+      setPreviewPdfFileName(fileName)
+    } catch (err) {
+      console.error("Erro ao gerar checklist em PDF:", err)
+      setPdfError(err instanceof Error ? err.message : "Erro ao gerar checklist em PDF")
+    } finally {
+      setGeneratingPdfTaskId(null)
+    }
   }
 
   // ✅ NOVO: Funções de navegação
@@ -557,10 +618,7 @@ export default function TaskList() {
                       <Typography variant="h4" sx={{ fontWeight: 700, color: "#333" }}>
                         {totalTasks}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "#4caf50", display: "flex", alignItems: "center" }}>
-                        <TrendingUp sx={{ fontSize: 16, mr: 0.5 }} />
-                        +2.5%
-                      </Typography>
+                  
                     </Box>
                     <Assignment sx={{ fontSize: 40, color: "#e0e0e0" }} />
                   </Box>
@@ -579,9 +637,7 @@ export default function TaskList() {
                       <Typography variant="h4" sx={{ fontWeight: 700, color: "#ff9800" }}>
                         {inProgressTasks}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "#ff9800" }}>
-                        Hoje
-                      </Typography>
+                    
                     </Box>
                     <PlayArrow sx={{ fontSize: 40, color: "#fff3e0" }} />
                   </Box>
@@ -600,10 +656,7 @@ export default function TaskList() {
                       <Typography variant="h4" sx={{ fontWeight: 700, color: "#2196f3" }}>
                         {pendingTasks}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "#2196f3", display: "flex", alignItems: "center" }}>
-                        <Schedule sx={{ fontSize: 16, mr: 0.5 }} />
-                        Para iniciar
-                      </Typography>
+      
                     </Box>
                     <Schedule sx={{ fontSize: 40, color: "#e3f2fd" }} />
                   </Box>
@@ -719,6 +772,12 @@ export default function TaskList() {
 
           {/* Lista de Tarefas */}
           <Box>
+            {pdfError && (
+              <Alert severity="error" sx={{ mb: 3 }} onClose={() => setPdfError(null)}>
+                {pdfError}
+              </Alert>
+            )}
+
             <Typography variant="h6" sx={{ mb: 3, color: "#333", fontWeight: 600 }}>
               Lista de Tarefas ({filteredTasks.length})
             </Typography>
@@ -819,27 +878,54 @@ export default function TaskList() {
                         </Box>
 
                         {/* Botão */}
-                        <Button
-                          variant="outlined"
-                          startIcon={<Visibility sx={{ fontSize: 18 }} />}
-                          onClick={() => navigate(`/task/${task.id}`)}
-                          fullWidth
-                          sx={{
-                            borderColor: "#e0e0e0",
-                            color: "#666",
-                            textTransform: "none",
-                            fontWeight: 500,
-                            fontSize: "0.9rem",
-                            py: 1,
-                            "&:hover": {
-                              borderColor: "#2196f3",
-                              color: "#2196f3",
-                              bgcolor: "transparent",
-                            },
-                          }}
-                        >
-                          Ver detalhes
-                        </Button>
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                          {task.status === "Em andamento" && (
+                            <Button
+                              variant="contained"
+                              onClick={() => handleGenerateChecklist(task.id)}
+                              disabled={generatingPdfTaskId === task.id}
+                              fullWidth
+                              sx={{
+                                bgcolor: "#2196f3",
+                                textTransform: "none",
+                                fontWeight: 600,
+                                fontSize: "0.9rem",
+                                py: 1,
+                                "&:hover": {
+                                  bgcolor: "#1976d2",
+                                },
+                                "&:disabled": {
+                                  bgcolor: "#90caf9",
+                                  color: "white",
+                                },
+                              }}
+                            >
+                              {generatingPdfTaskId === task.id ? "Gerando PDF..." : "Gerar Checklist Automatico"}
+                            </Button>
+                          )}
+
+                          <Button
+                            variant="outlined"
+                            startIcon={<Visibility sx={{ fontSize: 18 }} />}
+                            onClick={() => navigate(`/task/${task.id}`)}
+                            fullWidth
+                            sx={{
+                              borderColor: "#e0e0e0",
+                              color: "#666",
+                              textTransform: "none",
+                              fontWeight: 500,
+                              fontSize: "0.9rem",
+                              py: 1,
+                              "&:hover": {
+                                borderColor: "#2196f3",
+                                color: "#2196f3",
+                                bgcolor: "transparent",
+                              },
+                            }}
+                          >
+                            Ver detalhes
+                          </Button>
+                        </Box>
                       </CardContent>
                     </Card>
                   </Grid>
@@ -867,6 +953,69 @@ export default function TaskList() {
           </Box>
         </Box>
       </Box>
+
+      <Dialog
+        open={!!previewPdfUrl}
+        onClose={handleClosePdfPreview}
+        fullWidth
+        maxWidth="lg"
+        sx={{
+          "& .MuiDialog-paper": {
+            width: { xs: "100%", sm: "90%" },
+            maxHeight: { xs: "100vh", sm: "90vh" },
+            m: { xs: 0, sm: 2 },
+            borderRadius: { xs: 0, sm: 2 },
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 2,
+            pr: 1.5,
+          }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Preview do Checklist
+          </Typography>
+          <IconButton onClick={handleClosePdfPreview} aria-label="Fechar preview do checklist">
+            <Close />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent dividers sx={{ p: 0, bgcolor: "#f5f7fa" }}>
+          {previewPdfUrl ? (
+            <Box sx={{ height: { xs: "70vh", md: "75vh" }, overflow: "auto" }}>
+              <Box
+                component="iframe"
+                src={previewPdfUrl}
+                title="Preview do Checklist"
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  border: 0,
+                  bgcolor: "white",
+                }}
+              />
+            </Box>
+          ) : (
+            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 320 }}>
+              <CircularProgress />
+            </Box>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, py: 2, justifyContent: "space-between" }}>
+          <Button onClick={handleClosePdfPreview} sx={{ textTransform: "none" }}>
+            Fechar
+          </Button>
+          <Button variant="contained" onClick={handleDownloadPdf} disabled={!previewPdfUrl} sx={{ textTransform: "none" }}>
+            Baixar PDF
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

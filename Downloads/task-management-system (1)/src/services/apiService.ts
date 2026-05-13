@@ -87,6 +87,11 @@ export interface RFIDPayload {
   adicao_cartao: "Unitario" | "Lista"
 }
 
+export interface TaskChecklistPdfResponse {
+  blob: Blob
+  fileName: string
+}
+
 const STATUS_TO_NUMBER = {
   "Para iniciar": "1",
   "Em andamento": "2",
@@ -98,6 +103,17 @@ const NUMBER_TO_STATUS = {
   "2": "Em andamento",
   "3": "Concluído",
 } as const
+
+const formatLocalDateTime = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  const hours = String(date.getHours()).padStart(2, "0")
+  const minutes = String(date.getMinutes()).padStart(2, "0")
+  const seconds = String(date.getSeconds()).padStart(2, "0")
+
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
+}
 
 const handleFetchError = async (response: Response) => {
   if (!response.ok) {
@@ -246,6 +262,34 @@ class ApiService {
     return normalizeTask(data)
   }
 
+  async generateTaskChecklistPdf(taskId: number): Promise<TaskChecklistPdfResponse> {
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/gerar-pdf/${taskId}`, {
+      method: "GET",
+      headers: {
+        Accept: "application/pdf",
+      },
+    })
+
+    if (!response.ok) {
+      await handleFetchError(response)
+    }
+
+    const contentType = response.headers.get("content-type") || ""
+
+    if (!contentType.toLowerCase().includes("application/pdf")) {
+      throw new Error("Resposta inválida ao gerar checklist. O arquivo retornado não é um PDF.")
+    }
+
+    const contentDisposition = response.headers.get("content-disposition") || ""
+    const fileNameMatch = contentDisposition.match(/filename\*?=(?:UTF-8''|")?([^\";]+)/i)
+    const fileName = fileNameMatch?.[1] ? decodeURIComponent(fileNameMatch[1].replace(/"/g, "").trim()) : `checklist-tarefa-${taskId}.pdf`
+
+    return {
+      blob: await response.blob(),
+      fileName,
+    }
+  }
+
   async getEquipmentByUnitId(unitId: number): Promise<Equipment[]> {
     console.log("🔍 Buscando equipamentos da unidade:", unitId)
 
@@ -332,6 +376,7 @@ class ApiService {
 
     console.log("📦 PASSO 3: Criando FormData...")
     const formData = new FormData()
+    const dataTarefaSaidaTecnico = formatLocalDateTime(new Date())
 
     const diagnostico = String(data.diagnostico || "").trim()
     const solucao = String(data.solucao || "").trim()
@@ -344,6 +389,7 @@ class ApiService {
       solucao_processed: solucao,
       solucao_length: solucao.length,
       substituicao_de_pecas_processed: substituicao_de_pecas,
+      dataTarefaSaidaTecnico,
     })
 
     formData.append("diagnostico", diagnostico)
@@ -352,6 +398,7 @@ class ApiService {
     formData.append("latitude", String(data.latitude))
     formData.append("longitude", String(data.longitude))
     formData.append("status", "2")
+    formData.append("dataTarefaSaidaTecnico", dataTarefaSaidaTecnico)
 
     console.log("⚠️ IMPORTANTE: Campo 'unidade' NÃO será enviado para preservar o valor atual")
 
