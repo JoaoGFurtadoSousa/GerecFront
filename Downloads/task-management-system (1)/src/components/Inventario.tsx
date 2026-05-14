@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   CardContent,
+  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -28,8 +29,16 @@ import {
   Paper,
   Select,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material"
 import {
   Add,
@@ -52,6 +61,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom"
 import {
   apiService,
+  type EquipmentExitHistoryItem,
   type InventoryItem,
   type InventoryPayload,
   type InventoryRemovePayload,
@@ -73,6 +83,8 @@ const parsePositiveInteger = (value: string) => {
 }
 
 export default function Inventario() {
+  const theme = useTheme()
+  const fullScreenDialog = useMediaQuery(theme.breakpoints.down("sm"))
   const navigate = useNavigate()
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -106,6 +118,10 @@ export default function Inventario() {
   const [removeStockError, setRemoveStockError] = useState<string | null>(null)
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyError, setHistoryError] = useState<string | null>(null)
+  const [equipmentExitHistory, setEquipmentExitHistory] = useState<EquipmentExitHistoryItem[]>([])
   const [activeActionKey, setActiveActionKey] = useState<string | null>(null)
 
   const featuresEnabled = authService.shouldEnableFeatures()
@@ -154,8 +170,8 @@ export default function Inventario() {
   }, [inventoryItems, searchTerm])
 
   const totalItens = inventoryItems.length
-  const totalQuantidade = inventoryItems.reduce((sum, item) => sum + item.quantidade, 0)
   const itensComEstoque = inventoryItems.filter((item) => item.quantidade > 0).length
+  const itensComEstoqueBaixo = inventoryItems.filter((item) => item.quantidade < 5).length
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
@@ -419,6 +435,40 @@ export default function Inventario() {
     }
   }
 
+  const formatExitDate = (value: string) => {
+    const parsedDate = new Date(value)
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "Data indisponível"
+    }
+
+    return parsedDate.toLocaleString("pt-BR", {
+      dateStyle: "short",
+      timeStyle: "short",
+    })
+  }
+
+  const handleOpenHistoryDialog = async () => {
+    setHistoryOpen(true)
+    setHistoryLoading(true)
+    setHistoryError(null)
+
+    try {
+      const historyData = await apiService.getEquipmentExitHistory()
+      setEquipmentExitHistory(historyData)
+    } catch (loadError) {
+      console.error("Erro ao carregar histórico de saídas:", loadError)
+      setHistoryError(loadError instanceof Error ? loadError.message : "Erro ao carregar histórico de saídas")
+    } finally {
+      setHistoryLoading(false)
+    }
+  }
+
+  const handleCloseHistoryDialog = () => {
+    setHistoryOpen(false)
+    setHistoryError(null)
+  }
+
   const drawer = (
     <Box sx={{ height: "100%", bgcolor: "#1a1a1a", color: "white" }}>
       <Box sx={{ p: 3, borderBottom: "1px solid #333" }}>
@@ -665,10 +715,10 @@ export default function Inventario() {
               <Card sx={{ bgcolor: "white", border: "1px solid #e0e0e0" }}>
                 <CardContent>
                   <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-                    Quantidade total em estoque
+                    Itens com estoque disponivel
                   </Typography>
                   <Typography variant="h4" sx={{ fontWeight: 700, color: "#2196f3" }}>
-                    {totalQuantidade}
+                    {itensComEstoque}
                   </Typography>
                 </CardContent>
               </Card>
@@ -677,10 +727,10 @@ export default function Inventario() {
               <Card sx={{ bgcolor: "white", border: "1px solid #e0e0e0" }}>
                 <CardContent>
                   <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-                    Itens com estoque disponível
+                    Equipamentos com quantidade menor que 5
                   </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: "#4caf50" }}>
-                    {itensComEstoque}
+                  <Typography variant="h4" sx={{ fontWeight: 700, color: "#ed6c02" }}>
+                    {itensComEstoqueBaixo}
                   </Typography>
                 </CardContent>
               </Card>
@@ -706,15 +756,20 @@ export default function Inventario() {
                   />
                 </Grid>
                 <Grid item xs={12} md={4}>
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    startIcon={<Add />}
-                    onClick={handleOpenCreateDialog}
-                    sx={{ py: 1.5 }}
-                  >
-                    Cadastrar Equipamento
-                  </Button>
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+                    <Button fullWidth variant="outlined" onClick={handleOpenHistoryDialog} sx={{ py: 1.5 }}>
+                      Ver Saidas de Equipamentos
+                    </Button>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      startIcon={<Add />}
+                      onClick={handleOpenCreateDialog}
+                      sx={{ py: 1.5 }}
+                    >
+                      Cadastrar Equipamento
+                    </Button>
+                  </Stack>
                 </Grid>
               </Grid>
             </CardContent>
@@ -738,7 +793,15 @@ export default function Inventario() {
             <Grid container spacing={3}>
               {filteredItems.map((item) => (
                 <Grid item xs={12} md={6} lg={4} key={item.id}>
-                  <Card sx={{ height: "100%", border: "1px solid #e0e0e0", boxShadow: "none" }}>
+                  <Card
+                    sx={{
+                      height: "100%",
+                      border: "1px solid",
+                      borderColor: item.quantidade < 5 ? "#f0ad4e" : "#e0e0e0",
+                      bgcolor: item.quantidade < 5 ? "#fff8e1" : "white",
+                      boxShadow: "none",
+                    }}
+                  >
                     <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2 }}>
                       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2 }}>
                         <Box>
@@ -762,9 +825,17 @@ export default function Inventario() {
                         </Paper>
                       </Box>
 
-                      <Typography variant="body2" sx={{ color: "#666" }}>
-                        Estoque atual do equipamento.
-                      </Typography>
+                      <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" flexWrap="wrap">
+                        <Typography variant="body2" sx={{ color: "#666" }}>
+                          Estoque atual do equipamento.
+                        </Typography>
+                        <Chip
+                          label={item.quantidade < 5 ? "Estoque Baixo" : "Estoque OK"}
+                          color={item.quantidade < 5 ? "warning" : "success"}
+                          size="small"
+                          sx={{ fontWeight: 700 }}
+                        />
+                      </Stack>
 
                       <Stack spacing={1.25}>
                         <Button
@@ -934,6 +1005,58 @@ export default function Inventario() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Dialog open={historyOpen} onClose={handleCloseHistoryDialog} fullWidth maxWidth="lg" fullScreen={fullScreenDialog}>
+        <DialogTitle>Saidas de Equipamentos</DialogTitle>
+        <DialogContent dividers sx={{ p: 0 }}>
+          {historyLoading ? (
+            <Box sx={{ p: 4, textAlign: "center" }}>
+              <CircularProgress sx={{ mb: 2 }} />
+              <Typography variant="body2" color="text.secondary">
+                Carregando historico...
+              </Typography>
+            </Box>
+          ) : historyError ? (
+            <Box sx={{ p: 3 }}>
+              <Alert severity="error">{historyError}</Alert>
+            </Box>
+          ) : equipmentExitHistory.length === 0 ? (
+            <Box sx={{ p: 4, textAlign: "center" }}>
+              <History sx={{ fontSize: 52, color: "#d0d7de", mb: 2 }} />
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                Nenhuma saida de equipamento encontrada
+              </Typography>
+            </Box>
+          ) : (
+            <TableContainer sx={{ maxHeight: { xs: "70vh", md: "60vh" }, overflowX: "auto" }}>
+              <Table stickyHeader size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 700 }}>ID</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Tecnico</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Unidade de envio</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Data da saida</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {equipmentExitHistory.map((entry) => (
+                    <TableRow key={entry.id} hover>
+                      <TableCell>{entry.id}</TableCell>
+                      <TableCell>{entry.usuario?.username || "Nao informado"}</TableCell>
+                      <TableCell>{entry.unidade_envio?.nome_da_unidade || "Nao informada"}</TableCell>
+                      <TableCell>{formatExitDate(entry.data_saida)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseHistoryDialog}>Fechar</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }
+

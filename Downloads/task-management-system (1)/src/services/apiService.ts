@@ -2,6 +2,7 @@ import { authService } from "./authService"
 
 const API_BASE_URL = "http://192.168.0.102:8000/api/v1"
 const INVENTORY_API_BASE_URL = "http://192.168.0.102:8000/api/v1/inventario/"
+const EQUIPMENT_EXITS_API_URL = "http://192.168.0.102:8000/api/v1/saidas-equipamentos/"
 
 export interface Task {
   id: number
@@ -97,6 +98,23 @@ export interface InventoryRemoveResponse {
   unidade: string
   quantidade_retirada: number
   quantidade_de_equipamentos_no_inventario: number
+}
+
+export interface EquipmentExitUser {
+  id: number
+  username: string
+}
+
+export interface EquipmentExitUnit {
+  id: number
+  nome_da_unidade: string
+}
+
+export interface EquipmentExitHistoryItem {
+  id: number
+  usuario: EquipmentExitUser
+  data_saida: string
+  unidade_envio: EquipmentExitUnit
 }
 
 export interface CurrentUser {
@@ -365,7 +383,7 @@ class ApiService {
 
   async addInventoryStock(itemId: number, payload: InventoryQuantityPayload): Promise<InventoryItem> {
     const response = await authService.authenticatedFetch(`${INVENTORY_API_BASE_URL}add_equipamento/${itemId}/`, {
-      method: "POST",
+      method: "PUT",
       body: JSON.stringify(payload),
     })
 
@@ -375,12 +393,27 @@ class ApiService {
 
   async removeInventoryStock(itemId: number, payload: InventoryRemovePayload): Promise<InventoryRemoveResponse> {
     const response = await authService.authenticatedFetch(`${INVENTORY_API_BASE_URL}remove_equipamento/${itemId}/`, {
-      method: "POST",
+      method: "PUT",
       body: JSON.stringify(payload),
     })
 
     await handleFetchError(response)
     return response.json()
+  }
+
+  async getEquipmentExitHistory(): Promise<EquipmentExitHistoryItem[]> {
+    const response = await authService.authenticatedFetch(EQUIPMENT_EXITS_API_URL, {
+      method: "GET",
+    })
+
+    await handleFetchError(response)
+    const data = await response.json()
+
+    if (!Array.isArray(data)) {
+      return []
+    }
+
+    return data
   }
 
   async getEquipmentByUnitId(unitId: number): Promise<Equipment[]> {
