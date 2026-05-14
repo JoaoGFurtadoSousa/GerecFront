@@ -29,6 +29,7 @@ import {
   Add,
   ArrowBack,
   Business,
+  Inventory2,
   Dashboard,
   Engineering,
   History,
@@ -209,6 +210,23 @@ export default function QRCodePage() {
             <Business sx={{ color: featuresEnabled ? "#ccc" : "#666" }} />
           </ListItemIcon>
           <ListItemText primary="Unidades" primaryTypographyProps={{ fontSize: "0.9rem", color: featuresEnabled ? "#ccc" : "#666" }} />
+        </ListItem>
+
+        <ListItem
+          onClick={() => featuresEnabled && navigate("/inventario")}
+          sx={{
+            borderRadius: 2,
+            mb: 1,
+            bgcolor: isActiveRoute("/inventario") ? "#2196f3" : "transparent",
+            "&:hover": { bgcolor: featuresEnabled ? (isActiveRoute("/inventario") ? "#1976d2" : "#333") : "transparent" },
+            cursor: featuresEnabled ? "pointer" : "not-allowed",
+            opacity: featuresEnabled ? 1 : 0.5,
+          }}
+        >
+          <ListItemIcon>
+            <Inventory2 sx={{ color: isActiveRoute("/inventario") ? "white" : featuresEnabled ? "#ccc" : "#666" }} />
+          </ListItemIcon>
+          <ListItemText primary="Inventário" primaryTypographyProps={{ fontSize: "0.9rem", fontWeight: isActiveRoute("/inventario") ? 600 : 400, color: isActiveRoute("/inventario") ? "white" : featuresEnabled ? "#ccc" : "#666" }} />
         </ListItem>
 
         <Divider sx={{ my: 2, borderColor: "#333" }} />

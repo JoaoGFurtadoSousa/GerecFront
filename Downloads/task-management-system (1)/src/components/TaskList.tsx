@@ -45,6 +45,7 @@ import {
   Logout,
   Add,
   Business,
+  Inventory2,
   History,
   Assignment,
   QrCode2,
@@ -112,7 +113,7 @@ export default function TaskList() {
     try {
       console.log("🔄 Enviando requisição POST para salvar dados...")
 
-      const response = await authService.authenticatedFetch("http://192.168.0.101:8000/api/v1/historico/", {
+      const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/historico/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -427,6 +428,31 @@ export default function TaskList() {
             primaryTypographyProps={{
               fontSize: "0.9rem",
               color: authService.shouldEnableFeatures() ? (isActiveRoute("/unidades") ? "white" : "#ccc") : "#666",
+            }}
+          />
+        </ListItem>
+
+        <ListItem
+          onClick={() => authService.shouldEnableFeatures() && navigate("/inventario")}
+          sx={{
+            borderRadius: 2,
+            mb: 1,
+            bgcolor: isActiveRoute("/inventario") ? "#2196f3" : "transparent",
+            "&:hover": {
+              bgcolor: authService.shouldEnableFeatures() ? (isActiveRoute("/inventario") ? "#1976d2" : "#333") : "transparent",
+            },
+            cursor: authService.shouldEnableFeatures() ? "pointer" : "not-allowed",
+            opacity: authService.shouldEnableFeatures() ? 1 : 0.5,
+          }}
+        >
+          <ListItemIcon>
+            <Inventory2 sx={{ color: authService.shouldEnableFeatures() ? (isActiveRoute("/inventario") ? "white" : "#ccc") : "#666" }} />
+          </ListItemIcon>
+          <ListItemText
+            primary="Inventário"
+            primaryTypographyProps={{
+              fontSize: "0.9rem",
+              color: authService.shouldEnableFeatures() ? (isActiveRoute("/inventario") ? "white" : "#ccc") : "#666",
             }}
           />
         </ListItem>

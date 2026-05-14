@@ -13,6 +13,7 @@ import TaskAdditionalData from "./components/TaskAdditionalData"
 import NovaTask from "./components/NovaTask"
 import Historico from "./components/Historico"
 import Unidades from "./components/Unidades"
+import Inventario from "./components/Inventario"
 import QRCodePage from "./components/Qrcode"
 import RFIDPage from "./components/RFID"
 
@@ -132,6 +133,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <Unidades />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/inventario"
+              element={
+                <ProtectedRoute>
+                  <Inventario />
                 </ProtectedRoute>
               }
             />

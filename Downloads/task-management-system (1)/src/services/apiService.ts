@@ -1,6 +1,7 @@
 import { authService } from "./authService"
 
-const API_BASE_URL = "http://192.168.0.101:8000/api/v1"
+const API_BASE_URL = "http://192.168.0.102:8000/api/v1"
+const INVENTORY_API_BASE_URL = "http://192.168.0.102:8000/api/v1/inventario/"
 
 export interface Task {
   id: number
@@ -67,6 +68,35 @@ export interface AdditionalDataForm {
 export interface Technician {
   id: number
   nome: string
+}
+
+export interface InventoryItem {
+  id: number
+  nome_do_equipamento: string
+  quantidade: number
+}
+
+export interface InventoryPayload {
+  nome_do_equipamento: string
+  quantidade: number
+}
+
+export interface InventoryQuantityPayload {
+  quantidade: number
+}
+
+export interface InventoryRemovePayload {
+  nome_do_equipamento: string
+  unidade: number
+  quantidade: number
+}
+
+export interface InventoryRemoveResponse {
+  detail: string
+  tecnico: string
+  unidade: string
+  quantidade_retirada: number
+  quantidade_de_equipamentos_no_inventario: number
 }
 
 export interface CurrentUser {
@@ -288,6 +318,69 @@ class ApiService {
       blob: await response.blob(),
       fileName,
     }
+  }
+
+  async getInventoryItems(): Promise<InventoryItem[]> {
+    const response = await authService.authenticatedFetch(INVENTORY_API_BASE_URL, {
+      method: "GET",
+    })
+
+    await handleFetchError(response)
+    const data = await response.json()
+
+    if (!Array.isArray(data)) {
+      return []
+    }
+
+    return data
+  }
+
+  async createInventoryItem(payload: InventoryPayload): Promise<InventoryItem> {
+    const response = await authService.authenticatedFetch(INVENTORY_API_BASE_URL, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
+
+    await handleFetchError(response)
+    return response.json()
+  }
+
+  async updateInventoryItem(itemId: number, payload: InventoryPayload): Promise<InventoryItem> {
+    const response = await authService.authenticatedFetch(`${INVENTORY_API_BASE_URL}${itemId}/`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    })
+
+    await handleFetchError(response)
+    return response.json()
+  }
+
+  async deleteInventoryItem(itemId: number): Promise<void> {
+    const response = await authService.authenticatedFetch(`${INVENTORY_API_BASE_URL}${itemId}/`, {
+      method: "DELETE",
+    })
+
+    await handleFetchError(response)
+  }
+
+  async addInventoryStock(itemId: number, payload: InventoryQuantityPayload): Promise<InventoryItem> {
+    const response = await authService.authenticatedFetch(`${INVENTORY_API_BASE_URL}add_equipamento/${itemId}/`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
+
+    await handleFetchError(response)
+    return response.json()
+  }
+
+  async removeInventoryStock(itemId: number, payload: InventoryRemovePayload): Promise<InventoryRemoveResponse> {
+    const response = await authService.authenticatedFetch(`${INVENTORY_API_BASE_URL}remove_equipamento/${itemId}/`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
+
+    await handleFetchError(response)
+    return response.json()
   }
 
   async getEquipmentByUnitId(unitId: number): Promise<Equipment[]> {
@@ -600,7 +693,7 @@ class ApiService {
     console.log("🌐 Buscando técnicos...")
 
     try {
-      const response = await authService.authenticatedFetch("http://192.168.0.101:8000/api/v1/users/nometecnicos/", {
+      const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/users/nometecnicos/", {
         method: "GET",
       })
 
@@ -629,10 +722,10 @@ class ApiService {
     dataTarefa: string
     status: string
   }): Promise<void> {
-    console.log("📤 Enviando nova tarefa para: http://192.168.0.101:8000/api/v1/tarefas/")
+    console.log("📤 Enviando nova tarefa para: http://192.168.0.102:8000/api/v1/tarefas/")
     console.log("📋 Dados enviados:", taskData)
 
-    const response = await authService.authenticatedFetch("http://192.168.0.101:8000/api/v1/tarefas/", {
+    const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/tarefas/", {
       method: "POST",
       body: JSON.stringify(taskData),
     })
@@ -645,7 +738,7 @@ class ApiService {
     console.log("🌐 Buscando dados do usuário atual...")
 
     try {
-      const response = await authService.authenticatedFetch("http://192.168.0.101:8000/api/v1/unique-user", {
+      const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/unique-user", {
         method: "GET",
       })
 

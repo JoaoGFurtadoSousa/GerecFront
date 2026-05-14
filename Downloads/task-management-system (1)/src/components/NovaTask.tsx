@@ -33,6 +33,7 @@ import {
   Dashboard,
   Add,
   Business,
+  Inventory2,
   History,
   Assignment,
   Menu,
@@ -306,6 +307,31 @@ export default function NovaTask() {
             primaryTypographyProps={{
               fontSize: "0.9rem",
               color: featuresEnabled ? (isActiveRoute("/unidades") ? "white" : "#ccc") : "#666",
+            }}
+          />
+        </ListItem>
+
+        <ListItem
+          onClick={() => featuresEnabled && navigate("/inventario")}
+          sx={{
+            borderRadius: 2,
+            mb: 1,
+            bgcolor: isActiveRoute("/inventario") ? "#2196f3" : "transparent",
+            "&:hover": {
+              bgcolor: featuresEnabled ? (isActiveRoute("/inventario") ? "#1976d2" : "#333") : "transparent",
+            },
+            cursor: featuresEnabled ? "pointer" : "not-allowed",
+            opacity: featuresEnabled ? 1 : 0.5,
+          }}
+        >
+          <ListItemIcon>
+            <Inventory2 sx={{ color: featuresEnabled ? (isActiveRoute("/inventario") ? "white" : "#ccc") : "#666" }} />
+          </ListItemIcon>
+          <ListItemText
+            primary="Inventário"
+            primaryTypographyProps={{
+              fontSize: "0.9rem",
+              color: featuresEnabled ? (isActiveRoute("/inventario") ? "white" : "#ccc") : "#666",
             }}
           />
         </ListItem>
