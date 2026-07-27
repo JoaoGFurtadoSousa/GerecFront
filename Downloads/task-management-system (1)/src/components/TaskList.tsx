@@ -51,6 +51,7 @@ import {
   QrCode2,
   Nfc,
   Close,
+  LockReset,
 } from "@mui/icons-material"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useTask, type Task } from "../contexts/TaskContext"
@@ -113,7 +114,7 @@ export default function TaskList() {
     try {
       console.log("🔄 Enviando requisição POST para salvar dados...")
 
-      const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/historico/", {
+      const response = await authService.authenticatedFetch("http://192.168.15.29:7000/api/v1/historico/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -305,6 +306,12 @@ export default function TaskList() {
   const handleNavigateToRFID = () => {
     if (authService.shouldEnableFeatures()) {
       navigate("/rfid")
+    }
+  }
+
+  const handleNavigateToPasswordReset = () => {
+    if (authService.shouldEnableFeatures()) {
+      navigate("/reset-senha-cloudaccess")
     }
   }
 
@@ -505,6 +512,47 @@ export default function TaskList() {
             primaryTypographyProps={{
               fontSize: "0.9rem",
               color: authService.shouldEnableFeatures() ? (isActiveRoute("/rfid") ? "white" : "#ccc") : "#666",
+            }}
+          />
+        </ListItem>
+
+        <ListItem
+          onClick={handleNavigateToPasswordReset}
+          sx={{
+            borderRadius: 2,
+            mb: 1,
+            bgcolor: isActiveRoute("/reset-senha-cloudaccess") ? "#2196f3" : "transparent",
+            "&:hover": {
+              bgcolor: authService.shouldEnableFeatures()
+                ? isActiveRoute("/reset-senha-cloudaccess")
+                  ? "#1976d2"
+                  : "#333"
+                : "transparent",
+            },
+            cursor: authService.shouldEnableFeatures() ? "pointer" : "not-allowed",
+            opacity: authService.shouldEnableFeatures() ? 1 : 0.5,
+          }}
+        >
+          <ListItemIcon>
+            <LockReset
+              sx={{
+                color: authService.shouldEnableFeatures()
+                  ? isActiveRoute("/reset-senha-cloudaccess")
+                    ? "white"
+                    : "#ccc"
+                  : "#666",
+              }}
+            />
+          </ListItemIcon>
+          <ListItemText
+            primary="Reset de Senha"
+            primaryTypographyProps={{
+              fontSize: "0.9rem",
+              color: authService.shouldEnableFeatures()
+                ? isActiveRoute("/reset-senha-cloudaccess")
+                  ? "white"
+                  : "#ccc"
+                : "#666",
             }}
           />
         </ListItem>

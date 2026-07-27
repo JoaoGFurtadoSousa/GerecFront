@@ -1,8 +1,8 @@
 import { authService } from "./authService"
 
-const API_BASE_URL = "http://192.168.0.102:8000/api/v1"
-const INVENTORY_API_BASE_URL = "http://192.168.0.102:8000/api/v1/inventario/"
-const EQUIPMENT_EXITS_API_URL = "http://192.168.0.102:8000/api/v1/saidas-equipamentos/"
+const API_BASE_URL = "http://192.168.15.29:7000/api/v1"
+const INVENTORY_API_BASE_URL = "http://192.168.15.29:7000/api/v1/inventario/"
+const EQUIPMENT_EXITS_API_URL = "http://192.168.15.29:7000/api/v1/saidas-equipamentos/"
 
 export interface Task {
   id: number
@@ -133,6 +133,18 @@ export interface RFIDPayload {
   ticket_cartao: string
   id_garagem: string
   adicao_cartao: "Unitario" | "Lista"
+}
+
+export interface PasswordResetPayload {
+  user: number
+  username_user_cloudaccess: string
+  email_user_cloudaccess: string
+  unidade: string
+}
+
+export interface PasswordResetResponse {
+  id?: number
+  [key: string]: unknown
 }
 
 export interface TaskChecklistPdfResponse {
@@ -722,11 +734,21 @@ class ApiService {
     return response.json()
   }
 
+  async requestCloudAccessPasswordReset(payload: PasswordResetPayload): Promise<PasswordResetResponse> {
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/reset-password/`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
+
+    await handleFetchError(response)
+    return response.json()
+  }
+
   async getTechnicians(): Promise<Technician[]> {
     console.log("🌐 Buscando técnicos...")
 
     try {
-      const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/users/nometecnicos/", {
+      const response = await authService.authenticatedFetch("http://192.168.15.29:7000/api/v1/users/nometecnicos/", {
         method: "GET",
       })
 
@@ -755,10 +777,10 @@ class ApiService {
     dataTarefa: string
     status: string
   }): Promise<void> {
-    console.log("📤 Enviando nova tarefa para: http://192.168.0.102:8000/api/v1/tarefas/")
+    console.log("📤 Enviando nova tarefa para: http://192.168.15.29:7000/api/v1/tarefas/")
     console.log("📋 Dados enviados:", taskData)
 
-    const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/tarefas/", {
+    const response = await authService.authenticatedFetch("http://192.168.15.29:7000/api/v1/tarefas/", {
       method: "POST",
       body: JSON.stringify(taskData),
     })
@@ -771,7 +793,7 @@ class ApiService {
     console.log("🌐 Buscando dados do usuário atual...")
 
     try {
-      const response = await authService.authenticatedFetch("http://192.168.0.102:8000/api/v1/unique-user", {
+      const response = await authService.authenticatedFetch("http://192.168.15.29:7000/api/v1/unique-user", {
         method: "GET",
       })
 

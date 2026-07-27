@@ -16,6 +16,7 @@ import Unidades from "./components/Unidades"
 import Inventario from "./components/Inventario"
 import QRCodePage from "./components/Qrcode"
 import RFIDPage from "./components/RFID"
+import ResetPassword from "./components/ResetPassword"
 
 const theme = createTheme({
   palette: {
@@ -157,6 +158,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <RFIDPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reset-senha-cloudaccess"
+              element={
+                <ProtectedRoute>
+                  <ResetPassword />
                 </ProtectedRoute>
               }
             />
