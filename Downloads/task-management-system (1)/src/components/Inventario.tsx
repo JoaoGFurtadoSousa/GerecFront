@@ -68,6 +68,8 @@ import {
   type Unit,
 } from "../services/apiService"
 import { authService } from "../services/authService"
+import PasswordResetNavigationItem from "./PasswordResetNavigationItem"
+import CreateCloudAccessUserNavigationItem from "./CreateCloudAccessUserNavigationItem"
 
 const DRAWER_WIDTH = 240
 
@@ -601,8 +603,8 @@ export default function Inventario() {
           <ListItemText primary="RFID" primaryTypographyProps={{ fontSize: "0.9rem", color: featuresEnabled ? "#ccc" : "#666" }} />
         </ListItem>
 
-        <Divider sx={{ my: 2, borderColor: "#333" }} />
-
+        <PasswordResetNavigationItem />
+        <CreateCloudAccessUserNavigationItem />
         <ListItem
           onClick={handleLogout}
           sx={{

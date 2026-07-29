@@ -139,12 +139,32 @@ export interface PasswordResetPayload {
   user: number
   username_user_cloudaccess: string
   email_user_cloudaccess: string
-  unidade: string
+  unidades: number[]
+}
+
+export interface PasswordResetUnitSuccess {
+  unidade: number
+  garagem: string
+}
+
+export interface PasswordResetUnitFailure extends PasswordResetUnitSuccess {
+  erro: string
 }
 
 export interface PasswordResetResponse {
-  id?: number
-  [key: string]: unknown
+  detail: {
+    unidades_ok: PasswordResetUnitSuccess[]
+    unidades_fail: PasswordResetUnitFailure[]
+  }
+}
+
+export interface CreateCloudAccessUserPayload {
+  username: string
+  first_name: string
+  last_name: string
+  email: string
+  profile_type: number
+  unidades: number[]
 }
 
 export interface TaskChecklistPdfResponse {
@@ -736,6 +756,16 @@ class ApiService {
 
   async requestCloudAccessPasswordReset(payload: PasswordResetPayload): Promise<PasswordResetResponse> {
     const response = await authService.authenticatedFetch(`${API_BASE_URL}/reset-password/`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
+
+    await handleFetchError(response)
+    return response.json()
+  }
+
+  async createCloudAccessUser(payload: CreateCloudAccessUserPayload): Promise<PasswordResetResponse> {
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/create-new-user/`, {
       method: "POST",
       body: JSON.stringify(payload),
     })

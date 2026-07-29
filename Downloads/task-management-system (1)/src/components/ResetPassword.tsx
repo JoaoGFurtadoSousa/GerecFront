@@ -10,16 +10,12 @@ import {
   CardContent,
   CircularProgress,
   Drawer,
-  FormControl,
   Grid,
   IconButton,
-  InputLabel,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  MenuItem,
-  Select,
   TextField,
   Typography,
   Divider,
@@ -33,6 +29,7 @@ import {
   History,
   Inventory2,
   LockReset,
+  PersonAdd,
   Logout,
   Menu,
   Nfc,
@@ -41,15 +38,18 @@ import {
 } from "@mui/icons-material"
 import { useLocation, useNavigate } from "react-router-dom"
 import { authService } from "../services/authService"
-import { apiService, type Unit } from "../services/apiService"
+import { apiService, type PasswordResetResponse, type Unit } from "../services/apiService"
+import MultiUnitSelect from "./MultiUnitSelect"
 
 const DRAWER_WIDTH = 240
 
 interface ResetPasswordForm {
   username: string
   email: string
-  unidade: string
+  unidades: number[]
 }
+
+type ResetPasswordFieldErrors = Partial<Record<keyof ResetPasswordForm, string>>
 
 export default function ResetPassword() {
   const navigate = useNavigate()
@@ -59,9 +59,9 @@ export default function ResetPassword() {
   const [loadingUnits, setLoadingUnits] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-  const [form, setForm] = useState<ResetPasswordForm>({ username: "", email: "", unidade: "" })
-  const [fieldErrors, setFieldErrors] = useState<Partial<ResetPasswordForm>>({})
+  const [result, setResult] = useState<PasswordResetResponse | null>(null)
+  const [form, setForm] = useState<ResetPasswordForm>({ username: "", email: "", unidades: [] })
+  const [fieldErrors, setFieldErrors] = useState<ResetPasswordFieldErrors>({})
   const [userData] = useState(() => authService.getUserData())
 
   const featuresEnabled = authService.shouldEnableFeatures()
@@ -84,21 +84,21 @@ export default function ResetPassword() {
     loadUnits()
   }, [])
 
-  const handleChange = (field: keyof ResetPasswordForm, value: string) => {
+  const handleChange = (field: "username" | "email", value: string) => {
     setForm((current) => ({ ...current, [field]: value }))
     setFieldErrors((current) => ({ ...current, [field]: undefined, ...(field === "username" || field === "email" ? { username: undefined, email: undefined } : {}) }))
   }
 
   const validate = () => {
-    const errors: Partial<ResetPasswordForm> = {}
+    const errors: ResetPasswordFieldErrors = {}
 
     if (!form.username.trim() && !form.email.trim()) {
       errors.username = "Informe o username ou o e-mail do usuário CloudAccess."
       errors.email = "Informe o username ou o e-mail do usuário CloudAccess."
     }
 
-    if (!form.unidade) {
-      errors.unidade = "Selecione a unidade."
+    if (form.unidades.length === 0) {
+      errors.unidades = "Selecione pelo menos uma unidade."
     }
 
     setFieldErrors(errors)
@@ -108,7 +108,7 @@ export default function ResetPassword() {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setError(null)
-    setSuccess(null)
+    setResult(null)
 
     if (!validate()) {
       return
@@ -122,14 +122,14 @@ export default function ResetPassword() {
 
     setSubmitting(true)
     try {
-      await apiService.requestCloudAccessPasswordReset({
+      const response = await apiService.requestCloudAccessPasswordReset({
         user: userId,
         username_user_cloudaccess: form.username.trim(),
         email_user_cloudaccess: form.email.trim(),
-        unidade: form.unidade,
+        unidades: form.unidades,
       })
-      setSuccess("Solicitação de reset de senha enviada com sucesso.")
-      setForm({ username: "", email: "", unidade: "" })
+      setResult(response)
+      setForm({ username: "", email: "", unidades: [] })
     } catch (requestError) {
       console.error("Erro ao solicitar reset de senha:", requestError)
       setError(requestError instanceof Error ? requestError.message : "Não foi possível solicitar o reset de senha. Tente novamente.")
@@ -148,6 +148,7 @@ export default function ResetPassword() {
     { label: "Qrcode", path: "/qrcode", icon: <QrCode2 />, enabled: featuresEnabled },
     { label: "RFID", path: "/rfid", icon: <Nfc />, enabled: featuresEnabled },
     { label: "Reset de Senha", path: "/reset-senha-cloudaccess", icon: <LockReset />, enabled: featuresEnabled },
+    { label: "Criar Usuário CloudAccess", path: "/criar-usuario-cloudaccess", icon: <PersonAdd />, enabled: featuresEnabled },
   ]
 
   const drawer = (
@@ -218,7 +219,32 @@ export default function ResetPassword() {
               <Typography variant="h6" sx={{ fontWeight: 600, color: "#333", mb: 1 }}>Solicitar reset de senha</Typography>
               <Typography variant="body2" sx={{ color: "#666", mb: 3 }}>Informe o username, o e-mail ou ambos para localizar o usuário no CloudAccess.</Typography>
               {error && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>{error}</Alert>}
-              {success && <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess(null)}>{success}</Alert>}
+              {result && result.detail.unidades_fail.length === 0 && (
+                <Alert severity="success" sx={{ mb: 3 }} onClose={() => setResult(null)}>
+                  Reset de senha processado com sucesso para todas as unidades selecionadas.
+                </Alert>
+              )}
+              {result && result.detail.unidades_fail.length > 0 && (
+                <Alert severity="warning" sx={{ mb: 3 }} onClose={() => setResult(null)}>
+                  O reset foi concluído parcialmente. Confira os detalhes abaixo.
+                </Alert>
+              )}
+              {result && (
+                <Box sx={{ mb: 3 }}>
+                  {result.detail.unidades_ok.length > 0 && (
+                    <Box sx={{ mb: result.detail.unidades_fail.length > 0 ? 2 : 0 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Unidades processadas com sucesso</Typography>
+                      {result.detail.unidades_ok.map((unit) => <Typography key={unit.unidade} variant="body2">• Unidade {unit.garagem}</Typography>)}
+                    </Box>
+                  )}
+                  {result.detail.unidades_fail.length > 0 && (
+                    <Box>
+                      <Typography variant="subtitle2" color="error" sx={{ fontWeight: 600 }}>Unidades com erro</Typography>
+                      {result.detail.unidades_fail.map((unit) => <Box key={unit.unidade} sx={{ mb: 1 }}><Typography variant="body2">• Unidade {unit.garagem}</Typography><Typography variant="body2" color="error" sx={{ pl: 2 }}>{unit.erro}</Typography></Box>)}
+                    </Box>
+                  )}
+                </Box>
+              )}
               <Box component="form" onSubmit={handleSubmit} noValidate>
                 <Grid container spacing={3}>
                   <Grid item xs={12} sm={6}>
@@ -228,13 +254,7 @@ export default function ResetPassword() {
                     <TextField fullWidth type="email" label="E-mail CloudAccess" value={form.email} onChange={(event) => handleChange("email", event.target.value)} error={Boolean(fieldErrors.email)} helperText={fieldErrors.email} disabled={submitting} />
                   </Grid>
                   <Grid item xs={12}>
-                    <FormControl fullWidth error={Boolean(fieldErrors.unidade)} disabled={loadingUnits || submitting}>
-                      <InputLabel id="unidade-label">Unidade</InputLabel>
-                      <Select labelId="unidade-label" label="Unidade" value={form.unidade} onChange={(event) => handleChange("unidade", event.target.value)}>
-                        {units.filter((unit) => unit.id_garagem).map((unit) => <MenuItem key={unit.id} value={unit.id_garagem}>{unit.nome_da_unidade}</MenuItem>)}
-                      </Select>
-                      {fieldErrors.unidade && <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>{fieldErrors.unidade}</Typography>}
-                    </FormControl>
+                    <MultiUnitSelect units={units} value={form.unidades} disabled={loadingUnits || submitting} error={fieldErrors.unidades} onChange={(unidades) => { setForm((current) => ({ ...current, unidades })); setFieldErrors((current) => ({ ...current, unidades: undefined })) }} />
                   </Grid>
                   <Grid item xs={12}>
                     <Button type="submit" variant="contained" disabled={submitting || loadingUnits} startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : <Send />}>

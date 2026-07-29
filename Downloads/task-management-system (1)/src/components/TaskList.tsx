@@ -57,6 +57,7 @@ import { useNavigate, useLocation } from "react-router-dom"
 import { useTask, type Task } from "../contexts/TaskContext"
 import { apiService } from "../services/apiService"
 import { authService } from "../services/authService"
+import CreateCloudAccessUserNavigationItem from "./CreateCloudAccessUserNavigationItem"
 
 const DRAWER_WIDTH = 240
 
@@ -556,6 +557,8 @@ export default function TaskList() {
             }}
           />
         </ListItem>
+
+        <CreateCloudAccessUserNavigationItem />
 
         {/* Divider antes do Sair */}
         <Divider sx={{ my: 2, borderColor: "#333" }} />

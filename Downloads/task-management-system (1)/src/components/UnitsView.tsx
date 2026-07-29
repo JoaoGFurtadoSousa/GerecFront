@@ -34,6 +34,8 @@ import {
 } from "@mui/icons-material"
 import { useNavigate } from "react-router-dom"
 import { authService } from "../services/authService"
+import PasswordResetNavigationItem from "./PasswordResetNavigationItem"
+import CreateCloudAccessUserNavigationItem from "./CreateCloudAccessUserNavigationItem"
 import NewTaskModal from "./NewTaskModal"
 
 const DRAWER_WIDTH = 240
@@ -285,6 +287,8 @@ export default function UnitsView() {
             }}
           />
         </ListItem>
+        <PasswordResetNavigationItem />
+        <CreateCloudAccessUserNavigationItem />
         <ListItem
           onClick={handleLogout}
           sx={{

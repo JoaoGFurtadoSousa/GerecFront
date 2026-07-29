@@ -45,6 +45,8 @@ import {
 import { useLocation, useNavigate } from "react-router-dom"
 import { apiService, type Unit } from "../services/apiService"
 import { authService } from "../services/authService"
+import PasswordResetNavigationItem from "./PasswordResetNavigationItem"
+import CreateCloudAccessUserNavigationItem from "./CreateCloudAccessUserNavigationItem"
 
 const DRAWER_WIDTH = 240
 type AdditionMode = "Unitario" | "Lista"
@@ -293,8 +295,8 @@ export default function RFIDPage() {
           <ListItemText primary="RFID" primaryTypographyProps={{ fontSize: "0.9rem", fontWeight: isActiveRoute("/rfid") ? 600 : 400, color: isActiveRoute("/rfid") ? "white" : featuresEnabled ? "#ccc" : "#666" }} />
         </ListItem>
 
-        <Divider sx={{ my: 2, borderColor: "#333" }} />
-
+        <PasswordResetNavigationItem />
+        <CreateCloudAccessUserNavigationItem />
         <ListItem
           onClick={handleLogout}
           sx={{

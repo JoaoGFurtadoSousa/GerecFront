@@ -17,6 +17,7 @@ import Inventario from "./components/Inventario"
 import QRCodePage from "./components/Qrcode"
 import RFIDPage from "./components/RFID"
 import ResetPassword from "./components/ResetPassword"
+import CreateCloudAccessUser from "./components/CreateCloudAccessUser"
 
 const theme = createTheme({
   palette: {
@@ -166,6 +167,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <ResetPassword />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/criar-usuario-cloudaccess"
+              element={
+                <ProtectedRoute>
+                  <CreateCloudAccessUser />
                 </ProtectedRoute>
               }
             />

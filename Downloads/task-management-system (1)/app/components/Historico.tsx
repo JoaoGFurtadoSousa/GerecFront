@@ -429,10 +429,10 @@ export default function Historico() {
               </Badge>
             </IconButton>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.nome?.charAt(0) || "U"}</Avatar>
+              <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.first_name?.charAt(0) || "U"}</Avatar>
               <Box sx={{ display: { xs: "none", sm: "block" } }}>
                 <Typography variant="body2" sx={{ fontWeight: 600, color: "#333" }}>
-                  {userData.nome || "Usuário"}
+                  {userData.first_name || "Usuário"}
                 </Typography>
                 <Typography variant="caption" sx={{ color: "#666" }}>
                   {userData.email || "usuario@sistema.com"}

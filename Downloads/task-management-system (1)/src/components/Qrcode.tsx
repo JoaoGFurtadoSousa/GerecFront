@@ -41,6 +41,8 @@ import {
 } from "@mui/icons-material"
 import { useLocation, useNavigate } from "react-router-dom"
 import { authService } from "../services/authService"
+import PasswordResetNavigationItem from "./PasswordResetNavigationItem"
+import CreateCloudAccessUserNavigationItem from "./CreateCloudAccessUserNavigationItem"
 import { apiService, type Unit } from "../services/apiService"
 
 const DRAWER_WIDTH = 240
@@ -265,8 +267,8 @@ export default function QRCodePage() {
           <ListItemText primary="RFID" primaryTypographyProps={{ fontSize: "0.9rem", fontWeight: isActiveRoute("/rfid") ? 600 : 400, color: isActiveRoute("/rfid") ? "white" : featuresEnabled ? "#ccc" : "#666" }} />
         </ListItem>
 
-        <Divider sx={{ my: 2, borderColor: "#333" }} />
-
+        <PasswordResetNavigationItem />
+        <CreateCloudAccessUserNavigationItem />
         <ListItem
           onClick={handleLogout}
           sx={{

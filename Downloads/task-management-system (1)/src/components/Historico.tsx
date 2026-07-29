@@ -63,6 +63,8 @@ import {
 } from "@mui/icons-material"
 import { useNavigate, useLocation } from "react-router-dom"
 import { authService } from "../services/authService"
+import PasswordResetNavigationItem from "./PasswordResetNavigationItem"
+import CreateCloudAccessUserNavigationItem from "./CreateCloudAccessUserNavigationItem"
 import { apiService, type Task, type Equipment } from "../services/apiService"
 
 const DRAWER_WIDTH = 240
@@ -462,6 +464,8 @@ export default function Historico() {
           />
         </ListItem>
 
+        <PasswordResetNavigationItem />
+        <CreateCloudAccessUserNavigationItem />
         <ListItem
           onClick={handleLogout}
           sx={{

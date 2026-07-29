@@ -44,6 +44,8 @@ import {
 } from "@mui/icons-material"
 import { useNavigate, useLocation } from "react-router-dom"
 import { authService } from "../services/authService"
+import PasswordResetNavigationItem from "./PasswordResetNavigationItem"
+import CreateCloudAccessUserNavigationItem from "./CreateCloudAccessUserNavigationItem"
 import { apiService, type Technician, type Unit } from "../services/apiService"
 
 const DRAWER_WIDTH = 240
@@ -388,6 +390,8 @@ export default function NovaTask() {
           />
         </ListItem>
 
+        <PasswordResetNavigationItem />
+        <CreateCloudAccessUserNavigationItem />
         <ListItem
           onClick={handleLogout}
           sx={{
