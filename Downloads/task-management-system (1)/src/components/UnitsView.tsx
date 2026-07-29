@@ -37,8 +37,9 @@ import { authService } from "../services/authService"
 import PasswordResetNavigationItem from "./PasswordResetNavigationItem"
 import CreateCloudAccessUserNavigationItem from "./CreateCloudAccessUserNavigationItem"
 import NewTaskModal from "./NewTaskModal"
+import type { Equipment, Unit } from "../services/apiService"
 
-const DRAWER_WIDTH = 240
+const DRAWER_WIDTH = 0
 const API_BASE_URL = "http://192.168.15.29:7000/api/v1"
 
 export default function UnitsView() {
@@ -46,15 +47,15 @@ export default function UnitsView() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   // Estados específicos para unidades
-  const [units, setUnits] = useState([])
+  const [units, setUnits] = useState<Unit[]>([])
   const [loadingUnits, setLoadingUnits] = useState(false)
-  const [selectedUnit, setSelectedUnit] = useState(null)
-  const [unitEquipments, setUnitEquipments] = useState([])
+  const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null)
+  const [unitEquipments, setUnitEquipments] = useState<Equipment[]>([])
   const [loadingEquipments, setLoadingEquipments] = useState(false)
   const [showEquipmentsModal, setShowEquipmentsModal] = useState(false)
 
   // Estados para usuário
-  const [userInfo, setUserInfo] = useState(null)
+  const [userInfo, setUserInfo] = useState<{ nome?: string; email?: string } | null>(null)
   const [loadingUser, setLoadingUser] = useState(true)
   const [showNewTaskModal, setShowNewTaskModal] = useState(false)
 
@@ -74,7 +75,7 @@ export default function UnitsView() {
       if (!response.ok) {
         throw new Error(`Erro ao buscar usuário: ${response.status} ${response.statusText}`)
       }
-      const userData = await response.json()
+      const userData: { nome?: string; email?: string } = await response.json()
       console.log("✅ Dados do usuário recebidos:", userData)
       setUserInfo(userData)
     } catch (err) {
@@ -106,7 +107,7 @@ export default function UnitsView() {
         throw new Error(`Erro ao buscar unidades: ${response.status} ${response.statusText}`)
       }
 
-      const unitsData = await response.json()
+      const unitsData: Unit[] = await response.json()
       console.log("✅ Unidades recebidas:", unitsData)
       setUnits(Array.isArray(unitsData) ? unitsData : [])
     } catch (err) {
@@ -118,7 +119,7 @@ export default function UnitsView() {
   }
 
   // Função para buscar equipamentos de uma unidade
-  const fetchUnitEquipments = async (unitId) => {
+  const fetchUnitEquipments = async (unitId: number) => {
     try {
       setLoadingEquipments(true)
       console.log("🔄 Buscando equipamentos da unidade:", unitId)
@@ -139,7 +140,7 @@ export default function UnitsView() {
         throw new Error(`Erro ao buscar equipamentos: ${response.status} ${response.statusText}`)
       }
 
-      const equipmentsData = await response.json()
+      const equipmentsData: Equipment[] = await response.json()
       console.log("✅ Equipamentos recebidos:", equipmentsData)
       setUnitEquipments(Array.isArray(equipmentsData) ? equipmentsData : [])
     } catch (err) {
@@ -151,7 +152,7 @@ export default function UnitsView() {
   }
 
   // Função para lidar com clique em unidade
-  const handleUnitClick = async (unit) => {
+  const handleUnitClick = async (unit: Unit) => {
     setSelectedUnit(unit)
     setShowEquipmentsModal(true)
     await fetchUnitEquipments(unit.id)
@@ -175,143 +176,7 @@ export default function UnitsView() {
   }
 
   // Sidebar content
-  const drawer = (
-    <Box sx={{ height: "100%", bgcolor: "#1a1a1a", color: "white" }}>
-      <Box sx={{ p: 3, borderBottom: "1px solid #333" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Engineering sx={{ fontSize: 32, color: "#2196f3" }} />
-          <Typography variant="h6" sx={{ fontWeight: 600, color: "white" }}>
-            GerecTech
-          </Typography>
-        </Box>
-      </Box>
-      <List sx={{ px: 2, py: 1 }}>
-        <ListItem
-          onClick={() => navigate("/")}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            "&:hover": { bgcolor: "#333" },
-            cursor: "pointer",
-          }}
-        >
-          <ListItemIcon>
-            <Dashboard sx={{ color: "#ccc" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Dashboard"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              fontWeight: 500,
-              color: "#ccc",
-            }}
-          />
-        </ListItem>
-        <ListItem
-          onClick={() => navigate("/historico")}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            "&:hover": { bgcolor: "#333" },
-            cursor: "pointer",
-          }}
-        >
-          <ListItemIcon>
-            <Assignment sx={{ color: "#ccc" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Histórico"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: "#ccc",
-            }}
-          />
-        </ListItem>
-        <ListItem
-          onClick={() => setShowNewTaskModal(true)}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            "&:hover": { bgcolor: "#333" },
-            cursor: "pointer",
-          }}
-        >
-          <ListItemIcon>
-            <Add sx={{ color: "#ccc" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Nova Tarefa"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: "#ccc",
-            }}
-          />
-        </ListItem>
-        <ListItem
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            bgcolor: "#2196f3",
-            "&:hover": { bgcolor: "#1976d2" },
-            cursor: "pointer",
-          }}
-        >
-          <ListItemIcon>
-            <Business sx={{ color: "white" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Unidades"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: "white",
-            }}
-          />
-        </ListItem>
-        <Divider sx={{ my: 2, borderColor: "#333" }} />
-        <ListItem
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            "&:hover": { bgcolor: "#333" },
-            cursor: "pointer",
-          }}
-        >
-          <ListItemIcon>
-            <Settings sx={{ color: "#ccc" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Configurações"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: "#ccc",
-            }}
-          />
-        </ListItem>
-        <PasswordResetNavigationItem />
-        <CreateCloudAccessUserNavigationItem />
-        <ListItem
-          onClick={handleLogout}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            "&:hover": { bgcolor: "#d32f2f" },
-            cursor: "pointer",
-          }}
-        >
-          <ListItemIcon>
-            <Logout sx={{ color: "#ccc" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Sair"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: "#ccc",
-            }}
-          />
-        </ListItem>
-      </List>
-    </Box>
-  )
+  const drawer = null
 
   return (
     <Box sx={{ display: "flex", height: "100vh", bgcolor: "#f8f9fa" }}>
@@ -323,7 +188,7 @@ export default function UnitsView() {
           display: { xs: "none", md: "block" },
         }}
       >
-        {drawer}
+        {null}
       </Box>
       {/* Sidebar Mobile */}
       <Drawer
@@ -336,7 +201,7 @@ export default function UnitsView() {
           "& .MuiDrawer-paper": { width: DRAWER_WIDTH },
         }}
       >
-        {drawer}
+        {null}
       </Drawer>
       {/* Main Content */}
       <Box sx={{ flexGrow: 1, overflow: "auto" }}>
@@ -628,14 +493,7 @@ export default function UnitsView() {
         </Modal>
       </Box>
       {/* Modal Nova Tarefa */}
-      <NewTaskModal
-        open={showNewTaskModal}
-        onClose={() => setShowNewTaskModal(false)}
-        onSuccess={() => {
-          setShowNewTaskModal(false)
-          // Não precisa refresh aqui pois é página de unidades
-        }}
-      />
+      {showNewTaskModal && <NewTaskModal />}
     </Box>
   )
 }

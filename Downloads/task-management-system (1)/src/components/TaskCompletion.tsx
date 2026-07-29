@@ -20,7 +20,7 @@ import { useTask } from "../contexts/TaskContext"
 export default function TaskCompletion() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { getTaskById, completeTask, loading, error, clearError } = useTask()
+  const { getTaskById, completeTask, error, clearError } = useTask()
 
   const [formData, setFormData] = useState({
     descricao_realizada: "",
@@ -106,7 +106,7 @@ export default function TaskCompletion() {
           </Typography>
 
           <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
-            {task.nome} - {task.unidade}
+            {task.nome} - {task.unidade.nome_da_unidade}
           </Typography>
 
           {error && (

@@ -18,6 +18,7 @@ import QRCodePage from "./components/Qrcode"
 import RFIDPage from "./components/RFID"
 import ResetPassword from "./components/ResetPassword"
 import CreateCloudAccessUser from "./components/CreateCloudAccessUser"
+import ProtectedLayout from "./components/ProtectedLayout"
 
 const theme = createTheme({
   palette: {
@@ -77,7 +78,7 @@ export default function App() {
               path="/"
               element={
                 <ProtectedRoute>
-                  <TaskList />
+                  <ProtectedLayout><TaskList /></ProtectedLayout>
                 </ProtectedRoute>
               }
             />
@@ -85,7 +86,7 @@ export default function App() {
               path="/task/:id"
               element={
                 <ProtectedRoute>
-                  <TaskDetails />
+                  <ProtectedLayout><TaskDetails /></ProtectedLayout>
                 </ProtectedRoute>
               }
             />
@@ -93,7 +94,7 @@ export default function App() {
               path="/task/:id/checklist"
               element={
                 <ProtectedRoute>
-                  <EquipmentChecklist />
+                  <ProtectedLayout><EquipmentChecklist /></ProtectedLayout>
                 </ProtectedRoute>
               }
             />
@@ -101,7 +102,7 @@ export default function App() {
               path="/task/:id/completion"
               element={
                 <ProtectedRoute>
-                  <TaskCompletion />
+                  <ProtectedLayout><TaskCompletion /></ProtectedLayout>
                 </ProtectedRoute>
               }
             />
@@ -109,7 +110,7 @@ export default function App() {
               path="/task/:id/additional-data"
               element={
                 <ProtectedRoute>
-                  <TaskAdditionalData />
+                  <ProtectedLayout><TaskAdditionalData /></ProtectedLayout>
                 </ProtectedRoute>
               }
             />
@@ -118,7 +119,7 @@ export default function App() {
               path="/nova-tarefa"
               element={
                 <ProtectedRoute>
-                  <NovaTask />
+                  <ProtectedLayout><NovaTask /></ProtectedLayout>
                 </ProtectedRoute>
               }
             />
@@ -126,7 +127,7 @@ export default function App() {
               path="/historico"
               element={
                 <ProtectedRoute>
-                  <Historico />
+                  <ProtectedLayout><Historico /></ProtectedLayout>
                 </ProtectedRoute>
               }
             />
@@ -134,7 +135,7 @@ export default function App() {
               path="/unidades"
               element={
                 <ProtectedRoute>
-                  <Unidades />
+                  <ProtectedLayout><Unidades /></ProtectedLayout>
                 </ProtectedRoute>
               }
             />
@@ -142,7 +143,7 @@ export default function App() {
               path="/inventario"
               element={
                 <ProtectedRoute>
-                  <Inventario />
+                  <ProtectedLayout><Inventario /></ProtectedLayout>
                 </ProtectedRoute>
               }
             />
@@ -150,7 +151,7 @@ export default function App() {
               path="/qrcode"
               element={
                 <ProtectedRoute>
-                  <QRCodePage />
+                  <ProtectedLayout><QRCodePage /></ProtectedLayout>
                 </ProtectedRoute>
               }
             />
@@ -158,7 +159,7 @@ export default function App() {
               path="/rfid"
               element={
                 <ProtectedRoute>
-                  <RFIDPage />
+                  <ProtectedLayout><RFIDPage /></ProtectedLayout>
                 </ProtectedRoute>
               }
             />
@@ -166,7 +167,7 @@ export default function App() {
               path="/reset-senha-cloudaccess"
               element={
                 <ProtectedRoute>
-                  <ResetPassword />
+                  <ProtectedLayout><ResetPassword /></ProtectedLayout>
                 </ProtectedRoute>
               }
             />
@@ -174,7 +175,7 @@ export default function App() {
               path="/criar-usuario-cloudaccess"
               element={
                 <ProtectedRoute>
-                  <CreateCloudAccessUser />
+                  <ProtectedLayout><CreateCloudAccessUser /></ProtectedLayout>
                 </ProtectedRoute>
               }
             />

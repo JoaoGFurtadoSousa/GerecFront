@@ -1,13 +1,3 @@
-interface LoginResponse {
-  access: string
-  refresh: string
-  user?: {
-    id: number
-    nome: string
-    email: string
-  }
-}
-
 interface RefreshResponse {
   access: string
 }
@@ -425,7 +415,7 @@ class AuthService {
 
     // Preparar headers
     const headers: Record<string, string> = {
-      ...options.headers,
+      ...Object.fromEntries(new Headers(options.headers).entries()),
       Authorization: `Bearer ${accessToken}`,
       Accept: "application/json",
     }
@@ -461,7 +451,7 @@ class AuthService {
 
         // Repetir com novo token
         const newHeaders: Record<string, string> = {
-          ...options.headers,
+          ...Object.fromEntries(new Headers(options.headers).entries()),
           Authorization: `Bearer ${accessToken}`,
           Accept: "application/json",
         }

@@ -41,7 +41,7 @@ import { authService } from "../services/authService"
 import { apiService, type PasswordResetResponse, type Unit } from "../services/apiService"
 import MultiUnitSelect from "./MultiUnitSelect"
 
-const DRAWER_WIDTH = 240
+const DRAWER_WIDTH = 0
 
 interface ResetPasswordForm {
   username: string
@@ -151,52 +151,13 @@ export default function ResetPassword() {
     { label: "Criar Usuário CloudAccess", path: "/criar-usuario-cloudaccess", icon: <PersonAdd />, enabled: featuresEnabled },
   ]
 
-  const drawer = (
-    <Box sx={{ height: "100%", bgcolor: "#1a1a1a", color: "white" }}>
-      <Box sx={{ p: 3, borderBottom: "1px solid #333" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Engineering sx={{ fontSize: 32, color: "#2196f3" }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>GerecTech</Typography>
-        </Box>
-      </Box>
-      <List sx={{ px: 2, py: 1 }}>
-        {navigationItems.map((item, index) => {
-          const active = isActiveRoute(item.path)
-          const showDivider = index === 5
-          return (
-            <Box key={item.path}>
-              {showDivider && <Divider sx={{ my: 2, borderColor: "#333" }} />}
-              <ListItem
-                onClick={() => item.enabled && navigate(item.path)}
-                sx={{
-                  borderRadius: 2,
-                  mb: 1,
-                  bgcolor: active ? "#2196f3" : "transparent",
-                  "&:hover": { bgcolor: item.enabled ? (active ? "#1976d2" : "#333") : "transparent" },
-                  cursor: item.enabled ? "pointer" : "not-allowed",
-                  opacity: item.enabled ? 1 : 0.5,
-                }}
-              >
-                <ListItemIcon sx={{ color: active ? "white" : item.enabled ? "#ccc" : "#666" }}>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.label} primaryTypographyProps={{ fontSize: "0.9rem", fontWeight: active ? 600 : 400, color: active ? "white" : item.enabled ? "#ccc" : "#666" }} />
-              </ListItem>
-            </Box>
-          )
-        })}
-        <Divider sx={{ my: 2, borderColor: "#333" }} />
-        <ListItem onClick={() => authService.logout()} sx={{ borderRadius: 2, "&:hover": { bgcolor: "#d32f2f" }, cursor: "pointer" }}>
-          <ListItemIcon><Logout sx={{ color: "#ccc" }} /></ListItemIcon>
-          <ListItemText primary="Sair" primaryTypographyProps={{ fontSize: "0.9rem", color: "#ccc" }} />
-        </ListItem>
-      </List>
-    </Box>
-  )
+  const drawer = null
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f8f9fa" }}>
-      <Box sx={{ width: DRAWER_WIDTH, flexShrink: 0, display: { xs: "none", md: "block" } }}>{drawer}</Box>
+      <Box sx={{ width: DRAWER_WIDTH, flexShrink: 0, display: { xs: "none", md: "block" } }}>{null}</Box>
       <Drawer variant="temporary" open={mobileOpen} onClose={() => setMobileOpen(false)} ModalProps={{ keepMounted: true }} sx={{ display: { xs: "block", md: "none" }, "& .MuiDrawer-paper": { width: DRAWER_WIDTH } }}>
-        {drawer}
+        {null}
       </Drawer>
       <Box sx={{ flexGrow: 1, minWidth: 0 }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", p: 3, bgcolor: "white", borderBottom: "1px solid #e0e0e0" }}>

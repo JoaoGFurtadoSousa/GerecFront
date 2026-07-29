@@ -6,8 +6,10 @@ const EQUIPMENT_EXITS_API_URL = "http://192.168.15.29:7000/api/v1/saidas-equipam
 
 export interface Task {
   id: number
+  nome?: string
   nomeDoTecnico: {
     nome: string
+    username?: string
   }
   unidade: {
     id: number
@@ -54,6 +56,7 @@ export interface Unit {
   nome_da_unidade: string
   status: boolean
   id_garagem?: string
+  cidade?: string
 }
 
 export interface AdditionalDataForm {
@@ -69,6 +72,7 @@ export interface AdditionalDataForm {
 export interface Technician {
   id: number
   nome: string
+  username?: string
 }
 
 export interface InventoryItem {
@@ -804,7 +808,7 @@ class ApiService {
     unidade: number
     descricao: string
     numChamado: string
-    dataTarefa: string
+    dataTarefa?: string
     status: string
   }): Promise<void> {
     console.log("📤 Enviando nova tarefa para: http://192.168.15.29:7000/api/v1/tarefas/")
@@ -817,6 +821,15 @@ class ApiService {
 
     await handleFetchError(response)
     console.log("✅ Nova tarefa enviada com sucesso")
+  }
+
+  async completeTask(taskId: number, data: TaskCompletionData): Promise<void> {
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/${taskId}/concluir/`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+
+    await handleFetchError(response)
   }
 
   async getCurrentUser(): Promise<CurrentUser> {

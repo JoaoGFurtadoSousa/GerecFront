@@ -59,7 +59,7 @@ import { apiService } from "../services/apiService"
 import { authService } from "../services/authService"
 import CreateCloudAccessUserNavigationItem from "./CreateCloudAccessUserNavigationItem"
 
-const DRAWER_WIDTH = 240
+const DRAWER_WIDTH = 0
 
 const getStatusColor = (status: Task["status"]) => {
   switch (status) {
@@ -321,277 +321,12 @@ export default function TaskList() {
   }
 
   // Sidebar content - COM NAVEGAÇÃO FUNCIONAL
-  const drawer = (
-    <Box sx={{ height: "100%", bgcolor: "#1a1a1a", color: "white" }}>
-      <Box sx={{ p: 3, borderBottom: "1px solid #333" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Engineering sx={{ fontSize: 32, color: "#2196f3" }} />
-          <Typography variant="h6" sx={{ fontWeight: 600, color: "white" }}>
-            GerecTech
-          </Typography>
-        </Box>
-      </Box>
-
-      <List sx={{ px: 2, py: 1 }}>
-        {/* 1. Dashboard - ATIVO */}
-        <ListItem
-          onClick={handleNavigateToDashboard}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            bgcolor: isActiveRoute("/") ? "#2196f3" : "transparent",
-            "&:hover": { bgcolor: isActiveRoute("/") ? "#1976d2" : "#333" },
-            cursor: "pointer",
-          }}
-        >
-          <ListItemIcon>
-            <Dashboard sx={{ color: "white" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Dashboard"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              fontWeight: 500,
-              color: "white",
-            }}
-          />
-        </ListItem>
-
-        {/* 2. Nova Tarefa */}
-        <ListItem
-          onClick={handleNavigateToNewTask}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            bgcolor: isActiveRoute("/nova-tarefa") ? "#4caf50" : "transparent",
-            "&:hover": {
-              bgcolor: authService.shouldEnableFeatures() ? (isActiveRoute("/nova-tarefa") ? "#388e3c" : "#333") : "transparent",
-            },
-            cursor: authService.shouldEnableFeatures() ? "pointer" : "not-allowed",
-            opacity: authService.shouldEnableFeatures() ? 1 : 0.5,
-          }}
-        >
-          <ListItemIcon>
-            <Add sx={{ color: authService.shouldEnableFeatures() ? (isActiveRoute("/nova-tarefa") ? "white" : "#4caf50") : "#666" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Nova Tarefa"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: authService.shouldEnableFeatures() ? (isActiveRoute("/nova-tarefa") ? "white" : "#ccc") : "#666",
-            }}
-          />
-          {!authService.shouldEnableFeatures() && (
-            <Typography variant="caption" sx={{ color: "#666", fontSize: "0.7rem" }}>
-              Tokens válidos
-            </Typography>
-          )}
-        </ListItem>
-
-        {/* 3. Histórico */}
-        <ListItem
-          onClick={handleNavigateToHistory}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            bgcolor: isActiveRoute("/historico") ? "#2196f3" : "transparent",
-            "&:hover": {
-              bgcolor: authService.shouldEnableFeatures() ? (isActiveRoute("/historico") ? "#1976d2" : "#333") : "transparent",
-            },
-            cursor: authService.shouldEnableFeatures() ? "pointer" : "not-allowed",
-            opacity: authService.shouldEnableFeatures() ? 1 : 0.5,
-          }}
-        >
-          <ListItemIcon>
-            <History sx={{ color: authService.shouldEnableFeatures() ? (isActiveRoute("/historico") ? "white" : "#ccc") : "#666" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Histórico"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: authService.shouldEnableFeatures() ? (isActiveRoute("/historico") ? "white" : "#ccc") : "#666",
-            }}
-          />
-        </ListItem>
-
-        {/* 4. Unidades */}
-        <ListItem
-          onClick={handleNavigateToUnits}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            bgcolor: isActiveRoute("/unidades") ? "#2196f3" : "transparent",
-            "&:hover": {
-              bgcolor: authService.shouldEnableFeatures() ? (isActiveRoute("/unidades") ? "#1976d2" : "#333") : "transparent",
-            },
-            cursor: authService.shouldEnableFeatures() ? "pointer" : "not-allowed",
-            opacity: authService.shouldEnableFeatures() ? 1 : 0.5,
-          }}
-        >
-          <ListItemIcon>
-            <Business sx={{ color: authService.shouldEnableFeatures() ? (isActiveRoute("/unidades") ? "white" : "#ccc") : "#666" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Unidades"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: authService.shouldEnableFeatures() ? (isActiveRoute("/unidades") ? "white" : "#ccc") : "#666",
-            }}
-          />
-        </ListItem>
-
-        <ListItem
-          onClick={() => authService.shouldEnableFeatures() && navigate("/inventario")}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            bgcolor: isActiveRoute("/inventario") ? "#2196f3" : "transparent",
-            "&:hover": {
-              bgcolor: authService.shouldEnableFeatures() ? (isActiveRoute("/inventario") ? "#1976d2" : "#333") : "transparent",
-            },
-            cursor: authService.shouldEnableFeatures() ? "pointer" : "not-allowed",
-            opacity: authService.shouldEnableFeatures() ? 1 : 0.5,
-          }}
-        >
-          <ListItemIcon>
-            <Inventory2 sx={{ color: authService.shouldEnableFeatures() ? (isActiveRoute("/inventario") ? "white" : "#ccc") : "#666" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Inventário"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: authService.shouldEnableFeatures() ? (isActiveRoute("/inventario") ? "white" : "#ccc") : "#666",
-            }}
-          />
-        </ListItem>
-
-        <Divider sx={{ my: 2, borderColor: "#333" }} />
-
-        <ListItem
-          onClick={handleNavigateToQRCode}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            bgcolor: isActiveRoute("/qrcode") ? "#2196f3" : "transparent",
-            "&:hover": {
-              bgcolor: authService.shouldEnableFeatures() ? (isActiveRoute("/qrcode") ? "#1976d2" : "#333") : "transparent",
-            },
-            cursor: authService.shouldEnableFeatures() ? "pointer" : "not-allowed",
-            opacity: authService.shouldEnableFeatures() ? 1 : 0.5,
-          }}
-        >
-          <ListItemIcon>
-            <QrCode2 sx={{ color: authService.shouldEnableFeatures() ? (isActiveRoute("/qrcode") ? "white" : "#ccc") : "#666" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Qrcode"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: authService.shouldEnableFeatures() ? (isActiveRoute("/qrcode") ? "white" : "#ccc") : "#666",
-            }}
-          />
-        </ListItem>
-
-        <ListItem
-          onClick={handleNavigateToRFID}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            bgcolor: isActiveRoute("/rfid") ? "#2196f3" : "transparent",
-            "&:hover": {
-              bgcolor: authService.shouldEnableFeatures() ? (isActiveRoute("/rfid") ? "#1976d2" : "#333") : "transparent",
-            },
-            cursor: authService.shouldEnableFeatures() ? "pointer" : "not-allowed",
-            opacity: authService.shouldEnableFeatures() ? 1 : 0.5,
-          }}
-        >
-          <ListItemIcon>
-            <Nfc sx={{ color: authService.shouldEnableFeatures() ? (isActiveRoute("/rfid") ? "white" : "#ccc") : "#666" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="RFID"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: authService.shouldEnableFeatures() ? (isActiveRoute("/rfid") ? "white" : "#ccc") : "#666",
-            }}
-          />
-        </ListItem>
-
-        <ListItem
-          onClick={handleNavigateToPasswordReset}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            bgcolor: isActiveRoute("/reset-senha-cloudaccess") ? "#2196f3" : "transparent",
-            "&:hover": {
-              bgcolor: authService.shouldEnableFeatures()
-                ? isActiveRoute("/reset-senha-cloudaccess")
-                  ? "#1976d2"
-                  : "#333"
-                : "transparent",
-            },
-            cursor: authService.shouldEnableFeatures() ? "pointer" : "not-allowed",
-            opacity: authService.shouldEnableFeatures() ? 1 : 0.5,
-          }}
-        >
-          <ListItemIcon>
-            <LockReset
-              sx={{
-                color: authService.shouldEnableFeatures()
-                  ? isActiveRoute("/reset-senha-cloudaccess")
-                    ? "white"
-                    : "#ccc"
-                  : "#666",
-              }}
-            />
-          </ListItemIcon>
-          <ListItemText
-            primary="Reset de Senha"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: authService.shouldEnableFeatures()
-                ? isActiveRoute("/reset-senha-cloudaccess")
-                  ? "white"
-                  : "#ccc"
-                : "#666",
-            }}
-          />
-        </ListItem>
-
-        <CreateCloudAccessUserNavigationItem />
-
-        {/* Divider antes do Sair */}
-        <Divider sx={{ my: 2, borderColor: "#333" }} />
-
-        {/* Sair - MANTIDO */}
-        <ListItem
-          onClick={handleLogout}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            "&:hover": { bgcolor: "#d32f2f" },
-            cursor: "pointer",
-          }}
-        >
-          <ListItemIcon>
-            <Logout sx={{ color: "#ccc" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Sair"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: "#ccc",
-            }}
-          />
-        </ListItem>
-      </List>
-    </Box>
-  )
+  const drawer = null
 
   if (loading) {
     return (
       <Box sx={{ display: "flex", height: "100vh" }}>
-        <Box sx={{ width: DRAWER_WIDTH, flexShrink: 0 }}>{drawer}</Box>
+        <Box sx={{ width: DRAWER_WIDTH, flexShrink: 0 }}>{null}</Box>
         <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center", alignItems: "center", bgcolor: "#f8f9fa" }}>
           <CircularProgress size={60} />
         </Box>
@@ -602,7 +337,7 @@ export default function TaskList() {
   if (error) {
     return (
       <Box sx={{ display: "flex", height: "100vh" }}>
-        <Box sx={{ width: DRAWER_WIDTH, flexShrink: 0 }}>{drawer}</Box>
+        <Box sx={{ width: DRAWER_WIDTH, flexShrink: 0 }}>{null}</Box>
         <Box sx={{ flexGrow: 1, p: 3, bgcolor: "#f8f9fa" }}>
           <Alert severity="error" action={<Button onClick={refreshTasks}>Tentar Novamente</Button>}>
             <Typography variant="h6">Erro ao carregar tarefas</Typography>
@@ -623,7 +358,7 @@ export default function TaskList() {
           display: { xs: "none", md: "block" },
         }}
       >
-        {drawer}
+        {null}
       </Box>
 
       {/* Sidebar Mobile */}
@@ -637,7 +372,7 @@ export default function TaskList() {
           "& .MuiDrawer-paper": { width: DRAWER_WIDTH },
         }}
       >
-        {drawer}
+        {null}
       </Drawer>
 
       {/* Main Content */}

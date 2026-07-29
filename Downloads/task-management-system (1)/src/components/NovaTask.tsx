@@ -48,7 +48,7 @@ import PasswordResetNavigationItem from "./PasswordResetNavigationItem"
 import CreateCloudAccessUserNavigationItem from "./CreateCloudAccessUserNavigationItem"
 import { apiService, type Technician, type Unit } from "../services/apiService"
 
-const DRAWER_WIDTH = 240
+const DRAWER_WIDTH = 0
 
 interface NovaTaskForm {
   descricao: string
@@ -204,217 +204,7 @@ export default function NovaTask() {
     return location.pathname === path
   }
 
-  const drawer = (
-    <Box sx={{ height: "100%", bgcolor: "#1a1a1a", color: "white" }}>
-      <Box sx={{ p: 3, borderBottom: "1px solid #333" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Engineering sx={{ fontSize: 32, color: "#2196f3" }} />
-          <Typography variant="h6" sx={{ fontWeight: 600, color: "white" }}>
-            GerecTech
-          </Typography>
-        </Box>
-      </Box>
-
-      <List sx={{ px: 2, py: 1 }}>
-        <ListItem
-          onClick={() => navigate("/")}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            bgcolor: isActiveRoute("/") ? "#2196f3" : "transparent",
-            "&:hover": { bgcolor: isActiveRoute("/") ? "#1976d2" : "#333" },
-            cursor: "pointer",
-          }}
-        >
-          <ListItemIcon>
-            <Dashboard sx={{ color: "white" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Dashboard"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              fontWeight: 500,
-              color: "white",
-            }}
-          />
-        </ListItem>
-
-        <ListItem
-          onClick={() => navigate("/nova-tarefa")}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            bgcolor: isActiveRoute("/nova-tarefa") ? "#4caf50" : "transparent",
-            "&:hover": {
-              bgcolor: isActiveRoute("/nova-tarefa") ? "#388e3c" : "#333",
-            },
-            cursor: "pointer",
-          }}
-        >
-          <ListItemIcon>
-            <Add sx={{ color: isActiveRoute("/nova-tarefa") ? "white" : "#4caf50" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Nova Tarefa"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: isActiveRoute("/nova-tarefa") ? "white" : "#ccc",
-            }}
-          />
-        </ListItem>
-
-        <ListItem
-          onClick={() => navigate("/historico")}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            bgcolor: isActiveRoute("/historico") ? "#2196f3" : "transparent",
-            "&:hover": {
-              bgcolor: featuresEnabled ? (isActiveRoute("/historico") ? "#1976d2" : "#333") : "transparent",
-            },
-            cursor: featuresEnabled ? "pointer" : "not-allowed",
-            opacity: featuresEnabled ? 1 : 0.5,
-          }}
-        >
-          <ListItemIcon>
-            <History sx={{ color: featuresEnabled ? (isActiveRoute("/historico") ? "white" : "#ccc") : "#666" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Histórico"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: featuresEnabled ? (isActiveRoute("/historico") ? "white" : "#ccc") : "#666",
-            }}
-          />
-        </ListItem>
-
-        <ListItem
-          onClick={() => navigate("/unidades")}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            bgcolor: isActiveRoute("/unidades") ? "#2196f3" : "transparent",
-            "&:hover": {
-              bgcolor: featuresEnabled ? (isActiveRoute("/unidades") ? "#1976d2" : "#333") : "transparent",
-            },
-            cursor: featuresEnabled ? "pointer" : "not-allowed",
-            opacity: featuresEnabled ? 1 : 0.5,
-          }}
-        >
-          <ListItemIcon>
-            <Business sx={{ color: featuresEnabled ? (isActiveRoute("/unidades") ? "white" : "#ccc") : "#666" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Unidades"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: featuresEnabled ? (isActiveRoute("/unidades") ? "white" : "#ccc") : "#666",
-            }}
-          />
-        </ListItem>
-
-        <ListItem
-          onClick={() => featuresEnabled && navigate("/inventario")}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            bgcolor: isActiveRoute("/inventario") ? "#2196f3" : "transparent",
-            "&:hover": {
-              bgcolor: featuresEnabled ? (isActiveRoute("/inventario") ? "#1976d2" : "#333") : "transparent",
-            },
-            cursor: featuresEnabled ? "pointer" : "not-allowed",
-            opacity: featuresEnabled ? 1 : 0.5,
-          }}
-        >
-          <ListItemIcon>
-            <Inventory2 sx={{ color: featuresEnabled ? (isActiveRoute("/inventario") ? "white" : "#ccc") : "#666" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Inventário"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: featuresEnabled ? (isActiveRoute("/inventario") ? "white" : "#ccc") : "#666",
-            }}
-          />
-        </ListItem>
-
-        <Divider sx={{ my: 2, borderColor: "#333" }} />
-
-        <ListItem
-          onClick={() => featuresEnabled && navigate("/qrcode")}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            bgcolor: isActiveRoute("/qrcode") ? "#2196f3" : "transparent",
-            "&:hover": {
-              bgcolor: featuresEnabled ? (isActiveRoute("/qrcode") ? "#1976d2" : "#333") : "transparent",
-            },
-            cursor: featuresEnabled ? "pointer" : "not-allowed",
-            opacity: featuresEnabled ? 1 : 0.5,
-          }}
-        >
-          <ListItemIcon>
-            <QrCode2 sx={{ color: featuresEnabled ? (isActiveRoute("/qrcode") ? "white" : "#ccc") : "#666" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Qrcode"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: featuresEnabled ? (isActiveRoute("/qrcode") ? "white" : "#ccc") : "#666",
-            }}
-          />
-        </ListItem>
-
-        <ListItem
-          onClick={() => featuresEnabled && navigate("/rfid")}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            bgcolor: isActiveRoute("/rfid") ? "#2196f3" : "transparent",
-            "&:hover": {
-              bgcolor: featuresEnabled ? (isActiveRoute("/rfid") ? "#1976d2" : "#333") : "transparent",
-            },
-            cursor: featuresEnabled ? "pointer" : "not-allowed",
-            opacity: featuresEnabled ? 1 : 0.5,
-          }}
-        >
-          <ListItemIcon>
-            <Nfc sx={{ color: featuresEnabled ? (isActiveRoute("/rfid") ? "white" : "#ccc") : "#666" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="RFID"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: featuresEnabled ? (isActiveRoute("/rfid") ? "white" : "#ccc") : "#666",
-            }}
-          />
-        </ListItem>
-
-        <PasswordResetNavigationItem />
-        <CreateCloudAccessUserNavigationItem />
-        <ListItem
-          onClick={handleLogout}
-          sx={{
-            borderRadius: 2,
-            mb: 1,
-            "&:hover": { bgcolor: "#d32f2f" },
-            cursor: "pointer",
-          }}
-        >
-          <ListItemIcon>
-            <Logout sx={{ color: "#ccc" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Sair"
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: "#ccc",
-            }}
-          />
-        </ListItem>
-      </List>
-    </Box>
-  )
+  const drawer = null
 
   return (
     <Box sx={{ display: "flex", height: "100vh", bgcolor: "#f8f9fa" }}>
@@ -425,7 +215,7 @@ export default function NovaTask() {
           display: { xs: "none", md: "block" },
         }}
       >
-        {drawer}
+        {null}
       </Box>
 
       <Drawer
@@ -438,7 +228,7 @@ export default function NovaTask() {
           "& .MuiDrawer-paper": { width: DRAWER_WIDTH },
         }}
       >
-        {drawer}
+        {null}
       </Drawer>
 
       <Box sx={{ flexGrow: 1, overflow: "auto" }}>
