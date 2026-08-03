@@ -94,6 +94,7 @@ export default function TaskList() {
     username: "Usuário",
     email: "usuario@sistema.com",
   })
+  const [dashboardUsername, setDashboardUsername] = useState("")
   const [generatingPdfTaskId, setGeneratingPdfTaskId] = useState<number | null>(null)
   const [pdfError, setPdfError] = useState<string | null>(null)
   const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null)
@@ -104,6 +105,18 @@ export default function TaskList() {
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date())
 
   // Registrar callback de navegação no authService
+  useEffect(() => {
+    const loadDashboardUsername = async () => {
+      const authenticatedUser = authService.getUserData()
+      try {
+        setDashboardUsername(await apiService.getCurrentTechnicianUsername(authenticatedUser?.id, authenticatedUser?.username || ""))
+      } catch {
+        setDashboardUsername(authenticatedUser?.username || "")
+      }
+    }
+    loadDashboardUsername()
+  }, [])
+
   useEffect(() => {
     authService.setNavigationCallback((path: string) => {
       navigate(path, { replace: true })
@@ -402,10 +415,7 @@ export default function TaskList() {
               <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData.username?.charAt(0) || "U"}</Avatar>
               <Box sx={{ display: { xs: "none", sm: "block" } }}>
                 <Typography variant="body2" sx={{ fontWeight: 600, color: "#333" }}>
-                  {userData.username || "Usuário"}
-                </Typography>
-                <Typography variant="caption" sx={{ color: "#666" }}>
-                  {userData.email || "usuario@sistema.com"}
+                  {dashboardUsername || userData.username || "Usuário"}
                 </Typography>
               </Box>
             </Box>

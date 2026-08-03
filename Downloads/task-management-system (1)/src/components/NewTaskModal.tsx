@@ -103,14 +103,8 @@ export default function NovaTask() {
       try {
         setLoadingData(true)
 
-        const token = localStorage.getItem("token")
-        const headers = {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        }
-
-        const unidadesResponse = await fetch("http://192.168.15.29:7000/api/v1/unidades/", {
-          headers,
+        const unidadesResponse = await authService.authenticatedFetch("http://192.168.15.29:7000/api/v1/unidades/?page=1", {
+          method: "GET",
         })
 
         if (unidadesResponse.ok) {
@@ -122,8 +116,8 @@ export default function NovaTask() {
           setUnidades([])
         }
 
-        const usuariosResponse = await fetch("http://192.168.15.29:7000/api/v1/usuarios/", {
-          headers,
+        const usuariosResponse = await authService.authenticatedFetch("http://192.168.15.29:7000/api/v1/usuarios/?page=1", {
+          method: "GET",
         })
 
         if (usuariosResponse.ok) {

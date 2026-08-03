@@ -346,6 +346,8 @@ class AuthService {
     // Limpar timer
     this.clearRefreshTimer()
 
+    const hadSession = Boolean(this.getAccessToken() || this.getRefreshToken())
+
     // Limpar localStorage
     localStorage.removeItem("access_token")
     localStorage.removeItem("refresh_token")
@@ -359,7 +361,7 @@ class AuthService {
     console.log("🧹 Dados limpos")
 
     // Usar callback de navegação se disponível
-    if (message) {
+    if (message && hadSession) {
       this.setAuthMessage(message)
     }
 

@@ -1,6 +1,6 @@
 import { useState } from "react"
 import type { ReactNode } from "react"
-import { Add, Business, Dashboard, Engineering, History, Inventory2, LockReset, Logout, Menu, Nfc, PersonAdd, QrCode2 } from "@mui/icons-material"
+import { Add, Business, Dashboard, Engineering, History, Inventory2, LockReset, Logout, Menu, Nfc, PersonAdd, QrCode2, Restore } from "@mui/icons-material"
 import { Box, Divider, Drawer, IconButton, List, ListItem, ListItemIcon, ListItemText } from "@mui/material"
 import { useLocation, useNavigate } from "react-router-dom"
 import { authService } from "../services/authService"
@@ -10,7 +10,7 @@ export const APP_SIDEBAR_WIDTH = 240
 const operations = [
   ["Dashboard", "/", <Dashboard />], ["Nova Tarefa", "/nova-tarefa", <Add />], ["Histórico", "/historico", <History />], ["Unidades", "/unidades", <Business />], ["Inventário", "/inventario", <Inventory2 />],
 ] as const
-const cloudAccess = [["QRCode", "/qrcode", <QrCode2 />], ["RFID", "/rfid", <Nfc />], ["Reset de Senha", "/reset-senha-cloudaccess", <LockReset />], ["Criar Usuário CloudAccess", "/criar-usuario-cloudaccess", <PersonAdd />]] as const
+const cloudAccess = [["QRCode", "/qrcode", <QrCode2 />], ["RFID", "/rfid", <Nfc />], ["Reset de Senha", "/reset-senha-cloudaccess", <LockReset />], ["Histórico de Reset de Senhas", "/historico-reset-senhas", <Restore />], ["Criar Usuário CloudAccess", "/criar-usuario-cloudaccess", <PersonAdd />]] as const
 
 function MenuContent({ close }: { close?: () => void }) {
   const navigate = useNavigate(); const location = useLocation(); const enabled = authService.shouldEnableFeatures()

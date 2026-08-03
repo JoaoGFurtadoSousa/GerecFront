@@ -18,6 +18,7 @@ import QRCodePage from "./components/Qrcode"
 import RFIDPage from "./components/RFID"
 import ResetPassword from "./components/ResetPassword"
 import CreateCloudAccessUser from "./components/CreateCloudAccessUser"
+import PasswordResetHistory from "./components/PasswordResetHistory"
 import ProtectedLayout from "./components/ProtectedLayout"
 
 const theme = createTheme({
@@ -42,11 +43,22 @@ const theme = createTheme({
     },
   },
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          overflowX: "hidden",
+        },
+        "*": {
+          boxSizing: "border-box",
+        },
+      },
+    },
     MuiCard: {
       styleOverrides: {
         root: {
           borderRadius: 12,
           boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          border: "1px solid rgba(0, 0, 0, 0.06)",
         },
       },
     },
@@ -56,6 +68,41 @@ const theme = createTheme({
           borderRadius: 8,
           textTransform: "none",
           fontWeight: 500,
+          minHeight: 40,
+          "@media (max-width:600px)": {
+            width: "100%",
+          },
+        },
+      },
+    },
+    MuiTextField: {
+      defaultProps: {
+        size: "small",
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          backgroundColor: "#fff",
+          "&.Mui-focused": {
+            boxShadow: "0 0 0 3px rgba(33, 150, 243, 0.12)",
+          },
+        },
+      },
+    },
+    MuiTableContainer: {
+      styleOverrides: {
+        root: {
+          maxWidth: "100%",
+        },
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          whiteSpace: "normal",
+          wordBreak: "break-word",
         },
       },
     },
@@ -176,6 +223,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <ProtectedLayout><CreateCloudAccessUser /></ProtectedLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/historico-reset-senhas"
+              element={
+                <ProtectedRoute>
+                  <ProtectedLayout><PasswordResetHistory /></ProtectedLayout>
                 </ProtectedRoute>
               }
             />

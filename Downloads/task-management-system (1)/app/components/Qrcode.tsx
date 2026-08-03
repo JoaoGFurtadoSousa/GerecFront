@@ -44,7 +44,7 @@ import { useNavigate, useLocation } from "react-router-dom"
 import { authService } from "../services/authService"
 
 const DRAWER_WIDTH = 240
-const QRCODE_API_URL = "http://192.168.15.29:7000:8000/api/v1"
+const QRCODE_API_URL = "http://192.168.15.29:7000/api/v1"
 
 interface Unidade {
   id: number

@@ -59,10 +59,10 @@ export default function Login() {
     const userData = localStorage.getItem("user_data")
     const authMessage = sessionStorage.getItem("auth_message")
 
-    if (authMessage) {
+    if (authMessage && (accessToken || refreshToken || userData)) {
       setError(authMessage)
-      sessionStorage.removeItem("auth_message")
     }
+    sessionStorage.removeItem("auth_message")
 
     if (accessToken && refreshToken && userData) {
       console.log("✅ Já autenticado, redirecionando para home...")
@@ -290,17 +290,17 @@ export default function Login() {
                   color: "white",
                   fontSize: "0.9rem",
                   "&:-webkit-autofill": {
-                    WebkitBoxShadow: "0 0 0px 1000px #1e1e2f inset",
+                    WebkitBoxShadow: "0 0 0px 1000px #2a2a3e inset",
                     WebkitTextFillColor: "#ffffff",
                     transition: "background-color 5000s ease-in-out 0s",
                     caretColor: "#ffffff",
                   },
                   "&:-webkit-autofill:hover": {
-                    WebkitBoxShadow: "0 0 0px 1000px #1e1e2f inset",
+                    WebkitBoxShadow: "0 0 0px 1000px #2a2a3e inset",
                     WebkitTextFillColor: "#ffffff",
                   },
                   "&:-webkit-autofill:focus": {
-                    WebkitBoxShadow: "0 0 0px 1000px #1e1e2f inset",
+                    WebkitBoxShadow: "0 0 0px 1000px #2a2a3e inset",
                     WebkitTextFillColor: "#ffffff",
                   },
                   "&::placeholder": {
@@ -372,17 +372,17 @@ export default function Login() {
                   color: "white",
                   fontSize: "0.9rem",
                   "&:-webkit-autofill": {
-                    WebkitBoxShadow: "0 0 0px 1000px #1e1e2f inset",
+                    WebkitBoxShadow: "0 0 0px 1000px #2a2a3e inset",
                     WebkitTextFillColor: "#ffffff",
                     transition: "background-color 5000s ease-in-out 0s",
                     caretColor: "#ffffff",
                   },
                   "&:-webkit-autofill:hover": {
-                    WebkitBoxShadow: "0 0 0px 1000px #1e1e2f inset",
+                    WebkitBoxShadow: "0 0 0px 1000px #2a2a3e inset",
                     WebkitTextFillColor: "#ffffff",
                   },
                   "&:-webkit-autofill:focus": {
-                    WebkitBoxShadow: "0 0 0px 1000px #1e1e2f inset",
+                    WebkitBoxShadow: "0 0 0px 1000px #2a2a3e inset",
                     WebkitTextFillColor: "#ffffff",
                   },
                   "&::placeholder": {

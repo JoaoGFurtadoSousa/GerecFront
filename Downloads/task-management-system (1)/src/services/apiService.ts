@@ -171,6 +171,15 @@ export interface CreateCloudAccessUserPayload {
   unidades: number[]
 }
 
+export interface PaginatedResponse<T> {
+  count: number
+  next: string | null
+  previous: string | null
+  results: T[]
+}
+
+export type PasswordResetHistoryItem = Record<string, unknown> & { id?: number }
+
 export interface TaskChecklistPdfResponse {
   blob: Blob
   fileName: string
@@ -244,26 +253,41 @@ const normalizeTask = (task: any): Task => {
   }
 }
 
+const paginatedUrl = (url: string, page = 1) => {
+  const separator = url.includes("?") ? "&" : "?"
+  return `${url}${separator}page=${page}`
+}
+
+const readPaginatedResponse = <T>(data: unknown): PaginatedResponse<T> => {
+  if (Array.isArray(data)) return { count: data.length, next: null, previous: null, results: data as T[] }
+  const response = data as Partial<PaginatedResponse<T>>
+  return {
+    count: response.count ?? 0,
+    next: response.next ?? null,
+    previous: response.previous ?? null,
+    results: Array.isArray(response.results) ? response.results : [],
+  }
+}
+
 class ApiService {
+  private cachedCurrentTechnicianUsername: string | null = null
   async getTasks(): Promise<Task[]> {
+    const page = await this.getTasksPage()
+    return page.results
+  }
+
+  async getTasksPage(page = 1): Promise<PaginatedResponse<Task>> {
     console.log("🌐 Buscando tarefas com GET...")
 
     try {
-      const response = await authService.authenticatedFetch(`${API_BASE_URL}/tarefas/`, {
+      const response = await authService.authenticatedFetch(paginatedUrl(`${API_BASE_URL}/tarefas/`, page), {
         method: "GET",
       })
 
       await handleFetchError(response)
 
-      const data = await response.json()
-      console.log("📦 Tarefas recebidas:", data.length)
-
-      if (!Array.isArray(data)) {
-        console.warn("⚠️ API não retornou um array")
-        return []
-      }
-
-      return data.map(normalizeTask)
+      const data = readPaginatedResponse<unknown>(await response.json())
+      return { ...data, results: data.results.map(normalizeTask) }
     } catch (error) {
       console.error("❌ Erro ao buscar tarefas:", error)
       throw error
@@ -271,28 +295,28 @@ class ApiService {
   }
 
   async getHistorico(): Promise<Task[]> {
+    const page = await this.getHistoricoPage()
+    return page.results
+  }
+
+  async getHistoricoPage(page = 1): Promise<PaginatedResponse<Task>> {
     console.log("🌐 Buscando histórico de tarefas finalizadas...")
 
     try {
-      const response = await authService.authenticatedFetch(`${API_BASE_URL}/historico/`, {
+      const response = await authService.authenticatedFetch(paginatedUrl(`${API_BASE_URL}/historico/`, page), {
         method: "GET",
       })
 
       await handleFetchError(response)
 
-      const data = await response.json()
+      const data = readPaginatedResponse<unknown>(await response.json())
       console.log("📦 Histórico recebido:", {
-        total: data.length,
-        primeira_tarefa: data[0],
-        ultima_tarefa: data[data.length - 1],
+        total: data.count,
+        primeira_tarefa: data.results[0],
+        ultima_tarefa: data.results[data.results.length - 1],
       })
 
-      if (!Array.isArray(data)) {
-        console.warn("⚠️ API não retornou um array")
-        return []
-      }
-
-      const normalizedHistory = data.map(normalizeTask)
+      const normalizedHistory = data.results.map(normalizeTask)
 
       console.log("✅ Histórico normalizado:", {
         total: normalizedHistory.length,
@@ -302,7 +326,7 @@ class ApiService {
         },
       })
 
-      return normalizedHistory
+      return { ...data, results: normalizedHistory }
     } catch (error) {
       console.error("❌ Erro ao buscar histórico:", error)
       throw error
@@ -375,18 +399,16 @@ class ApiService {
   }
 
   async getInventoryItems(): Promise<InventoryItem[]> {
-    const response = await authService.authenticatedFetch(INVENTORY_API_BASE_URL, {
+    return (await this.getInventoryItemsPage()).results
+  }
+
+  async getInventoryItemsPage(page = 1): Promise<PaginatedResponse<InventoryItem>> {
+    const response = await authService.authenticatedFetch(paginatedUrl(INVENTORY_API_BASE_URL, page), {
       method: "GET",
     })
 
     await handleFetchError(response)
-    const data = await response.json()
-
-    if (!Array.isArray(data)) {
-      return []
-    }
-
-    return data
+    return readPaginatedResponse<InventoryItem>(await response.json())
   }
 
   async createInventoryItem(payload: InventoryPayload): Promise<InventoryItem> {
@@ -438,18 +460,16 @@ class ApiService {
   }
 
   async getEquipmentExitHistory(): Promise<EquipmentExitHistoryItem[]> {
-    const response = await authService.authenticatedFetch(EQUIPMENT_EXITS_API_URL, {
+    return (await this.getEquipmentExitHistoryPage()).results
+  }
+
+  async getEquipmentExitHistoryPage(page = 1): Promise<PaginatedResponse<EquipmentExitHistoryItem>> {
+    const response = await authService.authenticatedFetch(paginatedUrl(EQUIPMENT_EXITS_API_URL, page), {
       method: "GET",
     })
 
     await handleFetchError(response)
-    const data = await response.json()
-
-    if (!Array.isArray(data)) {
-      return []
-    }
-
-    return data
+    return readPaginatedResponse<EquipmentExitHistoryItem>(await response.json())
   }
 
   async getEquipmentByUnitId(unitId: number): Promise<Equipment[]> {
@@ -686,52 +706,28 @@ class ApiService {
   }
 
   async getUnits(): Promise<Unit[]> {
+    return (await this.getUnitsPage()).results
+  }
+
+  async getUnitsPage(page = 1): Promise<PaginatedResponse<Unit>> {
     console.log("🌐 Buscando unidades...")
 
     try {
-      const response = await authService.authenticatedFetch(`${API_BASE_URL}/unidades/`, {
+      const response = await authService.authenticatedFetch(paginatedUrl(`${API_BASE_URL}/unidades/`, page), {
         method: "GET",
       })
 
       await handleFetchError(response)
 
-      const data = await response.json()
-      console.log("📦 Unidades recebidas:", data.length)
-
-      if (!Array.isArray(data)) {
-        console.warn("⚠️ API não retornou um array")
-        return []
-      }
-
-      return data
+      return readPaginatedResponse<Unit>(await response.json())
     } catch (error) {
       console.error("❌ Erro ao buscar unidades:", error)
       throw error
     }
   }
 
-  async getQRCodeUnits(): Promise<Unit[]> {
-    console.log("🌐 Buscando unidades para QRCode...")
-
-    try {
-      const response = await authService.authenticatedFetch(`${API_BASE_URL}/unidades/`, {
-        method: "GET",
-      })
-
-      await handleFetchError(response)
-
-      const data = await response.json()
-
-      if (!Array.isArray(data)) {
-        console.warn("⚠️ API não retornou um array")
-        return []
-      }
-
-      return data
-    } catch (error) {
-      console.error("❌ Erro ao buscar unidades para QRCode:", error)
-      throw error
-    }
+  async getQRCodeUnits(page = 1): Promise<Unit[]> {
+    return (await this.getUnitsPage(page)).results
   }
 
   async createQRCodes(payload: QRCodePayload): Promise<any> {
@@ -768,6 +764,14 @@ class ApiService {
     return response.json()
   }
 
+  async getPasswordResetHistoryPage(page = 1): Promise<PaginatedResponse<PasswordResetHistoryItem>> {
+    const response = await authService.authenticatedFetch(paginatedUrl(`${API_BASE_URL}/reset-password/`, page), {
+      method: "GET",
+    })
+    await handleFetchError(response)
+    return readPaginatedResponse<PasswordResetHistoryItem>(await response.json())
+  }
+
   async createCloudAccessUser(payload: CreateCloudAccessUserPayload): Promise<PasswordResetResponse> {
     const response = await authService.authenticatedFetch(`${API_BASE_URL}/create-new-user/`, {
       method: "POST",
@@ -779,24 +783,20 @@ class ApiService {
   }
 
   async getTechnicians(): Promise<Technician[]> {
+    return (await this.getTechniciansPage()).results
+  }
+
+  async getTechniciansPage(page = 1): Promise<PaginatedResponse<Technician>> {
     console.log("🌐 Buscando técnicos...")
 
     try {
-      const response = await authService.authenticatedFetch("http://192.168.15.29:7000/api/v1/users/nometecnicos/", {
+      const response = await authService.authenticatedFetch(paginatedUrl(`${API_BASE_URL}/users/nometecnicos/`, page), {
         method: "GET",
       })
 
       await handleFetchError(response)
 
-      const data = await response.json()
-      console.log("📦 Técnicos recebidos:", data.length)
-
-      if (!Array.isArray(data)) {
-        console.warn("⚠️ API não retornou um array")
-        return []
-      }
-
-      return data
+      return readPaginatedResponse<Technician>(await response.json())
     } catch (error) {
       console.error("❌ Erro ao buscar técnicos:", error)
       throw error
@@ -821,6 +821,14 @@ class ApiService {
 
     await handleFetchError(response)
     console.log("✅ Nova tarefa enviada com sucesso")
+  }
+
+  async getCurrentTechnicianUsername(userId?: number, fallbackUsername = ""): Promise<string> {
+    if (this.cachedCurrentTechnicianUsername) return this.cachedCurrentTechnicianUsername
+    const technicians = await this.getTechnicians()
+    const currentTechnician = technicians.find((technician) => technician.id === userId || technician.username === fallbackUsername)
+    this.cachedCurrentTechnicianUsername = currentTechnician?.username || currentTechnician?.nome || fallbackUsername
+    return this.cachedCurrentTechnicianUsername
   }
 
   async completeTask(taskId: number, data: TaskCompletionData): Promise<void> {

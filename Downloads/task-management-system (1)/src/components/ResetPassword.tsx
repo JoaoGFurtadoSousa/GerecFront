@@ -168,7 +168,7 @@ export default function ResetPassword() {
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Avatar sx={{ bgcolor: "#2196f3", width: 32, height: 32 }}>{userData?.username?.charAt(0) || "U"}</Avatar>
-            <Box sx={{ display: { xs: "none", sm: "block" } }}>
+            <Box sx={{ display: "none" }}>
               <Typography variant="body2" sx={{ fontWeight: 600, color: "#333" }}>{userData?.username || "Usuário"}</Typography>
               <Typography variant="caption" sx={{ color: "#666" }}>{userData?.email || "usuario@sistema.com"}</Typography>
             </Box>

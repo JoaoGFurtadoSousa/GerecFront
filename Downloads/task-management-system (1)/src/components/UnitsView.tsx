@@ -107,7 +107,8 @@ export default function UnitsView() {
         throw new Error(`Erro ao buscar unidades: ${response.status} ${response.statusText}`)
       }
 
-      const unitsData: Unit[] = await response.json()
+      const unitsPayload: { results?: Unit[] } | Unit[] = await response.json()
+      const unitsData = Array.isArray(unitsPayload) ? unitsPayload : unitsPayload.results || []
       console.log("✅ Unidades recebidas:", unitsData)
       setUnits(Array.isArray(unitsData) ? unitsData : [])
     } catch (err) {
@@ -140,7 +141,8 @@ export default function UnitsView() {
         throw new Error(`Erro ao buscar equipamentos: ${response.status} ${response.statusText}`)
       }
 
-      const equipmentsData: Equipment[] = await response.json()
+      const equipmentsPayload: { results?: Equipment[] } | Equipment[] = await response.json()
+      const equipmentsData = Array.isArray(equipmentsPayload) ? equipmentsPayload : equipmentsPayload.results || []
       console.log("✅ Equipamentos recebidos:", equipmentsData)
       setUnitEquipments(Array.isArray(equipmentsData) ? equipmentsData : [])
     } catch (err) {
