@@ -103,7 +103,7 @@ export default function NovaTask() {
       try {
         setLoadingData(true)
 
-        const unidadesResponse = await authService.authenticatedFetch("http://192.168.15.29:7000/api/v1/unidades/?page=1", {
+        const unidadesResponse = await authService.authenticatedFetch("http://192.168.15.29:8000/api/v1/unidades/?page=1", {
           method: "GET",
         })
 
@@ -116,7 +116,7 @@ export default function NovaTask() {
           setUnidades([])
         }
 
-        const usuariosResponse = await authService.authenticatedFetch("http://192.168.15.29:7000/api/v1/usuarios/?page=1", {
+        const usuariosResponse = await authService.authenticatedFetch("http://192.168.15.29:8000/api/v1/usuarios/?page=1", {
           method: "GET",
         })
 
@@ -173,7 +173,7 @@ export default function NovaTask() {
         ...(token && { Authorization: `Bearer ${token}` }),
       }
 
-      const response = await fetch("http://192.168.15.29:7000/api/v1/tarefas/", {
+      const response = await fetch("http://192.168.15.29:8000/api/v1/tarefas/", {
         method: "POST",
         headers,
         body: JSON.stringify({

@@ -40,7 +40,7 @@ import NewTaskModal from "./NewTaskModal"
 import type { Equipment, Unit } from "../services/apiService"
 
 const DRAWER_WIDTH = 0
-const API_BASE_URL = "http://192.168.15.29:7000/api/v1"
+const API_BASE_URL = "http://192.168.15.29:8000/api/v1"
 
 export default function UnitsView() {
   const navigate = useNavigate()

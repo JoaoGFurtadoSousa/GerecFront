@@ -55,8 +55,10 @@ import { authService } from "../services/authService"
 import PasswordResetNavigationItem from "./PasswordResetNavigationItem"
 import CreateCloudAccessUserNavigationItem from "./CreateCloudAccessUserNavigationItem"
 import { apiService, type Unit, type Equipment } from "../services/apiService"
+import PaginatedNavigation from "./PaginatedNavigation"
 
 const DRAWER_WIDTH = 0
+const PAGE_SIZE = 10
 
 interface Unidade {
   id: number
@@ -107,6 +109,8 @@ export default function Unidades() {
   const [dialogOpen, setDialogOpen] = useState(false)
 
   const [units, setUnits] = useState<Unit[]>([])
+  const [page, setPage] = useState(1)
+  const [totalUnits, setTotalUnits] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null)
@@ -148,9 +152,10 @@ export default function Unidades() {
       try {
         setLoading(true)
         setError(null)
-        const data = await apiService.getUnits()
-        setUnits(data)
-        console.log("✅ Unidades carregadas:", data)
+        const response = await apiService.getUnitsPage(page)
+        setUnits(response.results)
+        setTotalUnits(response.count)
+        console.log("✅ Unidades carregadas:", response.results)
       } catch (err) {
         console.error("❌ Erro ao carregar unidades:", err)
         setError(err instanceof Error ? err.message : "Erro ao carregar unidades")
@@ -160,7 +165,7 @@ export default function Unidades() {
     }
 
     fetchUnits()
-  }, [])
+  }, [page])
 
   const filteredUnits = units
     .filter((unit) => {
@@ -170,7 +175,6 @@ export default function Unidades() {
     })
     .filter((unit) => unit.nome_da_unidade.toLowerCase().includes(searchTerm.toLowerCase()))
 
-  const totalUnits = units.length
   const activeUnits = units.filter((u) => u.status === true).length
   const inactiveUnits = units.filter((u) => u.status === false).length
 
@@ -552,6 +556,7 @@ export default function Unidades() {
                 ))}
               </Grid>
             )}
+            <PaginatedNavigation page={page} totalRecords={totalUnits} pageSize={PAGE_SIZE} onChange={setPage} />
           </Box>
         </Box>
       </Box>

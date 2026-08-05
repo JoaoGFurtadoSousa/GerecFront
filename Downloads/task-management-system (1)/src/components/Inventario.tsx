@@ -70,8 +70,10 @@ import {
 import { authService } from "../services/authService"
 import PasswordResetNavigationItem from "./PasswordResetNavigationItem"
 import CreateCloudAccessUserNavigationItem from "./CreateCloudAccessUserNavigationItem"
+import PaginatedNavigation from "./PaginatedNavigation"
 
 const DRAWER_WIDTH = 0
+const PAGE_SIZE = 10
 
 type InventoryDialogMode = "create" | "edit" | null
 
@@ -92,6 +94,8 @@ export default function Inventario() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
+  const [page, setPage] = useState(1)
+  const [totalInventoryItems, setTotalInventoryItems] = useState(0)
   const [units, setUnits] = useState<Unit[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -150,8 +154,9 @@ export default function Inventario() {
     setError(null)
 
     try {
-      const [inventoryData, unitsData] = await Promise.all([apiService.getInventoryItems(), apiService.getUnits()])
-      setInventoryItems(inventoryData)
+      const [inventoryResponse, unitsData] = await Promise.all([apiService.getInventoryItemsPage(page), apiService.getUnits()])
+      setInventoryItems(inventoryResponse.results)
+      setTotalInventoryItems(inventoryResponse.count)
       setUnits(unitsData)
     } catch (loadError) {
       console.error("Erro ao carregar inventário:", loadError)
@@ -163,7 +168,7 @@ export default function Inventario() {
 
   useEffect(() => {
     loadInventoryPage()
-  }, [])
+  }, [page])
 
   const filteredItems = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase()
@@ -171,7 +176,7 @@ export default function Inventario() {
     return inventoryItems.filter((item) => item.nome_do_equipamento.toLowerCase().includes(normalizedSearch))
   }, [inventoryItems, searchTerm])
 
-  const totalItens = inventoryItems.length
+  const totalItens = totalInventoryItems
   const itensComEstoque = inventoryItems.filter((item) => item.quantidade > 0).length
   const itensComEstoqueBaixo = inventoryItems.filter((item) => item.quantidade < 5).length
 
@@ -731,6 +736,7 @@ export default function Inventario() {
               ))}
             </Grid>
           )}
+          <PaginatedNavigation page={page} totalRecords={totalInventoryItems} pageSize={PAGE_SIZE} onChange={setPage} />
         </Box>
       </Box>
 

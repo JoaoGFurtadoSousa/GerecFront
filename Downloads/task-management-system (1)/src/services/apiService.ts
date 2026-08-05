@@ -1,8 +1,8 @@
 import { authService } from "./authService"
 
-const API_BASE_URL = "http://192.168.15.29:7000/api/v1"
-const INVENTORY_API_BASE_URL = "http://192.168.15.29:7000/api/v1/inventario/"
-const EQUIPMENT_EXITS_API_URL = "http://192.168.15.29:7000/api/v1/saidas-equipamentos/"
+const API_BASE_URL = "http://192.168.15.29:8000/api/v1"
+const INVENTORY_API_BASE_URL = "http://192.168.15.29:8000/api/v1/inventario/"
+const EQUIPMENT_EXITS_API_URL = "http://192.168.15.29:8000/api/v1/saidas-equipamentos/"
 
 export interface Task {
   id: number
@@ -269,11 +269,35 @@ const readPaginatedResponse = <T>(data: unknown): PaginatedResponse<T> => {
   }
 }
 
+/**
+ * Follows the API pagination links and returns a single collection.  This is
+ * used by form controls, where hiding records from subsequent pages would
+ * make them impossible to select.
+ */
+export const fetchAllPages = async <T>(fetchPage: (page: number) => Promise<PaginatedResponse<T>>): Promise<T[]> => {
+  const records: T[] = []
+  const visitedPages = new Set<number>()
+  let page = 1
+
+  while (!visitedPages.has(page)) {
+    visitedPages.add(page)
+    const response = await fetchPage(page)
+    records.push(...response.results)
+
+    if (!response.next) break
+
+    const nextPage = Number(new URL(response.next, API_BASE_URL).searchParams.get("page"))
+    if (!Number.isInteger(nextPage) || nextPage < 1) break
+    page = nextPage
+  }
+
+  return records
+}
+
 class ApiService {
   private cachedCurrentTechnicianUsername: string | null = null
   async getTasks(): Promise<Task[]> {
-    const page = await this.getTasksPage()
-    return page.results
+    return fetchAllPages((page) => this.getTasksPage(page))
   }
 
   async getTasksPage(page = 1): Promise<PaginatedResponse<Task>> {
@@ -295,8 +319,7 @@ class ApiService {
   }
 
   async getHistorico(): Promise<Task[]> {
-    const page = await this.getHistoricoPage()
-    return page.results
+    return fetchAllPages((page) => this.getHistoricoPage(page))
   }
 
   async getHistoricoPage(page = 1): Promise<PaginatedResponse<Task>> {
@@ -399,7 +422,7 @@ class ApiService {
   }
 
   async getInventoryItems(): Promise<InventoryItem[]> {
-    return (await this.getInventoryItemsPage()).results
+    return fetchAllPages((page) => this.getInventoryItemsPage(page))
   }
 
   async getInventoryItemsPage(page = 1): Promise<PaginatedResponse<InventoryItem>> {
@@ -460,7 +483,7 @@ class ApiService {
   }
 
   async getEquipmentExitHistory(): Promise<EquipmentExitHistoryItem[]> {
-    return (await this.getEquipmentExitHistoryPage()).results
+    return fetchAllPages((page) => this.getEquipmentExitHistoryPage(page))
   }
 
   async getEquipmentExitHistoryPage(page = 1): Promise<PaginatedResponse<EquipmentExitHistoryItem>> {
@@ -706,7 +729,7 @@ class ApiService {
   }
 
   async getUnits(): Promise<Unit[]> {
-    return (await this.getUnitsPage()).results
+    return fetchAllPages((page) => this.getUnitsPage(page))
   }
 
   async getUnitsPage(page = 1): Promise<PaginatedResponse<Unit>> {
@@ -726,8 +749,8 @@ class ApiService {
     }
   }
 
-  async getQRCodeUnits(page = 1): Promise<Unit[]> {
-    return (await this.getUnitsPage(page)).results
+  async getQRCodeUnits(): Promise<Unit[]> {
+    return this.getUnits()
   }
 
   async createQRCodes(payload: QRCodePayload): Promise<any> {
@@ -783,7 +806,7 @@ class ApiService {
   }
 
   async getTechnicians(): Promise<Technician[]> {
-    return (await this.getTechniciansPage()).results
+    return fetchAllPages((page) => this.getTechniciansPage(page))
   }
 
   async getTechniciansPage(page = 1): Promise<PaginatedResponse<Technician>> {
@@ -811,10 +834,10 @@ class ApiService {
     dataTarefa?: string
     status: string
   }): Promise<void> {
-    console.log("📤 Enviando nova tarefa para: http://192.168.15.29:7000/api/v1/tarefas/")
+    console.log("📤 Enviando nova tarefa para: http://192.168.15.29:8000/api/v1/tarefas/")
     console.log("📋 Dados enviados:", taskData)
 
-    const response = await authService.authenticatedFetch("http://192.168.15.29:7000/api/v1/tarefas/", {
+    const response = await authService.authenticatedFetch("http://192.168.15.29:8000/api/v1/tarefas/", {
       method: "POST",
       body: JSON.stringify(taskData),
     })
@@ -844,7 +867,7 @@ class ApiService {
     console.log("🌐 Buscando dados do usuário atual...")
 
     try {
-      const response = await authService.authenticatedFetch("http://192.168.15.29:7000/api/v1/unique-user", {
+      const response = await authService.authenticatedFetch("http://192.168.15.29:8000/api/v1/unique-user", {
         method: "GET",
       })
 

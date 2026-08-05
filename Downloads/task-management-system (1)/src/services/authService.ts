@@ -304,7 +304,7 @@ class AuthService {
   private async performTokenRefresh(refreshToken: string): Promise<string> {
     try {
       console.log("📡 Fazendo requisição de refresh...")
-      const response = await fetch("http://192.168.15.29:7000/api/token/refresh/", {
+      const response = await fetch("http://192.168.15.29:8000/api/token/refresh/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -501,7 +501,7 @@ class AuthService {
     try {
       console.log("🔍 Validando token...")
       // Fazer uma requisição simples para validar o token
-      const response = await fetch("http://192.168.15.29:7000/api/v1/tarefas/", {
+      const response = await fetch("http://192.168.15.29:8000/api/v1/tarefas/", {
         method: "HEAD", // Usar HEAD para não retornar dados
         headers: {
           Authorization: `Bearer ${accessToken}`,

@@ -68,7 +68,7 @@ import CreateCloudAccessUserNavigationItem from "./CreateCloudAccessUserNavigati
 import { apiService, type Task, type Equipment } from "../services/apiService"
 
 const DRAWER_WIDTH = 0
-const ITEMS_PER_PAGE = 6
+const PAGE_SIZE = 10
 
 export default function Historico() {
   const navigate = useNavigate()
@@ -76,6 +76,7 @@ export default function Historico() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
+  const [totalHistoryTasks, setTotalHistoryTasks] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [historyTasks, setHistoryTasks] = useState<Task[]>([])
@@ -116,16 +117,17 @@ export default function Historico() {
   }, [])
 
   useEffect(() => {
-    loadHistorico()
-  }, [])
+    loadHistorico(currentPage)
+  }, [currentPage])
 
-  const loadHistorico = async () => {
+  const loadHistorico = async (page: number) => {
     console.log("🔄 Carregando histórico de tarefas...")
     setLoading(true)
     setError(null)
 
     try {
-      const data = await apiService.getHistorico()
+      const response = await apiService.getHistoricoPage(page)
+      const data = response.results
       console.log("✅ Histórico carregado com sucesso:", data.length, "tarefas")
 
       const sortedData = data.sort((a, b) => {
@@ -138,7 +140,7 @@ export default function Historico() {
       })
 
       setHistoryTasks(sortedData)
-      setCurrentPage(1)
+      setTotalHistoryTasks(response.count)
     } catch (err) {
       console.error("❌ Erro ao carregar histórico:", err)
       setError(err instanceof Error ? err.message : "Erro ao carregar histórico")
@@ -233,11 +235,10 @@ export default function Historico() {
     return matchesSearch
   })
 
-  const totalPages = Math.ceil(filteredTasks.length / ITEMS_PER_PAGE)
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-  const paginatedTasks = filteredTasks.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+  const totalPages = Math.ceil(totalHistoryTasks / PAGE_SIZE)
+  const paginatedTasks = filteredTasks
 
-  const totalTasks = historyTasks.length
+  const totalTasks = totalHistoryTasks
   const completedTasks = historyTasks.filter((task) => task.status === "Concluído").length
 
   const handleDrawerToggle = () => {
@@ -341,7 +342,7 @@ export default function Historico() {
             <Typography variant="h5" sx={{ fontWeight: 600, color: "#333" }}>
               Histórico de Tarefas
             </Typography>
-            <IconButton onClick={loadHistorico} disabled={loading} color="primary" title="Atualizar lista">
+            <IconButton onClick={() => loadHistorico(currentPage)} disabled={loading} color="primary" title="Atualizar lista">
               <Refresh />
             </IconButton>
           </Box>
@@ -459,7 +460,7 @@ export default function Historico() {
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                       {searchTerm ? "Tente ajustar os filtros de busca" : "Não há tarefas no histórico"}
                     </Typography>
-                    <Button variant="outlined" onClick={loadHistorico} startIcon={<Refresh />}>
+                    <Button variant="outlined" onClick={() => loadHistorico(currentPage)} startIcon={<Refresh />}>
                       Recarregar
                     </Button>
                   </Paper>

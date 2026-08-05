@@ -128,7 +128,7 @@ export default function TaskList() {
     try {
       console.log("🔄 Enviando requisição POST para salvar dados...")
 
-      const response = await authService.authenticatedFetch("http://192.168.15.29:7000/api/v1/historico/", {
+      const response = await authService.authenticatedFetch("http://192.168.15.29:8000/api/v1/historico/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

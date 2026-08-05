@@ -103,7 +103,7 @@ export default function Login() {
     try {
       console.log("🔐 Fazendo login com:", formData.username)
 
-      const response = await fetch("http://192.168.15.29:7000/api/v1/login/", {
+      const response = await fetch("http://192.168.15.29:8000/api/v1/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
